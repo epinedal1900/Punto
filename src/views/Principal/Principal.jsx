@@ -1,28 +1,26 @@
-import React from 'react';
-import {
-  Grid,
-  AppBar,
-  IconButton,
-  Toolbar,
-  Hidden,
-  Button,
-  Typography,
-  Card,
-  CardContent,
-  Box,
-  CardActions,
-} from '@material-ui/core';
+import React, { useState } from 'react';
+import { Grid, Card, CardContent, CardActions } from '@material-ui/core';
 
-import MenuIcon from '@material-ui/icons/Menu';
-import InputIcon from '@material-ui/icons/Input';
-import CssBaseline from '@material-ui/core/CssBaseline';
 import Paper from '@material-ui/core/Paper';
-
-import { makeStyles } from '@material-ui/styles';
-import Search from './components/Search';
+import { makeStyles } from '@material-ui/core/styles';
+import { useHistory } from 'react-router-dom';
+import { Formik } from 'formik';
+import { useQuery } from '@apollo/client';
+import { useSelector, useDispatch } from 'react-redux';
+import * as yup from 'yup';
+import { NUEVA_VENTA_UTILS } from '../../utils/queries';
+import UpperButtons from './components/UpperButtons';
+import LowerButtons from './components/LowerButtons';
 import Tickets from './components/Tickets';
+import SuccessErrorMessage from '../../components/SuccessErrorMessage';
+import CancelDialog from '../../components/CancelDialog';
+import AsignarForm from './components/AsignarForm';
+import CobrarForm from './components/CobrarForm';
 
-const useStyles = makeStyles((theme) => ({
+import AuthGuard from '../../components/AuthGuard';
+import { modificarTickets } from '../../actions';
+
+const useStyles = makeStyles(() => ({
   root: {
     height: '100%',
     width: '100%',
@@ -45,7 +43,7 @@ const useStyles = makeStyles((theme) => ({
   },
   cardContent: {
     padding: 0,
-    height: 510,
+    height: 475,
   },
   cardActions: {
     padding: 0,
@@ -54,53 +52,197 @@ const useStyles = makeStyles((theme) => ({
     boxShadow: 'none',
   },
 }));
+const validationSchema = yup.object({
+  articulos: yup
+    .array()
+    .of(
+      yup.object().shape({
+        articulo: yup.object().required('requerido').typeError('requerido'),
+        cantidad: yup.number().required('requerido').min(1, 'requerido'),
+        precio: yup.number().required('requerido').min(1, 'requerido'),
+      })
+    )
+    .test(
+      'selected',
+      'Ingrese al menos 1 artículo',
+      (values) => values.length > 0
+    ),
+  cantidadPagada: yup
+    .number()
+    .required('requerido')
+    .when('articulos', (articulos, schema) => {
+      const total = articulos.reduce((acc, cur) => {
+        return acc + cur.precio * cur.cantidad;
+      }, 0);
+      return schema
+        .min(
+          total,
+          `La cantidad pagada debe ser mayor o igual a ${Intl.NumberFormat(
+            'en-US',
+            {
+              style: 'currency',
+              currency: 'USD',
+            }
+          ).format(total)}`
+        )
+        .max(total + 1000, 'Cantidad pagada inválida');
+    }),
+});
 
-const Principal = () => {
+const Principal = (props) => {
+  const { history } = props;
+  const dispatch = useDispatch();
   const classes = useStyles();
+  const [success, setSuccess] = useState(false);
+  const [message, setMessage] = useState(null);
+  const [eliminarTicketConfirmation, setEliminarTicketConfirmation] = useState(
+    false
+  );
+  const [agregarOpen, setAgregarOpen] = useState(false);
+  const [asignarOpen, setAsignarOpen] = useState(false);
+  const [cobrarOpen, setCobrarOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [total, setTotal] = useState(null);
+  const [opcionesArticulos, setOpcionesArticulos] = useState(null);
+  const [clientes, setClientes] = useState(null);
+  const [cuentas, setCuentas] = useState(null);
+  const [selectedTicket, setSelectedTicket] = useState(0);
+  const session = useSelector((state) => state.session);
+  useQuery(NUEVA_VENTA_UTILS, {
+    variables: {
+      _idProductos: 'productos',
+      _idCuentas: 'cuentas',
+    },
+    onCompleted: (data) => {
+      setClientes(data.clientes);
+      setCuentas(data.cuentas.values);
+      setOpcionesArticulos(data.productos.objects);
+    },
+  });
+
+  const handleExit = () => {
+    setSuccess(null);
+    setMessage(null);
+  };
+  const handleSubmit = () => {
+    alert('ji');
+  };
+
+  const handleEliminarTicketClose = () => {
+    setEliminarTicketConfirmation(false);
+  };
+  const handleEliminarTicket = (formikProps) => {
+    let nuevosTickets = JSON.parse(JSON.stringify(session.tickets));
+    const { length } = nuevosTickets;
+    nuevosTickets = nuevosTickets.filter((val, i) => {
+      return i !== selectedTicket;
+    });
+    dispatch(
+      modificarTickets({
+        tickets: nuevosTickets,
+      })
+    );
+    formikProps.setFieldValue(
+      'articulos',
+      nuevosTickets[
+        selectedTicket === length - 1 ? selectedTicket - 1 : selectedTicket
+      ]
+    );
+    setSelectedTicket(
+      selectedTicket === length - 1 ? selectedTicket - 1 : selectedTicket
+    );
+    setEliminarTicketConfirmation(false);
+  };
+
   return (
-    <>
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <Paper className={classes.search} elevation={2}>
-            <Search />
-          </Paper>
-        </Grid>
-        <Grid item xs={12}>
-          <Card className={classes.search} elevation={2}>
-            <CardContent className={classes.cardContent}>
-              <Tickets />
-            </CardContent>
-            <CardActions className={classes.cardActions}>
-              <Box display="flex" m={0} p={1} width="100%">
-                <Box p={1}>
-                  <Button color="secondary" variant="outlined">
-                    Eliminar
-                  </Button>
-                </Box>
-                <Box flexGrow={1} p={1}>
-                  <Button color="primary" variant="outlined">
-                    Asignar Cliente
-                  </Button>
-                </Box>
-                <Box p={1}>
-                  <Button color="primary" variant="outlined">
-                    Reimprimir último ticket
-                  </Button>
-                </Box>
-                <Box p={1}>
-                  <Button color="primary" variant="contained">
-                    Cobrar
-                  </Button>
-                </Box>
-                <Box alignSelf="center" p={1}>
-                  <Typography variant="h5"> Total: $12,000.00</Typography>
-                </Box>
-              </Box>
-            </CardActions>
-          </Card>
-        </Grid>
-      </Grid>
-    </>
+    <AuthGuard roles={['ADMIN', 'PUNTO']}>
+      <SuccessErrorMessage
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        handleExit={handleExit}
+        message={message}
+        success={success}
+      />
+      <Formik
+        initialValues={{
+          // articulos: [],
+          articulos: session.tickets[selectedTicket],
+          cliente: '',
+          articulo: '',
+          cantidad: 0,
+          precio: 0,
+          tipoDePago: 'efectivo',
+          tipoDeImpresion: 'imprimir',
+          comentarios: '',
+          cantidadPagada: 0,
+        }}
+        onSubmit={handleSubmit}
+        validateOnBlur={false}
+        validateOnChange={false}
+        validationSchema={validationSchema}
+      >
+        {(formikProps) => (
+          <>
+            <CancelDialog
+              handleCancel={() => handleEliminarTicket(formikProps)}
+              handleClose={handleEliminarTicketClose}
+              message="¿Está seguro de que desea eliminar el ticket?"
+              open={eliminarTicketConfirmation}
+            />
+            <AsignarForm
+              clientes={clientes}
+              open={asignarOpen}
+              setAsignarOpen={setAsignarOpen}
+            />
+            <CobrarForm
+              clientes={clientes}
+              open={cobrarOpen}
+              setAsignarOpen={setCobrarOpen}
+              setSubmitting={setSubmitting}
+              submitting={submitting}
+              total={total}
+            />
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <Paper className={classes.search} elevation={2}>
+                  <UpperButtons
+                    formikProps={formikProps}
+                    selectedTicket={selectedTicket}
+                    setAgregarOpen={setAgregarOpen}
+                    setSelectedTicket={setSelectedTicket}
+                  />
+                </Paper>
+              </Grid>
+              <Grid item xs={12}>
+                <Card className={classes.search} elevation={2}>
+                  <CardContent className={classes.cardContent}>
+                    <Tickets
+                      agregarOpen={agregarOpen}
+                      formikProps={formikProps}
+                      opcionesArticulos={opcionesArticulos}
+                      selectedTicket={selectedTicket}
+                      setAgregarOpen={setAgregarOpen}
+                      setSelectedTicket={setSelectedTicket}
+                      setTotal={setTotal}
+                    />
+                  </CardContent>
+                  <CardActions className={classes.cardActions}>
+                    <LowerButtons
+                      formikProps={formikProps}
+                      setAsignarOpen={setAsignarOpen}
+                      setCobrarOpen={setCobrarOpen}
+                      setEliminarTicketConfirmation={
+                        setEliminarTicketConfirmation
+                      }
+                      total={total}
+                    />
+                  </CardActions>
+                </Card>
+              </Grid>
+            </Grid>
+          </>
+        )}
+      </Formik>
+    </AuthGuard>
   );
 };
 

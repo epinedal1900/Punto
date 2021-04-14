@@ -2,7 +2,7 @@ import { gql } from '@apollo/client';
 
 export const NUEVO_CLIENTE = gql`
   mutation Mutation($obj: JSON!) {
-    nuevoCliente(obj:$obj) {
+    nuevoCliente(obj: $obj) {
       success
       message
       _id
@@ -12,134 +12,7 @@ export const NUEVO_CLIENTE = gql`
 
 export const ADD_DIRECCION = gql`
   mutation Mutation($obj: JSON!, $_idCliente: String!) {
-    addDireccion(obj:$obj, _idCliente: $_idCliente) {
-      success
-      message
-      _id
-    }
-  }
-`;
-
-export const EDITAR_CLIENTE = gql`
-  mutation Mutation(
-    $_idCliente: String!
-    $telefonos: [String]!
-    $correo: String!
-  ) {
-    editarCliente(_idCliente: $_idCliente, telefonos: $telefonos, correo: $correo) {
-      success
-      message
-      _id
-    }
-  }
-`;
-
-export const ADD_VALUE_UTILS = gql`
-  mutation Mutation($_id: String!, $value: String!, $message: String!) {
-    addValueUtils(_id:$_id, value: $value, message: $message) {
-      success
-      message
-      _id
-    }
-  }
-`;
-
-export const ADD_OBJECT_UTILS = gql`
-  mutation Mutation($_id: String!, $object: JSON!, $message: String!) {
-    addObjectUtils(_id:$_id, object: $object, message: $message) {
-      success
-      message
-      _id
-    }
-  }
-`;
-
-
-export const EDITAR_OBJECT_UTILS = gql`
- mutation Mutation(
-    $_id: String!
-    $codigo: String!
-    $object: JSON!
-    $message: String!
-  ) {
-    editarProductos(
-      _id: $_id
-      codigo: $codigo
-      object: $object
-      message: $message
-    ) {
-      success
-      message
-      _id
-    }
-  }
-`;
-
-export const DELETE_OBJECT_UTILS = gql`
-  mutation Mutation($_id: String!, $object: JSON!, $message: String!) {
-    deleteObjectUtils(_id:$_id, object: $object, message: $message) {
-      success
-      message
-      _id
-    }
-  }
-`;
-
-export const DELETE_VALUE_UTILS = gql`
-  mutation Mutation($_id: String!,$value: String!, $message: String!) {
-    deleteValueUtils(_id:$_id, value: $value, message: $message) {
-      success
-      message
-      _id
-    }
-  }
-`;
-export const ELIMINAR_PEDIDO = gql`
-  mutation Mutation(
-    $_idPedido: String!
-    $cliente: String
-  ) {
-    eliminarPedido(
-      _idPedido: $_idPedido
-      cliente: $cliente
-    ) {
-      success
-      message
-      _id
-    }
-  }
-`;
-
-export const AGREGAR_VENTA_A_PEDIDO = gql`
-  mutation Mutation(
-    $_idPedido: String!
-    $_idVenta: String!
-    $cliente: String!
-  ) {
-    agregarVentaAPedido(
-      _idPedido: $_idPedido
-      _idVenta: $_idVenta
-      cliente: $cliente
-    ) {
-      success
-      message
-      _id
-    }
-  }
-`;
-
-
-export const EDITAR_PEDIDO = gql`
-    mutation Mutation(
-    $obj: JSON!
-    $cliente: String!
-    $_idPedido: String!
-  ) {
-    editarPedido(
-      obj: $obj
-      cliente: $cliente
-      _idPedido: $_idPedido
-    ) {
+    addDireccion(obj: $obj, _idCliente: $_idCliente) {
       success
       message
       _id
@@ -148,7 +21,7 @@ export const EDITAR_PEDIDO = gql`
 `;
 
 export const CANCELAR_VENTA = gql`
-    mutation Mutation(
+  mutation Mutation(
     $_idCollection: String!
     $_idCliente: String!
     $cliente: String!
@@ -166,7 +39,6 @@ export const CANCELAR_VENTA = gql`
     }
   }
 `;
-
 
 export const UPLOAD_ENVIO = gql`
   mutation Mutation($path: String!, $_idVenta: String!) {
@@ -223,13 +95,13 @@ export const CANCELAR_PAGO = gql`
 `;
 
 export const NUEVO_PEDIDO = gql`
-    mutation Mutation(
+  mutation Mutation(
     $obj: JSON!
     $cliente: String!
     $prendas: Int!
     $urls: [String]
   ) {
-    nuevoPedido(obj: $obj, cliente: $cliente, prendas:$prendas, urls:$urls) {
+    nuevoPedido(obj: $obj, cliente: $cliente, prendas: $prendas, urls: $urls) {
       success
       message
       _id
@@ -238,11 +110,7 @@ export const NUEVO_PEDIDO = gql`
 `;
 
 export const NUEVA_VENTA = gql`
-    mutation Mutation(
-    $objVenta: JSON!
-    $monto: Float!
-    $cliente: String!
-  ) {
+  mutation Mutation($objVenta: JSON!, $monto: Float!, $cliente: String!) {
     nuevaVenta(obj: $objVenta, monto: $monto, cliente: $cliente) {
       success
       message
@@ -252,11 +120,7 @@ export const NUEVA_VENTA = gql`
 `;
 
 export const NUEVO_PAGO = gql`
-    mutation Mutation(
-    $objPago: JSON!
-    $cliente: String!
-    $urls: [String]
-  ) {
+  mutation Mutation($objPago: JSON!, $cliente: String!, $urls: [String]) {
     nuevoPago(obj: $objPago, cliente: $cliente, urls: $urls) {
       success
       message

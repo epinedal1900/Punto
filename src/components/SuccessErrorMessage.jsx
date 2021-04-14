@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertMessage } from 'components';
+import AlertMessage from './AlertMessage';
 
 const SuccessErrorMessage = (props) => {
   const { success, message, id, viewPath, handleExit, anchorOrigin } = props;

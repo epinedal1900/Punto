@@ -3,6 +3,9 @@ export const SESSION_LOGOUT = 'SESSION_LOGOUT';
 export const CREAR_VENTA = 'CREAR_VENTA';
 export const LIMPIAR_VENTA = 'LIMPIAR_VENTA';
 export const SET_ELIMINAR_PEDIDO = 'SET_ELIMINAR_PEDIDO';
+export const MODIFICAR_TICKETS = 'MODIFICAR_TICKETS';
+export const GUARDAR_TICKET = 'GUARDAR_TICKET';
+export const ELIMINAR_TICKET = 'ELIMINAR_TICKET';
 
 export const login = (args) => (dispatch) =>
   dispatch({
@@ -24,7 +27,13 @@ export const setEliminarPedido = (args) => (dispatch) =>
     type: SET_ELIMINAR_PEDIDO,
     payload: args,
   });
-export const limpiarVenta = () => (dispatch) =>
+export const guardarTicket = (args) => (dispatch) =>
   dispatch({
-    type: LIMPIAR_VENTA,
+    type: GUARDAR_TICKET,
+    payload: args,
+  });
+export const modificarTickets = (args) => (dispatch) =>
+  dispatch({
+    type: MODIFICAR_TICKETS,
+    payload: args,
   });

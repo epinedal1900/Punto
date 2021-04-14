@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Button from '@material-ui/core/Button';
 import Box from '@material-ui/core/Box';
-import { makeStyles } from '@material-ui/styles';
+import { makeStyles } from '@material-ui/core/styles';
 import { Formik } from 'formik';
 import * as yup from 'yup';
 import { useMutation } from '@apollo/client';

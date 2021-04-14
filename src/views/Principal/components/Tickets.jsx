@@ -1,124 +1,43 @@
+/* eslint-disable react/jsx-key */
 /* eslint-disable react/no-multi-comp */
 import React from 'react';
 
 import CssBaseline from '@material-ui/core/CssBaseline';
-import { makeStyles } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
-import Typography from '@material-ui/core/Typography';
 import Box from '@material-ui/core/Box';
-import { Paper } from '@material-ui/core';
-import makeData from './makeData';
-import EnhancedTable from './EnhancedTable';
+import Divider from '@material-ui/core/Divider';
+import { useSelector, useDispatch } from 'react-redux';
+import Articulos from '../../../formPartials/Articulos';
+import { modificarTickets } from '../../../actions';
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    flexGrow: 1,
-    width: '100%',
-    backgroundColor: theme.palette.background.paper,
-  },
-  content: {
-    padding: 0,
-    height: 300,
-  },
-}));
-
-function TabPanel(props) {
-  const { children, value, index, ...other } = props;
-
-  return (
-    <div
-      aria-labelledby={`scrollable-auto-tab-${index}`}
-      hidden={value !== index}
-      id={`scrollable-auto-tabpanel-${index}`}
-      role="tabpanel"
-      // eslint-disable-next-line react/jsx-props-no-spreading
-      {...other}
-    >
-      {value === index && (
-        <Box p={3}>
-          <Typography>{children}</Typography>
-        </Box>
-      )}
-    </div>
-  );
-}
-
-const Tickets = () => {
-  const columns = React.useMemo(
-    () => [
-      {
-        Header: 'Cantidad',
-        accessor: 'cantidad',
-      },
-      {
-        Header: 'Artículo',
-        accessor: 'articulo',
-      },
-      {
-        Header: 'Precio',
-        accessor: 'precio',
-      },
-    ],
-    []
-  );
-
-  const [data, setData] = React.useState(
-    React.useMemo(
-      () => [
-        {
-          articulo: 'Pantalón dama basic',
-          cantidad: 17,
-          precio: 135,
-        },
-        {
-          articulo: 'Falda dama basic',
-          cantidad: 5,
-          precio: 110,
-        },
-        {
-          articulo: 'Short dama basic',
-          cantidad: 5,
-          precio: 110,
-        },
-        {
-          articulo: 'Capri dama premium',
-          cantidad: 5,
-          precio: 125,
-        },
-      ],
-      []
-    )
-  );
-
-  const [skipPageReset, setSkipPageReset] = React.useState(false);
-
-  // We need to keep the table from resetting the pageIndex when we
-  // Update data. So we can keep track of that flag with a ref.
-
-  // When our cell renderer calls updateMyData, we'll use
-  // the rowIndex, columnId and new value to update the
-  // original data
-  const updateMyData = (rowIndex, columnId, value) => {
-    // We also turn on the flag to not reset the page
-    setSkipPageReset(true);
-    setData((old) =>
-      old.map((row, index) => {
-        if (index === rowIndex) {
-          return {
-            ...old[rowIndex],
-            [columnId]: value,
-          };
-        }
-        return row;
-      })
-    );
-  };
-  const [value, setValue] = React.useState(0);
+const Tickets = (props) => {
+  const {
+    agregarOpen,
+    setAgregarOpen,
+    setTotal,
+    opcionesArticulos,
+    selectedTicket,
+    setSelectedTicket,
+    formikProps,
+  } = props;
+  const session = useSelector((state) => state.session);
+  const dispatch = useDispatch();
 
   const handleChange = (event, newValue) => {
-    setValue(newValue);
+    const nuevosTickets = JSON.parse(JSON.stringify(session.tickets));
+    nuevosTickets[selectedTicket] = formikProps.values.articulos;
+    dispatch(
+      modificarTickets({
+        tickets: nuevosTickets,
+      })
+    );
+    formikProps.setFieldValue('articulos', nuevosTickets[newValue]);
+    setSelectedTicket(newValue);
+  };
+  const handleAgregarClose = () => {
+    setAgregarOpen(false);
   };
 
   return (
@@ -128,25 +47,34 @@ const Tickets = () => {
         <AppBar color="default" position="static">
           <Tabs
             indicatorColor="primary"
-            onChange={handleChange}
+            onChange={(event, value) => handleChange(event, value)}
             scrollButtons="auto"
             textColor="primary"
-            value={value}
+            value={selectedTicket}
             variant="scrollable"
           >
-            <Tab label="ticket 1" />
-            <Tab label="ticket 2" />
+            {session.tickets.map((ticket, i) => (
+              <Tab label={`ticket ${i + 1}`} />
+            ))}
           </Tabs>
         </AppBar>
-        <Box height={300}>
-          <EnhancedTable
-            columns={columns}
-            data={data}
-            setData={setData}
-            skipPageReset={skipPageReset}
-            updateMyData={updateMyData}
-          />
+        <Box height={425} maxHeight={425} overflow="auto" p={3}>
+          <form onSubmit={formikProps.handleSubmit}>
+            <Articulos
+              agregarButton={false}
+              agregarOpen={agregarOpen}
+              allowNoItems
+              handleAgregarClose={handleAgregarClose}
+              opcionesArticulos={opcionesArticulos}
+              setAgregarOpen={setAgregarOpen}
+              setTotal={setTotal}
+            />
+            <h2>{JSON.stringify(formikProps.values)}</h2>
+            <h2>{JSON.stringify(formikProps.errors)}</h2>
+            <h2>{JSON.stringify(session)}</h2>
+          </form>
         </Box>
+        <Divider />
       </div>
     </div>
   );

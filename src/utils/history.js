@@ -1,4 +1,4 @@
-import { createBrowserHistory } from 'history';
+import { createHashHistory } from 'history';
 
 // eslint-disable-next-line import/prefer-default-export
-export const history = createBrowserHistory();
+export const history = createHashHistory();

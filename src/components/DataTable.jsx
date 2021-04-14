@@ -1,6 +1,7 @@
-/* eslint-disable react/no-multi-comp */
+/* eslint-disable no-underscore-dangle */
 /* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable react/jsx-key */
+/* eslint-disable react/no-multi-comp */
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import Table from '@material-ui/core/Table';
@@ -17,14 +18,13 @@ import Card from '@material-ui/core/Card';
 import Box from '@material-ui/core/Box';
 import CardContent from '@material-ui/core/CardContent';
 
+import { useHistory } from 'react-router-dom';
 import {
   useGlobalFilter,
   usePagination,
   useSortBy,
   useTable,
 } from 'react-table';
-
-import useRouter from '../utils/useRouter';
 import GlobalFilter from './GlobalFilter';
 import TablePaginationActions from './TablePaginationActions';
 import LoadingTable from './LoadingTable';
@@ -58,11 +58,14 @@ const EnhancedTable = (props) => {
     ids,
     detailsPath,
     multipleDetailsPaths,
+    primaryIds,
+    movimiento,
+    pSize,
   } = props;
   const classes = useStyles();
 
   const initialState = {
-    pageSize: 10,
+    pageSize: pSize,
     // sortBy: [
     //   {
     //     id: columns[0].Header,
@@ -95,7 +98,7 @@ const EnhancedTable = (props) => {
 
   const linkToDetails = ids.length > 0;
 
-  const { history } = useRouter();
+  const history = useHistory();
 
   const handleRowClick = (event, id) => {
     if (multipleDetailsPaths) {
@@ -104,6 +107,8 @@ const EnhancedTable = (props) => {
       if (path) {
         history.push(`${path}/${ids[id]}`);
       }
+    } else if (primaryIds) {
+      history.push(`${detailsPath}/${primaryIds[id]}/${movimiento}/${ids[id]}`);
     } else {
       history.push(`${detailsPath}/${ids[id]}`);
     }
@@ -204,29 +209,39 @@ const DataTable = (props) => {
     firstRowId,
     detailsPath,
     loading,
-    query,
     multipleDetailsPaths,
     noDataText,
+    movimiento,
+    pSize,
   } = props;
   const classes = useStyles();
 
   let ids;
   let data;
   let columns;
+  let primaryIds; // ej. idCorte/movimiento/id
 
-  if (!loading && rawData[query].length !== 0) {
-    const headers = Object.getOwnPropertyNames(rawData[query][0]);
+  if (!loading && rawData.length !== 0) {
+    const headers = Object.getOwnPropertyNames(rawData[0]);
     if (firstRowId) {
-      data = rawData[query];
-      ids = rawData[query].map((obj) => obj[headers[0]]);
+      data = rawData;
+      ids = rawData.map((obj) => obj[headers[0]]);
     } else if (headers[0] === '_id') {
-      // eslint-disable-next-line no-unused-vars
-      data = rawData[query].map(({ _id, ...rest }) => rest);
-      headers.shift();
-      // eslint-disable-next-line no-underscore-dangle
-      ids = rawData[query].map((obj) => obj._id);
+      if (headers[1] === '_idCorte') {
+        // eslint-disable-next-line no-unused-vars
+        data = rawData.map(({ _id, _idCorte, ...rest }) => rest);
+        headers.shift();
+        headers.shift();
+        ids = rawData.map((obj) => obj._id);
+        primaryIds = rawData.map((obj) => obj._idCorte);
+      } else {
+        // eslint-disable-next-line no-unused-vars
+        data = rawData.map(({ _id, ...rest }) => rest);
+        headers.shift();
+        ids = rawData.map((obj) => obj._id);
+      }
     } else {
-      data = rawData[query];
+      data = rawData;
       ids = [];
     }
     columns = makeColumns(headers);
@@ -236,13 +251,16 @@ const DataTable = (props) => {
     <div>
       {!loading ? (
         <>
-          {rawData[query].length !== 0 ? (
+          {rawData.length !== 0 ? (
             <EnhancedTable
               columns={columns}
               data={data}
               detailsPath={detailsPath}
               ids={ids}
+              movimiento={movimiento}
               multipleDetailsPaths={multipleDetailsPaths}
+              primaryIds={primaryIds}
+              pSize={pSize}
               title={title}
             />
           ) : (
@@ -292,6 +310,7 @@ const DataTable = (props) => {
 
 DataTable.defaultProps = {
   noDataText: 'Sin registros',
+  pSize: 10,
 };
 
 export default DataTable;

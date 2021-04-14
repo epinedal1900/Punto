@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-duplicate-props */
 import React from 'react';
 import TextField from '@material-ui/core/TextField';
 import { useFormikContext, getIn } from 'formik';

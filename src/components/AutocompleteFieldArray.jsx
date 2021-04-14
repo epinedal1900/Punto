@@ -23,26 +23,18 @@ const AutocompleteFieldArray = (props) => {
     handleChange,
     freeSolo,
     articulos,
+    renderOption,
+    onBlur,
   } = props;
 
   return (
     <Autocomplete
+      autoHighlight
       disableClearable
-      freeSolo={freeSolo}
       getOptionLabel={getOptionLabel}
       id={`${valueName}.${index}.${property}`}
       name={`${valueName}.${index}.${property}`}
-      onBlur={
-        articulos
-          ? async (e) => {
-            setFieldValue(
-              `${valueName}.${index}.${property}`,
-              e.target.value.split(':')[1] || e.target.value,
-              false
-            );
-          }
-          : null
-      }
+      onBlur={onBlur}
       onChange={(e, value) => {
         setFieldValue(
           `${valueName}.${index}.${property}`,
@@ -61,7 +53,6 @@ const AutocompleteFieldArray = (props) => {
             getIn(errors, `${valueName}.${index}.${property}`) &&
             getIn(touched, `${valueName}.${index}.${property}`)
           }
-          freeSolo={freeSolo}
           helperText={
             getIn(errors, `${valueName}.${index}.${property}`) &&
             getIn(touched, `${valueName}.${index}.${property}`)
@@ -75,6 +66,7 @@ const AutocompleteFieldArray = (props) => {
           variant="outlined"
         />
       )}
+      renderOption={renderOption}
       value={getIn(values, `${valueName}.${index}.${property}`)}
     />
   );

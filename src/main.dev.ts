@@ -8,6 +8,10 @@
  * When running `yarn build` or `yarn build-main`, this file is compiled to
  * `./src/main.prod.js` using webpack. This gives us some performance wins.
  */
+/* eslint-disable no-console */
+/* eslint-disable promise/always-return */
+/* eslint-disable promise/no-nesting */
+/* eslint-disable promise/catch-or-return */
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import path from 'path';

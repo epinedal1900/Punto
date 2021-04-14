@@ -13,6 +13,7 @@ const NumberField = (props) => {
       helperText={errors[value] && touched[value]}
       label={label}
       name={value}
+      size="small"
       type="number"
       variant="outlined"
     />

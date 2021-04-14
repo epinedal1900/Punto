@@ -3,13 +3,13 @@ import * as actionTypes from '../actions';
 const initialState = {
   loggedIn: localStorage.getItem('loggedIn') || 'false',
   nombre: localStorage.getItem('nombre'),
-  role: localStorage.getItem('role'),
-  readOnly: localStorage.getItem('readOnly'),
+  roles: localStorage.getItem('roles'),
   articulos: null,
   cliente: null,
   idPedido: null,
   eliminarPedido: null,
   pedidoConVentas: null,
+  tickets: [[]],
 };
 // roles and name from db
 
@@ -20,21 +20,17 @@ const sessionReducer = (state = initialState, action) => {
         ...state,
         loggedIn: 'true',
         nombre: action.payload.nombre,
-        role: action.payload.role,
-        readOnly: action.payload.readOnly,
+        roles: action.payload.roles,
       };
     }
-
     case actionTypes.SESSION_LOGOUT: {
       return {
         ...state,
         loggedIn: 'false',
         nombre: null,
-        role: null,
-        readOnly: null,
+        roles: null,
       };
     }
-
     case actionTypes.CREAR_VENTA: {
       return {
         ...state,
@@ -45,7 +41,6 @@ const sessionReducer = (state = initialState, action) => {
         eliminarPedido: action.payload.eliminarPedido,
       };
     }
-
     case actionTypes.LIMPIAR_VENTA: {
       return {
         ...state,
@@ -54,6 +49,12 @@ const sessionReducer = (state = initialState, action) => {
         idPedido: null,
         eliminarPedido: null,
         pedidoConVentas: null,
+      };
+    }
+    case actionTypes.MODIFICAR_TICKETS: {
+      return {
+        ...state,
+        tickets: action.payload.tickets,
       };
     }
     case actionTypes.SET_ELIMINAR_PEDIDO: {
