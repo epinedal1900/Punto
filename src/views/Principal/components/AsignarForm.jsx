@@ -13,17 +13,20 @@ import { useFormikContext } from 'formik';
 import Tooltip from '@material-ui/core/Tooltip';
 
 const AsignarForm = (props) => {
-  const { open, setAsignarOpen, clientes } = props;
+  const { open, setAsignarOpen, clientes, setDialogOpen } = props;
   const { values, errors, touched, setFieldValue } = useFormikContext();
 
   const handleClose = () => {
+    setDialogOpen(false);
     setAsignarOpen(false);
     setFieldValue('cliente', '', false);
   };
 
   const handleAsignar = () => {
+    setDialogOpen(false);
     setAsignarOpen(false);
   };
+
   return (
     <Dialog onClose={handleClose} open={open}>
       <Box width={400}>

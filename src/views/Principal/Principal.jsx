@@ -3,7 +3,6 @@ import { Grid, Card, CardContent, CardActions } from '@material-ui/core';
 
 import Paper from '@material-ui/core/Paper';
 import { makeStyles } from '@material-ui/core/styles';
-import { useHistory } from 'react-router-dom';
 import { Formik } from 'formik';
 import { useQuery } from '@apollo/client';
 import { useSelector, useDispatch } from 'react-redux';
@@ -16,7 +15,10 @@ import SuccessErrorMessage from '../../components/SuccessErrorMessage';
 import CancelDialog from '../../components/CancelDialog';
 import AsignarForm from './components/AsignarForm';
 import CobrarForm from './components/CobrarForm';
-
+import IntercambioForm from './components/IntercambioForm';
+import RegresoForm from './components/RegresoForm';
+import Reporte from './components/Reporte';
+import GastoForm from './components/GastoForm';
 import AuthGuard from '../../components/AuthGuard';
 import { modificarTickets } from '../../actions';
 
@@ -43,7 +45,7 @@ const useStyles = makeStyles(() => ({
   },
   cardContent: {
     padding: 0,
-    height: 475,
+    height: 525,
   },
   cardActions: {
     padding: 0,
@@ -52,7 +54,9 @@ const useStyles = makeStyles(() => ({
     boxShadow: 'none',
   },
 }));
+
 const validationSchema = yup.object({
+  cliente: yup.object(),
   articulos: yup
     .array()
     .of(
@@ -67,55 +71,40 @@ const validationSchema = yup.object({
       'Ingrese al menos 1 artículo',
       (values) => values.length > 0
     ),
-  cantidadPagada: yup
-    .number()
-    .required('requerido')
-    .when('articulos', (articulos, schema) => {
-      const total = articulos.reduce((acc, cur) => {
-        return acc + cur.precio * cur.cantidad;
-      }, 0);
-      return schema
-        .min(
-          total,
-          `La cantidad pagada debe ser mayor o igual a ${Intl.NumberFormat(
-            'en-US',
-            {
-              style: 'currency',
-              currency: 'USD',
-            }
-          ).format(total)}`
-        )
-        .max(total + 1000, 'Cantidad pagada inválida');
-    }),
+  cantidadPagada: yup.number(),
 });
 
-const Principal = (props) => {
-  const { history } = props;
+const Principal = () => {
   const dispatch = useDispatch();
   const classes = useStyles();
-  const [success, setSuccess] = useState(false);
+  const [success, setSuccess] = useState(null);
   const [message, setMessage] = useState(null);
   const [eliminarTicketConfirmation, setEliminarTicketConfirmation] = useState(
     false
   );
+  const [
+    imprimirReporteConfirmation,
+    setImprimirReporteConfirmation,
+  ] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [agregarOpen, setAgregarOpen] = useState(false);
   const [asignarOpen, setAsignarOpen] = useState(false);
   const [cobrarOpen, setCobrarOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [intercambioOpen, setIntercambioOpen] = useState(false);
   const [total, setTotal] = useState(null);
   const [opcionesArticulos, setOpcionesArticulos] = useState(null);
   const [clientes, setClientes] = useState(null);
-  const [cuentas, setCuentas] = useState(null);
+  const [regresoOpen, setRegresoOpen] = useState(null);
   const [selectedTicket, setSelectedTicket] = useState(0);
+  const [gastoOpen, setGastoOpen] = useState(false);
   const session = useSelector((state) => state.session);
+
   useQuery(NUEVA_VENTA_UTILS, {
     variables: {
       _idProductos: 'productos',
-      _idCuentas: 'cuentas',
     },
     onCompleted: (data) => {
       setClientes(data.clientes);
-      setCuentas(data.cuentas.values);
       setOpcionesArticulos(data.productos.objects);
     },
   });
@@ -124,11 +113,9 @@ const Principal = (props) => {
     setSuccess(null);
     setMessage(null);
   };
-  const handleSubmit = () => {
-    alert('ji');
-  };
 
   const handleEliminarTicketClose = () => {
+    setDialogOpen(false);
     setEliminarTicketConfirmation(false);
   };
   const handleEliminarTicket = (formikProps) => {
@@ -146,12 +133,23 @@ const Principal = (props) => {
       'articulos',
       nuevosTickets[
         selectedTicket === length - 1 ? selectedTicket - 1 : selectedTicket
-      ]
+      ].articulos
+    );
+    formikProps.setFieldValue(
+      'cliente',
+      nuevosTickets[
+        selectedTicket === length - 1 ? selectedTicket - 1 : selectedTicket
+      ].cliente
     );
     setSelectedTicket(
       selectedTicket === length - 1 ? selectedTicket - 1 : selectedTicket
     );
+    setDialogOpen(false);
     setEliminarTicketConfirmation(false);
+  };
+  const handleImprimirReporteClose = () => {
+    setDialogOpen(false);
+    setImprimirReporteConfirmation(false);
   };
 
   return (
@@ -164,9 +162,8 @@ const Principal = (props) => {
       />
       <Formik
         initialValues={{
-          // articulos: [],
-          articulos: session.tickets[selectedTicket],
-          cliente: '',
+          articulos: session.tickets[selectedTicket].articulos,
+          cliente: session.tickets[selectedTicket].cliente,
           articulo: '',
           cantidad: 0,
           precio: 0,
@@ -175,39 +172,79 @@ const Principal = (props) => {
           comentarios: '',
           cantidadPagada: 0,
         }}
-        onSubmit={handleSubmit}
         validateOnBlur={false}
         validateOnChange={false}
         validationSchema={validationSchema}
       >
         {(formikProps) => (
           <>
+            <Reporte
+              handleClose={handleImprimirReporteClose}
+              open={imprimirReporteConfirmation}
+              setDialogOpen={setDialogOpen}
+              setImprimirReporteConfirmation={setImprimirReporteConfirmation}
+              setMessage={setMessage}
+              setSuccess={setSuccess}
+            />
             <CancelDialog
               handleCancel={() => handleEliminarTicket(formikProps)}
               handleClose={handleEliminarTicketClose}
               message="¿Está seguro de que desea eliminar el ticket?"
               open={eliminarTicketConfirmation}
             />
+            <GastoForm
+              open={gastoOpen}
+              setDialogOpen={setDialogOpen}
+              setGastoOpen={setGastoOpen}
+              setMessage={setMessage}
+              setSuccess={setSuccess}
+            />
+            <IntercambioForm
+              opcionesArticulos={opcionesArticulos}
+              open={intercambioOpen}
+              setDialogOpen={setDialogOpen}
+              setIntercambioOpen={setIntercambioOpen}
+              setMessage={setMessage}
+              setSuccess={setSuccess}
+            />
+            <RegresoForm
+              opcionesArticulos={opcionesArticulos}
+              open={regresoOpen}
+              setDialogOpen={setDialogOpen}
+              setMessage={setMessage}
+              setRegresoOpen={setRegresoOpen}
+              setSuccess={setSuccess}
+            />
             <AsignarForm
               clientes={clientes}
               open={asignarOpen}
               setAsignarOpen={setAsignarOpen}
+              setDialogOpen={setDialogOpen}
             />
             <CobrarForm
               clientes={clientes}
               open={cobrarOpen}
-              setAsignarOpen={setCobrarOpen}
-              setSubmitting={setSubmitting}
-              submitting={submitting}
+              setCobrarOpen={setCobrarOpen}
+              setDialogOpen={setDialogOpen}
+              setMessage={setMessage}
+              setSuccess={setSuccess}
               total={total}
             />
             <Grid container spacing={3}>
               <Grid item xs={12}>
                 <Paper className={classes.search} elevation={2}>
                   <UpperButtons
+                    dialogOpen={dialogOpen}
                     formikProps={formikProps}
                     selectedTicket={selectedTicket}
                     setAgregarOpen={setAgregarOpen}
+                    setDialogOpen={setDialogOpen}
+                    setGastoOpen={setGastoOpen}
+                    setImprimirReporteConfirmation={
+                      setImprimirReporteConfirmation
+                    }
+                    setIntercambioOpen={setIntercambioOpen}
+                    setRegresoOpen={setRegresoOpen}
                     setSelectedTicket={setSelectedTicket}
                   />
                 </Paper>
@@ -217,19 +254,23 @@ const Principal = (props) => {
                   <CardContent className={classes.cardContent}>
                     <Tickets
                       agregarOpen={agregarOpen}
+                      dialogOpen={dialogOpen}
                       formikProps={formikProps}
                       opcionesArticulos={opcionesArticulos}
                       selectedTicket={selectedTicket}
                       setAgregarOpen={setAgregarOpen}
+                      setDialogOpen={setDialogOpen}
                       setSelectedTicket={setSelectedTicket}
                       setTotal={setTotal}
                     />
                   </CardContent>
                   <CardActions className={classes.cardActions}>
                     <LowerButtons
+                      dialogOpen={dialogOpen}
                       formikProps={formikProps}
                       setAsignarOpen={setAsignarOpen}
                       setCobrarOpen={setCobrarOpen}
+                      setDialogOpen={setDialogOpen}
                       setEliminarTicketConfirmation={
                         setEliminarTicketConfirmation
                       }

@@ -6,7 +6,7 @@
 /* eslint-disable no-unused-vars */
 import React, { useEffect } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import { Box, Button, TextField, Grid, Typography } from '@material-ui/core';
+import { Box, Button, TextField, Grid } from '@material-ui/core';
 import { Formik } from 'formik';
 import * as yup from 'yup';
 import { useSelector, useDispatch } from 'react-redux';

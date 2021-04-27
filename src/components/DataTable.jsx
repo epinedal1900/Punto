@@ -66,12 +66,12 @@ const EnhancedTable = (props) => {
 
   const initialState = {
     pageSize: pSize,
-    // sortBy: [
-    //   {
-    //     id: columns[0].Header,
-    //     desc: columns[0].Header === 'Fecha' ? true : false
-    //   }
-    // ]
+    sortBy: [
+      {
+        id: columns[0].Header,
+        desc: true,
+      },
+    ],
   };
 
   const {
@@ -280,7 +280,7 @@ const DataTable = (props) => {
                     <Typography
                       className={classes.title}
                       id="tableTitle"
-                      variant="h4"
+                      variant="h5"
                     >
                       {noDataText}
                     </Typography>

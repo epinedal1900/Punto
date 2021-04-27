@@ -1,0 +1,97 @@
+{
+  "Punto": [
+    {
+      "_id": "Plaza",
+      "inventario": [
+        {
+          "prenda": "_idPrenda",
+          "cantidad": 100,
+          "precio": 129.5
+        },
+        {
+          "prenda": "_idPrenda",
+          "cantidad": 100,
+          "precio": 129.5
+        },
+        {
+          "prenda": "_idPrenda",
+          "cantidad": 100,
+          "precio": 129.5
+        }
+      ]
+    },
+    {
+      "_id": "fecha",
+      "punto":"Pasillo 2",
+      "movimientos": [
+        {
+          "_id":"_id",
+          "tipo":"entrada",
+          "articulos": [
+            {
+              "prenda": "_idPrenda",
+              "cantidad": 100,
+              "precio": 129.5
+            },
+            {
+              "prenda": "_idPrenda",
+              "cantidad": 10,
+              "precio": 120.5
+            },
+            {
+              "prenda": "_idPrenda",
+              "cantidad": 100,
+              "precio": 128.5
+            }
+          ]
+        },
+        {
+          "_id":"_id",
+          "tipo":"intercambio",
+          "articulos": [
+            {
+              "prenda": "_idPrenda",
+              "cantidad": 100,
+              "precio": 129.5
+            },
+            {
+              "prenda": "_idPrenda",
+              "cantidad": 10,
+              "precio": 120.5
+            },
+            {
+              "prenda": "_idPrenda",
+              "cantidad": 100,
+              "precio": 128.5
+            }
+          ]
+        },
+        {
+          "_idVenta": "_idVenta",
+          "monto":123123
+        }
+        {
+          "_id": "_id",
+          "articulos": [
+            {
+              "prenda": "_idPrenda",
+              "cantidad": 100,
+              "precio": 129.5
+            },
+            {
+              "prenda": "_idPrenda",
+              "cantidad": 10,
+              "precio": 120.5
+            },
+            {
+              "prenda": "_idPrenda",
+              "cantidad": 100,
+              "precio": 128.5
+            }
+          ],
+          "cancelada": true
+        }
+      ]
+    }
+  ]
+}

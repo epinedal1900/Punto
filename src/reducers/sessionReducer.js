@@ -4,12 +4,12 @@ const initialState = {
   loggedIn: localStorage.getItem('loggedIn') || 'false',
   nombre: localStorage.getItem('nombre'),
   roles: localStorage.getItem('roles'),
-  articulos: null,
-  cliente: null,
-  idPedido: null,
-  eliminarPedido: null,
-  pedidoConVentas: null,
-  tickets: [[]],
+  puntoIdActivo: localStorage.getItem('puntoIdActivo'),
+  infoPunto: localStorage.getItem('infoPunto'),
+  tickets: [{ cliente: '', articulos: [] }],
+  ultimoTicket: {},
+  impresora: localStorage.getItem('impresora'),
+  ancho: localStorage.getItem('ancho'),
 };
 // roles and name from db
 
@@ -21,6 +21,8 @@ const sessionReducer = (state = initialState, action) => {
         loggedIn: 'true',
         nombre: action.payload.nombre,
         roles: action.payload.roles,
+        puntoIdActivo: action.payload.puntoIdActivo,
+        infoPunto: action.payload.infoPunto,
       };
     }
     case actionTypes.SESSION_LOGOUT: {
@@ -29,26 +31,8 @@ const sessionReducer = (state = initialState, action) => {
         loggedIn: 'false',
         nombre: null,
         roles: null,
-      };
-    }
-    case actionTypes.CREAR_VENTA: {
-      return {
-        ...state,
-        articulos: action.payload.articulos,
-        cliente: action.payload.cliente,
-        idPedido: action.payload.idPedido,
-        pedidoConVentas: action.payload.pedidoConVentas,
-        eliminarPedido: action.payload.eliminarPedido,
-      };
-    }
-    case actionTypes.LIMPIAR_VENTA: {
-      return {
-        ...state,
-        articulos: null,
-        cliente: null,
-        idPedido: null,
-        eliminarPedido: null,
-        pedidoConVentas: null,
+        puntoIdActivo: null,
+        infoPunto: null,
       };
     }
     case actionTypes.MODIFICAR_TICKETS: {
@@ -57,13 +41,19 @@ const sessionReducer = (state = initialState, action) => {
         tickets: action.payload.tickets,
       };
     }
-    case actionTypes.SET_ELIMINAR_PEDIDO: {
+    case actionTypes.MODIFICAR_ULTIMO_TICKET: {
       return {
         ...state,
-        eliminarPedido: action.payload,
+        ultimoTicket: action.payload.ultimoTicket,
       };
     }
-
+    case actionTypes.MODIFICAR_IMPRESORA: {
+      return {
+        ...state,
+        impresora: action.payload.impresora,
+        ancho: action.payload.ancho,
+      };
+    }
     default: {
       return state;
     }

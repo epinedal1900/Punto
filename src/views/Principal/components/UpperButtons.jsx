@@ -1,31 +1,16 @@
-import React, { useState } from 'react';
-import { makeStyles } from '@material-ui/core/styles';
-import Paper from '@material-ui/core/Paper';
+import React from 'react';
 import Box from '@material-ui/core/Box';
 import { GlobalHotKeys } from 'react-hotkeys';
 import Button from '@material-ui/core/Button';
-import Typography from '@material-ui/core/Typography';
 import Tooltip from '@material-ui/core/Tooltip';
 import AddIcon from '@material-ui/icons/Add';
 import ReceiptIcon from '@material-ui/icons/Receipt';
 import { useSelector, useDispatch } from 'react-redux';
+import MonetizationOnOutlinedIcon from '@material-ui/icons/MonetizationOnOutlined';
+import SwapHorizIcon from '@material-ui/icons/SwapHoriz';
+import SettingsBackupRestoreIcon from '@material-ui/icons/SettingsBackupRestore';
+import PrintIcon from '@material-ui/icons/Print';
 import { modificarTickets } from '../../../actions';
-
-const useStyles = makeStyles((theme) => ({
-  root: {
-    padding: '2px 4px',
-    display: 'flex',
-    alignItems: 'center',
-    width: 400,
-  },
-  input: {
-    marginLeft: theme.spacing(1),
-    flex: 1,
-  },
-  iconButton: {
-    padding: 10,
-  },
-}));
 
 export default function UpperButtons(props) {
   const {
@@ -33,45 +18,90 @@ export default function UpperButtons(props) {
     setSelectedTicket,
     selectedTicket,
     formikProps,
+    dialogOpen,
+    setIntercambioOpen,
+    setImprimirReporteConfirmation,
+    setGastoOpen,
+    setDialogOpen,
+    setRegresoOpen,
   } = props;
   const dispatch = useDispatch();
   const session = useSelector((state) => state.session);
 
   const handleAgregarClick = () => {
-    setAgregarOpen(true);
+    if (!dialogOpen) {
+      setDialogOpen(true);
+      setAgregarOpen(true);
+    }
+  };
+  const handleIntercambioClick = () => {
+    if (!dialogOpen) {
+      setDialogOpen(true);
+      setIntercambioOpen(true);
+    }
+  };
+  const handleRegresoClick = () => {
+    if (!dialogOpen) {
+      setDialogOpen(true);
+      setRegresoOpen(true);
+    }
+  };
+  const handleImprimirReporteClick = () => {
+    if (!dialogOpen) {
+      setDialogOpen(true);
+      setImprimirReporteConfirmation(true);
+    }
+  };
+  const handleGastoClick = () => {
+    if (!dialogOpen) {
+      setDialogOpen(true);
+      setGastoOpen(true);
+    }
   };
 
   const handleNuevoTicketClick = () => {
-    const nuevosTickets = JSON.parse(JSON.stringify(session.tickets));
-    if (nuevosTickets.length < 7) {
-      nuevosTickets[selectedTicket] = formikProps.values.articulos;
-      nuevosTickets.push([]);
-      dispatch(
-        modificarTickets({
-          tickets: nuevosTickets,
-        })
-      );
-      formikProps.setFieldValue('articulos', []);
-      setSelectedTicket(nuevosTickets.length - 1);
+    if (dialogOpen === false) {
+      const nuevosTickets = JSON.parse(JSON.stringify(session.tickets));
+      if (nuevosTickets.length < 7) {
+        nuevosTickets[selectedTicket] = {
+          cliente: formikProps.cliente || '',
+          articulos: formikProps.values.articulos,
+        };
+        nuevosTickets.push({ cliente: '', articulos: [] });
+        dispatch(
+          modificarTickets({
+            tickets: nuevosTickets,
+          })
+        );
+        formikProps.setFieldValue('articulos', []);
+        formikProps.setFieldValue('cliente', '');
+        setSelectedTicket(nuevosTickets.length - 1);
+      }
     }
   };
 
   const handleTicketChange = (n) => {
     const nuevosTickets = JSON.parse(JSON.stringify(session.tickets));
     if (n <= nuevosTickets.length) {
-      nuevosTickets[selectedTicket] = formikProps.values.articulos;
+      nuevosTickets[selectedTicket] = {
+        cliente: formikProps.values.cliente || '',
+        articulos: formikProps.values.articulos,
+      };
       dispatch(
         modificarTickets({
           tickets: nuevosTickets,
         })
       );
-      formikProps.setFieldValue('articulos', nuevosTickets[n - 1]);
+      formikProps.setFieldValue('articulos', nuevosTickets[n - 1].articulos);
+      formikProps.setFieldValue('cliente', nuevosTickets[n - 1].cliente);
       setSelectedTicket(n - 1);
     }
   };
 
   const keyMap = {
     AGREGAR: 'ctrl+n',
+    INTERCAMBIO: 'ctrl+i',
+    GASTO: 'ctrl+g',
     NUEVO_TICKET: 'ctrl+shift+n',
     TICKET1: 'ctrl+1',
     TICKET2: 'ctrl+2',
@@ -84,6 +114,8 @@ export default function UpperButtons(props) {
 
   const handlers = {
     AGREGAR: handleAgregarClick,
+    INTERCAMBIO: handleIntercambioClick,
+    GASTO: handleGastoClick,
     NUEVO_TICKET: handleNuevoTicketClick,
     TICKET1: () => handleTicketChange(1),
     TICKET2: () => handleTicketChange(2),
@@ -107,6 +139,50 @@ export default function UpperButtons(props) {
               variant="outlined"
             >
               Agregar
+            </Button>
+          </Tooltip>
+        </Box>
+        <Box p={1}>
+          <Button
+            color="secondary"
+            onClick={handleImprimirReporteClick}
+            startIcon={<PrintIcon />}
+            variant="outlined"
+          >
+            Imprimir reporte
+          </Button>
+        </Box>
+        <Box p={1}>
+          <Button
+            color="primary"
+            onClick={handleRegresoClick}
+            startIcon={<SettingsBackupRestoreIcon />}
+            variant="outlined"
+          >
+            Nuevo regreso
+          </Button>
+        </Box>
+        <Box p={1}>
+          <Tooltip title="CTRL+G">
+            <Button
+              color="primary"
+              onClick={handleGastoClick}
+              startIcon={<MonetizationOnOutlinedIcon />}
+              variant="outlined"
+            >
+              Nuevo gasto
+            </Button>
+          </Tooltip>
+        </Box>
+        <Box p={1}>
+          <Tooltip title="CTRL+I">
+            <Button
+              color="primary"
+              onClick={handleIntercambioClick}
+              startIcon={<SwapHorizIcon />}
+              variant="outlined"
+            >
+              Nuevo intercambio
             </Button>
           </Tooltip>
         </Box>

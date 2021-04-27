@@ -10,4 +10,5 @@ export { default as SuccessErrorMessage } from './SuccessErrorMessage';
 export { default as AutocompleteField } from './AutocompleteField';
 export { default as NumberField } from './NumberField';
 export { default as CancelDialog } from './CancelDialog';
+export { default as Header } from './Header';
 export { default as AuthGuard } from './AuthGuard';

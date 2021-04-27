@@ -9,7 +9,7 @@ import Tab from '@material-ui/core/Tab';
 import Box from '@material-ui/core/Box';
 import Divider from '@material-ui/core/Divider';
 import { useSelector, useDispatch } from 'react-redux';
-import Articulos from '../../../formPartials/Articulos';
+import Articulos from './Articulos';
 import { modificarTickets } from '../../../actions';
 
 const Tickets = (props) => {
@@ -21,23 +21,29 @@ const Tickets = (props) => {
     selectedTicket,
     setSelectedTicket,
     formikProps,
+    setDialogOpen,
   } = props;
   const session = useSelector((state) => state.session);
   const dispatch = useDispatch();
 
   const handleChange = (event, newValue) => {
     const nuevosTickets = JSON.parse(JSON.stringify(session.tickets));
-    nuevosTickets[selectedTicket] = formikProps.values.articulos;
+    nuevosTickets[selectedTicket] = {
+      cliente: formikProps.values.cliente || '',
+      articulos: formikProps.values.articulos,
+    };
     dispatch(
       modificarTickets({
         tickets: nuevosTickets,
       })
     );
-    formikProps.setFieldValue('articulos', nuevosTickets[newValue]);
+    formikProps.setFieldValue('articulos', nuevosTickets[newValue].articulos);
+    formikProps.setFieldValue('cliente', nuevosTickets[newValue].cliente);
     setSelectedTicket(newValue);
   };
   const handleAgregarClose = () => {
     setAgregarOpen(false);
+    setDialogOpen(false);
   };
 
   return (
@@ -58,7 +64,7 @@ const Tickets = (props) => {
             ))}
           </Tabs>
         </AppBar>
-        <Box height={425} maxHeight={425} overflow="auto" p={3}>
+        <Box height={475} maxHeight={475} overflow="auto" p={3}>
           <form onSubmit={formikProps.handleSubmit}>
             <Articulos
               agregarButton={false}
@@ -67,11 +73,11 @@ const Tickets = (props) => {
               handleAgregarClose={handleAgregarClose}
               opcionesArticulos={opcionesArticulos}
               setAgregarOpen={setAgregarOpen}
+              setDialogOpen={setDialogOpen}
               setTotal={setTotal}
             />
-            <h2>{JSON.stringify(formikProps.values)}</h2>
-            <h2>{JSON.stringify(formikProps.errors)}</h2>
-            <h2>{JSON.stringify(session)}</h2>
+            {/* <h2>{JSON.stringify(formikProps.errors)}</h2>
+            <h2>{JSON.stringify(session)}</h2> */}
           </form>
         </Box>
         <Divider />

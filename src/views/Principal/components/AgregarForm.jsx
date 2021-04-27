@@ -10,10 +10,9 @@ import Box from '@material-ui/core/Box';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import Grid from '@material-ui/core/Grid';
 import TextField from '@material-ui/core/TextField';
-import { useFormikContext, getIn } from 'formik';
-import * as yup from 'yup';
+import { useFormikContext } from 'formik';
 import Tooltip from '@material-ui/core/Tooltip';
-import { MoneyFormat, IntegerFormat } from '../utils/TextFieldFormats';
+import { MoneyFormat, IntegerFormat } from '../../../utils/TextFieldFormats';
 
 const AgregarForm = (props) => {
   const {
@@ -22,6 +21,7 @@ const AgregarForm = (props) => {
     setAgregarOpen,
     opcionesArticulos,
     arrayHelpers,
+    setDialogOpen,
   } = props;
   const { values, errors, touched, setFieldValue } = useFormikContext();
 
@@ -30,7 +30,7 @@ const AgregarForm = (props) => {
   };
 
   const handleAgregar = () => {
-    if (values.articulos.length < 20) {
+    if (values.articulos.length < 20 && open === true) {
       arrayHelpers.insert(0, {
         articulo: values.articulo,
         cantidad: values.cantidad,
@@ -40,6 +40,7 @@ const AgregarForm = (props) => {
       setFieldValue('cantidad', 0, false);
       setFieldValue('precio', 0, false);
       setAgregarOpen(false);
+      setDialogOpen(false);
     }
   };
   const keyMap = {

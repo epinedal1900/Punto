@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { useQuery } from '@apollo/client';
 import { Grid } from '@material-ui/core';
-import { VENTAS } from '../../utils/queries';
+import { PRODUCTOS } from '../../utils/queries';
 import { AuthGuard, DataTable } from '../../components';
 
-const Ventas = () => {
+const Articulos = () => {
   const [loading, setLoading] = useState(true);
-  const [ventas, setVentas] = useState(null);
-  useQuery(VENTAS, {
+  const [productos, setProductos] = useState(null);
+  useQuery(PRODUCTOS, {
+    variables: { _idProductos: 'productos' },
     onCompleted: (data) => {
-      setVentas(data.ventas);
+      setProductos(data.productos.objects);
       setLoading(false);
     },
   });
@@ -19,11 +20,10 @@ const Ventas = () => {
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <DataTable
-            detailsPath="/ventas"
             firstRowId={false}
             loading={loading}
-            rawData={ventas}
-            title="Ventas"
+            rawData={productos}
+            title="Artículos"
           />
         </Grid>
       </Grid>
@@ -31,4 +31,4 @@ const Ventas = () => {
   );
 };
 
-export default Ventas;
+export default Articulos;

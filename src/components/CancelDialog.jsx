@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
@@ -14,7 +14,22 @@ const CancelDialog = (props) => {
     loading,
     selectedId,
     message,
+    hacerEsperar,
   } = props;
+  const [espera, setEspera] = useState(true);
+  useEffect(() => {
+    const bloquearSubmit = async () => {
+      setEspera(true);
+      await new Promise((resolve) => setTimeout(resolve, 10000));
+      setEspera(false);
+    };
+    if (hacerEsperar) {
+      bloquearSubmit();
+    } else {
+      setEspera(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
   return (
     <Dialog onClose={handleClose} open={open}>
       <DialogContent>
@@ -33,7 +48,7 @@ const CancelDialog = (props) => {
         <Button
           autoFocus
           color="primary"
-          disabled={loading}
+          disabled={loading || espera}
           onClick={() => handleCancel(selectedId)}
           size="small"
           variant="outlined"

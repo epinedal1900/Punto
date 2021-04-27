@@ -1,5 +1,5 @@
-/* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable react/jsx-key */
+/* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable react/no-multi-comp */
 // eslint-disable-next-line no-unused-vars
 import React from 'react';
@@ -11,6 +11,8 @@ import TableHead from '@material-ui/core/TableHead';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableRow from '@material-ui/core/TableRow';
 import Card from '@material-ui/core/Card';
+import Typography from '@material-ui/core/Typography';
+import Box from '@material-ui/core/Box';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
 import Divider from '@material-ui/core/Divider';
@@ -23,8 +25,8 @@ import ClearIcon from '@material-ui/icons/Clear';
 import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
 import CloudUploadOutlinedIcon from '@material-ui/icons/CloudUploadOutlined';
 import { useTable } from 'react-table';
+import { useHistory } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import useRouter from '../utils/useRouter';
 
 import makeColumns from '../utils/makeColumns';
 import LoadingTable from './LoadingTable';
@@ -60,15 +62,19 @@ function EnhancedTable(props) {
     handleCancelClick,
     handleUploadClick,
     handleEliminarClick,
+    secondEditText,
+    handleSecondEditClick,
+    editText,
     detailsPath,
     data,
     movimiento,
     ids,
     columns,
+    readOnlyRoles,
   } = props;
 
   const classes = useStyles();
-  const { history } = useRouter();
+  const history = useHistory();
   const session = useSelector((state) => state.session);
 
   const { getTableProps, headerGroups, rows, prepareRow } = useTable({
@@ -127,12 +133,20 @@ function EnhancedTable(props) {
         </div>
       </CardContent>
       <CardActions className={classes.actions} disableSpacing>
-        {session.readOnly === 'false' && (
+        {JSON.parse(session.roles).some((role) => {
+          return readOnlyRoles.includes(role.role) && role.readOnly === 'false';
+        }) && (
           <>
             {handleEditClick && (
               <Button onClick={handleEditClick} size="small">
                 <EditOutlinedIcon className={classes.buttonIcon} />
-                Editar
+                {editText}
+              </Button>
+            )}
+            {handleSecondEditClick && (
+              <Button onClick={handleSecondEditClick} size="small">
+                <EditOutlinedIcon className={classes.buttonIcon} />
+                {secondEditText}
               </Button>
             )}
             {handleAddClick && (
@@ -179,15 +193,20 @@ const DetailsTable = (props) => {
     hasViewMoreButton,
     handleAddClick,
     handleEditClick,
+    handleSecondEditClick,
     handleMoreClick,
     handleCancelClick,
     handleUploadClick,
     handleEliminarClick,
     detailsPath,
     loading,
+    editText,
+    secondEditText,
     movimiento,
     data,
     ids,
+    noDataText,
+    readOnlyRoles,
   } = props;
   const classes = useStyles();
 
@@ -210,23 +229,49 @@ const DetailsTable = (props) => {
 
   return (
     <div>
-      {!loading && data && data.length !== 0 ? (
-        <EnhancedTable
-          columns={columns}
-          data={data}
-          detailsPath={detailsPath}
-          handleAddClick={handleAddClick}
-          handleCancelClick={handleCancelClick}
-          handleEditClick={handleEditClick}
-          handleEliminarClick={handleEliminarClick}
-          handleMoreClick={handleMoreClick}
-          handleUploadClick={handleUploadClick}
-          hasHeaderColumns={hasHeaderColumns}
-          hasViewMoreButton={hasViewMoreButton}
-          ids={ids}
-          movimiento={movimiento}
-          title={title}
-        />
+      {!loading && data ? (
+        <>
+          {data.length !== 0 ? (
+            <EnhancedTable
+              columns={columns}
+              data={data}
+              detailsPath={detailsPath}
+              editText={editText}
+              handleAddClick={handleAddClick}
+              handleCancelClick={handleCancelClick}
+              handleEditClick={handleEditClick}
+              handleEliminarClick={handleEliminarClick}
+              handleMoreClick={handleMoreClick}
+              handleSecondEditClick={handleSecondEditClick}
+              handleUploadClick={handleUploadClick}
+              hasHeaderColumns={hasHeaderColumns}
+              hasViewMoreButton={hasViewMoreButton}
+              ids={ids}
+              movimiento={movimiento}
+              readOnlyRoles={readOnlyRoles}
+              secondEditText={secondEditText}
+              title={title}
+            />
+          ) : (
+            <Card>
+              <CardHeader title={title} />
+              <Divider />
+              <CardContent className={classes.content}>
+                <Box display="flex" justifyContent="center" m={0}>
+                  <Box>
+                    <Typography
+                      className={classes.title}
+                      id="tableTitle"
+                      variant="h4"
+                    >
+                      {noDataText}
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          )}
+        </>
       ) : (
         <Card>
           <CardHeader title={title} />
@@ -244,6 +289,8 @@ const DetailsTable = (props) => {
 
 DetailsTable.defaultProps = {
   hasViewMoreButton: true,
+  editText: 'Editar',
+  readOnlyRoles: [],
 };
 
 export default DetailsTable;

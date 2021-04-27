@@ -13,12 +13,16 @@ const Alert = (props) => {
   return <MuiAlert elevation={6} variant="filled" {...props} />;
 };
 
-const useStyles = makeStyles(() => ({
-  root: {
-    maxWidth: 800,
-    width: '100%',
+const useStyles = makeStyles({
+  cookieAlert: {
+    '& .MuiAlert-icon': {
+      fontSize: 30,
+    },
+    '& .MuiAlert-message': {
+      fontSize: 20,
+    },
   },
-}));
+});
 
 const AlertMessage = (props) => {
   const { severity, message, viewPath, handleExit, anchorOrigin } = props;
@@ -33,44 +37,23 @@ const AlertMessage = (props) => {
   };
 
   return (
-    <div className={classes.root}>
-      <Snackbar
-        anchorOrigin={anchorOrigin}
-        autoHideDuration={4000}
+    // <div className={classes.root}>
+    <Snackbar
+      anchorOrigin={anchorOrigin}
+      autoHideDuration={30000}
+      onClose={handleClose}
+      onExit={handleExit}
+      open={open}
+    >
+      <Alert
+        className={classes.cookieAlert}
         onClose={handleClose}
-        onExit={handleExit}
-        open={open}
+        severity={severity}
       >
-        <Alert
-          action={
-            <>
-              {viewPath && (
-                <Button
-                  color="inherit"
-                  component={RouterLink}
-                  size="small"
-                  to={viewPath}
-                >
-                  VER
-                </Button>
-              )}
-              <IconButton
-                aria-label="close"
-                color="inherit"
-                onClick={handleClose}
-                size="small"
-              >
-                <CloseIcon fontSize="small" />
-              </IconButton>
-            </>
-          }
-          onClose={handleClose}
-          severity={severity}
-        >
-          <h3>{message}</h3>
-        </Alert>
-      </Snackbar>
-    </div>
+        {message}
+      </Alert>
+    </Snackbar>
+    // </div>
   );
 };
 

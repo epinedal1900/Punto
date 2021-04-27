@@ -1,11 +1,12 @@
 /* eslint-disable react/no-multi-comp */
-import React, { Suspense } from 'react';
+import React, { Suspense, useState, useRef } from 'react';
 import clsx from 'clsx';
 import { makeStyles } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import Drawer from '@material-ui/core/Drawer';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
+import { useQuery, useMutation } from '@apollo/client';
 import List from '@material-ui/core/List';
 import Typography from '@material-ui/core/Typography';
 import Divider from '@material-ui/core/Divider';
@@ -14,10 +15,14 @@ import Badge from '@material-ui/core/Badge';
 import Container from '@material-ui/core/Container';
 import MenuIcon from '@material-ui/icons/Menu';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
-import NotificationsIcon from '@material-ui/icons/Notifications';
+import NotificationsIcon from '@material-ui/icons/NotificationsOutlined';
 import InputIcon from '@material-ui/icons/Input';
 import { LinearProgress } from '@material-ui/core';
+import { useSelector } from 'react-redux';
 import { mainListItems } from '../components/listItems';
+import NotificacionesPopover from '../components/NotificacionesPopover';
+import { NOTIFICACIONES_PUNTO } from '../utils/queries';
+import { MARCAR_LEIDOS_PUNTO } from '../utils/mutations';
 
 import { auth } from '../firebase';
 
@@ -77,6 +82,7 @@ const useStyles = makeStyles((theme) => ({
       duration: theme.transitions.duration.leavingScreen,
     }),
     width: theme.spacing(7),
+    // eslint-disable-next-line no-dupe-keys
     width: theme.spacing(9),
   },
   appBarSpacer: theme.mixins.toolbar,
@@ -103,16 +109,56 @@ const useStyles = makeStyles((theme) => ({
 export default function Dashboard(props) {
   const classes = useStyles();
   const { children } = props;
+  const session = useSelector((state) => state.session);
   const [open, setOpen] = React.useState(true);
+  const [noLeidos, setNoLeidos] = useState(0);
+  const [notificaciones, setNotificaciones] = useState([]);
+  const notificacionesRef = useRef(null);
+  const [openNotificaciones, setOpenNotificaciones] = useState(false);
   const handleDrawerOpen = () => {
     setOpen(true);
   };
   const handleDrawerClose = () => {
     setOpen(false);
   };
-
   const handleLogout = () => {
     auth.signOut();
+  };
+
+  useQuery(NOTIFICACIONES_PUNTO, {
+    onCompleted: (data) => {
+      const notificacionesArr = data.notificacionesPunto.find((val) => {
+        return val.nombre === session.nombre;
+      }).notificaciones;
+      setNotificaciones(notificacionesArr);
+      const i = notificacionesArr.reduce((acc, cur) => {
+        if (cur.leido) {
+          return acc;
+        }
+        return acc + 1;
+      }, 0);
+      setNoLeidos(i);
+    },
+    pollInterval: 5000,
+  });
+
+  const [marcarLeidos] = useMutation(MARCAR_LEIDOS_PUNTO, {
+    onCompleted: (data) => {
+      if (data.marcarLeidos.success === true) {
+        setNoLeidos(0);
+      }
+    },
+  });
+
+  const handlenotificacionesOpen = () => {
+    if (noLeidos > 0) {
+      marcarLeidos({ variables: { nombre: session.nombre } });
+    }
+    setOpenNotificaciones(true);
+  };
+
+  const handlenotificacionesClose = () => {
+    setOpenNotificaciones(false);
   };
 
   return (
@@ -142,10 +188,14 @@ export default function Dashboard(props) {
             noWrap
             variant="h6"
           >
-            Pasillo 2
+            {session.nombre}
           </Typography>
-          <IconButton color="inherit">
-            <Badge badgeContent={4} color="secondary">
+          <IconButton
+            ref={notificacionesRef}
+            color="inherit"
+            onClick={handlenotificacionesOpen}
+          >
+            <Badge badgeContent={noLeidos} color="secondary">
               <NotificationsIcon />
             </Badge>
           </IconButton>
@@ -153,6 +203,12 @@ export default function Dashboard(props) {
             <InputIcon />
           </IconButton>
         </Toolbar>
+        <NotificacionesPopover
+          anchorEl={notificacionesRef.current}
+          notificaciones={notificaciones}
+          onClose={handlenotificacionesClose}
+          open={openNotificaciones}
+        />
       </AppBar>
       <Drawer
         classes={{

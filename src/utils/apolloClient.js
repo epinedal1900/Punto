@@ -12,11 +12,11 @@ require('dotenv').config();
 
 export const errorLink = onError(({ graphQLErrors, networkError }) => {
   if (graphQLErrors) {
-    // alert(JSON.stringify(graphQLErrors, null, 2))
+    alert(JSON.stringify(graphQLErrors, null, 2))
     graphQLErrors.map(({ message }) => {
       if (message === 'UNAUTHENTICATED') {
         alert(JSON.stringify(message));
-        auth.signOut();
+        // auth.signOut();
         return 0;
       }
 
