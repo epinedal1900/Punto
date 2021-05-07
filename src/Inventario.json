@@ -1,0 +1,51 @@
+{
+  "_id": "productos",
+  "objects": [
+    { "codigo": "NC89", "nombre": "Camisola", "precio": 89 },
+    { "codigo": "NC105", "nombre": "Chaleco", "precio": 105 },
+    { "codigo": "NC135", "nombre": "Chamarra", "precio": 135 },
+    { "codigo": "NCF155", "nombre": "Conjunto falda chaleco", "precio": 155 },
+    {
+      "codigo": "NCP189",
+      "nombre": "Conjunto pantalón chaleco",
+      "precio": 189
+    },
+    {
+      "codigo": "NCP199",
+      "nombre": "Conjunto pantalón chamarra",
+      "precio": 199
+    },
+    { "codigo": "CS155", "nombre": "Conjunto short chaleco", "precio": 155 },
+    { "codigo": "DF110", "nombre": "Falda dama basic", "precio": 110 },
+    { "codigo": "DF125", "nombre": "Falda dama premium", "precio": 125 },
+    { "codigo": "NAA05", "nombre": "Falda niña basic", "precio": 100 },
+    { "codigo": "NFM69", "nombre": "Falda niña milenium", "precio": 69 },
+    { "codigo": "NFO69", "nombre": "Falda niña olanes", "precio": 69 },
+    { "codigo": "NF100", "nombre": "Falda niña premium", "precio": 100 },
+    { "codigo": "Df100", "nombre": "Falda short superponti", "precio": 100 },
+    { "codigo": "Dl129", "nombre": "Leggins", "precio": 125 },
+    { "codigo": "NN100", "nombre": "Nicker niña premium", "precio": 100 },
+    { "codigo": "DN125", "nombre": "Nicker dama basic", "precio": 125 },
+    { "codigo": "DN145", "nombre": "Nicker dama premium", "precio": 145 },
+    { "codigo": "DF165", "nombre": "Overol corto falda dama", "precio": 165 },
+    { "codigo": "NF135", "nombre": "Overol corto falda niña", "precio": 135 },
+    { "codigo": "DS165", "nombre": "Overol corto short dama", "precio": 165 },
+    { "codigo": "NS135", "nombre": "Overol corto short niña ", "precio": 135 },
+    { "codigo": "NA02", "nombre": "Overol largo", "precio": 100 },
+    { "codigo": "NP165", "nombre": "Palapzo", "precio": 165 },
+    { "codigo": "NP89", "nombre": "Pantalón bebe", "precio": 89 },
+    { "codigo": "DP135", "nombre": "Pantalón dama basic", "precio": 135 },
+    { "codigo": "DP150", "nombre": "Pantalón dama basic XL", "precio": 150 },
+    { "codigo": "DP160", "nombre": "Pantalón dama premium", "precio": 160 },
+    { "codigo": "DP175", "nombre": "Pantalón dama premium XL", "precio": 175 },
+    { "codigo": "NP89", "nombre": "Pantalón niña basic", "precio": 89 },
+    { "codigo": "NP135", "nombre": "Pantalón niña premium", "precio": 135 },
+    { "codigo": "DS110", "nombre": "Short dama basic", "precio": 110 },
+    { "codigo": "DS125", "nombre": "Short dama premium", "precio": 125 },
+    { "codigo": "NS79", "nombre": "Short niña basic", "precio": 100 },
+    { "codigo": "NS89", "nombre": "Short niña premium", "precio": 100 },
+    { "codigo": "DSS", "nombre": "Short superponti", "precio": 110 },
+    { "codigo": "Dp145", "nombre": "Pant Básico corte Recto", "precio": 145 },
+    { "codigo": "Dn130", "nombre": "Nikker Dama XL", "precio": 130 }
+  ]
+}

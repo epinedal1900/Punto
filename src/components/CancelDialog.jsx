@@ -31,7 +31,7 @@ const CancelDialog = (props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
   return (
-    <Dialog onClose={handleClose} open={open}>
+    <Dialog onClose={loading ? null : handleClose} open={open}>
       <DialogContent>
         <Typography>{message}</Typography>
         {loading && <LinearProgress />}

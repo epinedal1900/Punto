@@ -7,28 +7,38 @@ import { RetryLink } from '@apollo/client/link/retry';
 import { setContext } from '@apollo/client/link/context';
 import { history } from './history';
 import { auth } from '../firebase';
+import store from './store';
+import { modificarOnline } from '../actions/sessionActions';
 
 require('dotenv').config();
 
-export const errorLink = onError(({ graphQLErrors, networkError }) => {
-  if (graphQLErrors) {
-    alert(JSON.stringify(graphQLErrors, null, 2))
-    graphQLErrors.map(({ message }) => {
-      if (message === 'UNAUTHENTICATED') {
-        alert(JSON.stringify(message));
-        // auth.signOut();
-        return 0;
-      }
+export const errorLink = onError(
+  ({ graphQLErrors, networkError, operation }) => {
+    if (graphQLErrors) {
+      alert(JSON.stringify(graphQLErrors, null, 2));
+      graphQLErrors.map(({ message }) => {
+        if (message === 'UNAUTHENTICATED') {
+          alert(JSON.stringify(message));
+          // auth.signOut();
+          return 0;
+        }
 
-      history.push('/error/405');
+        history.push('/error/405');
+        return 0;
+      });
       return 0;
-    });
-    return 0;
+    }
+    if (networkError) {
+      alert('Modo sin conexión activado');
+      // operation.query.definitions[0].selectionSet.selections.forEach((val) => {
+      //   console.log('val.name.value', val.name.value);
+      // });
+      store.dispatch(modificarOnline({ online: false }));
+      localStorage.setItem('online', 'false');
+      // history.push('/error/405');
+    }
   }
-  if (networkError) {
-    history.push('/error/405');
-  }
-});
+);
 
 export const retryLink = new RetryLink({
   delay: {

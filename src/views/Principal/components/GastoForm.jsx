@@ -16,10 +16,14 @@ import { useSelector } from 'react-redux';
 import { RadioGroup } from 'formik-material-ui';
 import Radio from '@material-ui/core/Radio';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
+import ObjectId from 'bson-objectid';
 
+import { assign } from 'lodash';
 import { MoneyFormat } from '../../../utils/TextFieldFormats';
 import { NUEVO_GASTO } from '../../../utils/mutations';
 import { MOVIMIENTOS } from '../../../utils/queries';
+
+const { ipcRenderer } = window.require('electron');
 
 const validationSchema = yup.object({
   tipoDeGasto: yup.string(),
@@ -60,23 +64,47 @@ const NuevoGasto = (props) => {
   };
 
   const handleSubmit = async (values, actions) => {
+    let descripcion = values.tipoDeGasto;
+    if (values.tipoDeGasto === 'otro') {
+      descripcion = values.especificar;
+    } else if (values.tipoDeGasto === 'ingreso') {
+      descripcion = 'ingreso de efectivo';
+    }
     const obj = {
-      descripcion:
-        values.tipoDeGasto === 'otro' ? values.especificar : values.tipoDeGasto,
+      descripcion,
       monto: values.monto,
     };
-    await nuevoGasto({
-      variables: {
-        obj,
-        puntoId: session.puntoIdActivo,
-      },
-    }).then((res) => {
-      if (res.data.nuevoGasto.success === true) {
-        actions.resetForm();
-        setDialogOpen(false);
-        setGastoOpen(false);
-      }
-    });
+    const variables = {
+      obj,
+      puntoId: session.puntoIdActivo,
+    };
+    if (session.online) {
+      await nuevoGasto({
+        variables,
+      }).then((res) => {
+        if (res.data.nuevoGasto.success === true) {
+          actions.resetForm();
+          setDialogOpen(false);
+          setGastoOpen(false);
+        }
+      });
+    } else {
+      const objOffline = {
+        _id: ObjectId().toString(),
+        Fecha: new Date().toISOString(),
+        Descripcion: `Sin conexión: ${descripcion}`,
+        Monto: values.monto,
+      };
+      // eslint-disable-next-line no-underscore-dangle
+      assign(variables, { _idOffline: objOffline._id });
+      ipcRenderer.send('GASTOS', variables);
+      ipcRenderer.send('GASTOS_OFFLINE', objOffline);
+      actions.resetForm();
+      setDialogOpen(false);
+      setGastoOpen(false);
+      setMessage('Gasto añadido');
+      setSuccess(true);
+    }
   };
 
   return (
@@ -118,6 +146,12 @@ const NuevoGasto = (props) => {
                       disabled={formikProps.submitting}
                       label="Comida"
                       value="comida"
+                    />
+                    <FormControlLabel
+                      control={<Radio disabled={formikProps.submitting} />}
+                      disabled={formikProps.submitting}
+                      label="Ingreso de efectivo"
+                      value="ingreso"
                     />
                     <FormControlLabel
                       control={<Radio disabled={formikProps.submitting} />}

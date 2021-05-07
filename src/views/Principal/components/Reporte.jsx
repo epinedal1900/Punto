@@ -1,3 +1,4 @@
+/* eslint-disable radix */
 /* eslint-disable promise/always-return */
 /* eslint-disable react/jsx-key */
 /* eslint-disable no-unused-vars */
@@ -7,9 +8,12 @@ import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import Typography from '@material-ui/core/Typography';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import LinearProgress from '@material-ui/core/LinearProgress';
+import ObjectId from 'bson-objectid';
 import { useMutation, useLazyQuery } from '@apollo/client';
+
+import groupBy from 'lodash/groupBy';
 import {
   pdf,
   Page,
@@ -19,9 +23,20 @@ import {
   View,
 } from '@react-pdf/renderer';
 import Button from '@material-ui/core/Button';
-import { MOVIMIENTOS } from '../../../utils/queries';
-import { ENVIAR_REPORTE_URL } from '../../../utils/mutations';
+import { MOVIMIENTOS, INVENTARIO } from '../../../utils/queries';
+import {
+  ENVIAR_REPORTE_URL,
+  MODIFICAR_PUNTOS_ACTIVOS,
+  NUEVO_REGRESO,
+} from '../../../utils/mutations';
 import { storage } from '../../../firebase';
+import { desactivarPunto } from '../../../actions';
+
+const dayjs = require('dayjs');
+
+const electron = window.require('electron');
+const { remote } = electron;
+const { BrowserWindow } = remote;
 
 const CrearReporte = (props) => {
   const {
@@ -30,23 +45,144 @@ const CrearReporte = (props) => {
     setMessage,
     setSuccess,
     setDialogOpen,
-    setImprimirReporteConfirmation,
+    setGenerarReporteConfirmation,
   } = props;
   const [reporteLoading, setReporteLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const [data, setData] = useState(null);
   const session = useSelector((state) => state.session);
+  const dispatch = useDispatch();
+  const [inventario, setInventario] = useState(null);
+
+  const [modificarPuntosActivos] = useMutation(MODIFICAR_PUNTOS_ACTIVOS, {
+    onCompleted: (res) => {
+      if (res.modificarPuntosActivos.success === true) {
+        dispatch(desactivarPunto());
+        localStorage.removeItem('puntoIdActivo');
+      }
+    },
+  });
+
+  const [regresoSinAlmacen] = useMutation(NUEVO_REGRESO);
+
+  const [getInventario] = useLazyQuery(INVENTARIO, {
+    onCompleted(invRes) {
+      const invObj = invRes.inventario.inventario
+        .filter((val) => {
+          return val.cantidad > 0;
+        })
+        .map((val) => {
+          return { articulo: val.articulo, cantidad: parseInt(val.cantidad) };
+        });
+      setInventario(invObj);
+    },
+  });
 
   const [getMovimientos] = useLazyQuery(MOVIMIENTOS, {
     onCompleted(res) {
-      setData(res.reportePuntoData);
+      const { movimientos, gastos } = res.movimientos;
+      let ventasPublico = 0;
+      let ventasAClientes = 0;
+      let pagosClientes = 0;
+      let totalGastos = 0;
+      let gastosArr;
+      let dineroInicial = 0;
+      if (gastos.length > 0) {
+        const gastosFiltered = gastos.filter((val) => {
+          return val.Descripcion !== 'ingreso de efectivo';
+        });
+        gastos.forEach((val) => {
+          if (val.Descripcion === 'ingreso de efectivo') {
+            dineroInicial += val.Monto;
+          }
+        });
+        const objGastos = groupBy(gastosFiltered, 'Descripcion');
+        if (gastosFiltered.length > 0) {
+          gastosArr = Object.keys(objGastos).map((key) => {
+            return {
+              descripción: key,
+              monto: Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+              }).format(
+                objGastos[key].reduce((acc, cur) => {
+                  return acc + cur.Monto;
+                }, 0)
+              ),
+            };
+          });
+          totalGastos = gastosFiltered.reduce((acc, cur) => {
+            return acc + cur.Monto;
+          }, 0);
+        }
+      }
+      movimientos.forEach((movimiento) => {
+        if (movimiento.Tipo === 'venta') {
+          ventasPublico += movimiento.Monto;
+        } else if (
+          movimiento.Tipo.split(':').length === 2 &&
+          movimiento.Tipo.split(':')[0] === 'venta'
+        ) {
+          // es de cliente y no esta cancelada
+          if (movimiento.Tipo.split('(').length === 1) {
+            ventasAClientes += movimiento.Monto;
+          }
+          if (movimiento.Pago) {
+            pagosClientes += movimiento.Pago;
+          }
+        } else if (
+          movimiento.Tipo.split(':').length === 2 &&
+          movimiento.Tipo.split(':')[0] === 'pago' &&
+          movimiento.Tipo.split('(').length === 1
+        ) {
+          pagosClientes += movimiento.Monto;
+        }
+      });
+      const dineroEsperado =
+        dineroInicial + ventasPublico + pagosClientes - totalGastos;
+      const dataObj = {
+        nombre: session.nombre,
+        fecha: dayjs(ObjectId(session.puntoIdActivo).getTimestamp()).format(
+          'DD-MM-YYYY'
+        ),
+        dineroInicial: Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+        }).format(dineroInicial),
+        ventasPublico: Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+        }).format(ventasPublico),
+        ventasAClientes: Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+        }).format(ventasAClientes),
+        pagosClientes: Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+        }).format(pagosClientes),
+        totalGastos: Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+        }).format(totalGastos),
+        gastosArr,
+        dineroEsperado: Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+        }).format(dineroEsperado),
+      };
+      setData(dataObj);
       setDataLoading(false);
     },
+    fetchPolicy: 'network-only',
   });
 
   useEffect(() => {
     if (open) {
-      getMovimientos({ variables: { _id: session.puntoId } });
+      getMovimientos({ variables: { _id: session.puntoIdActivo } });
+      if (session.sinAlmacen) {
+        getInventario({ variables: { nombre: session.nombre } });
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -73,10 +209,11 @@ const CrearReporte = (props) => {
       textAlign: 'justify',
       fontFamily: 'Times-Roman',
     },
-    text2: {
+    textBold: {
       margin: 2,
       marginLeft: 2,
-      fontSize: 14,
+      fontWeight: 900,
+      fontSize: 15,
       textAlign: 'justify',
       fontFamily: 'Times-Roman',
     },
@@ -109,8 +246,8 @@ const CrearReporte = (props) => {
       margin: 'auto',
       flexDirection: 'row',
     },
-    tableColFourHeader: {
-      width: '25%',
+    tableColTwoHeader: {
+      width: '50%',
       borderStyle: 'solid',
       borderColor: '#bfbfbf',
       borderBottomColor: '#000',
@@ -118,8 +255,8 @@ const CrearReporte = (props) => {
       borderLeftWidth: 0,
       borderTopWidth: 0,
     },
-    tableColFour: {
-      width: '25%',
+    tableColTwo: {
+      width: '50%',
       borderStyle: 'solid',
       borderColor: '#bfbfbf',
       borderWidth: 1,
@@ -159,6 +296,9 @@ const CrearReporte = (props) => {
   const [enviarReporteUrl] = useMutation(ENVIAR_REPORTE_URL, {
     onCompleted: (res) => {
       if (res.enviarReporteUrl.success === true) {
+        modificarPuntosActivos({
+          variables: { nombre: session.nombre, propiedad: 'id' },
+        });
         setMessage(res.enviarReporteUrl.message);
         setSuccess(true);
       } else {
@@ -173,49 +313,52 @@ const CrearReporte = (props) => {
   const doc = data && (
     <Document>
       <Page style={styles.body}>
-        <Text style={styles.titulo}>Reporte de ventas</Text>
-        <Text
-          style={styles.fechas}
-        >{`${data.fechaInicial}-${data.fechaFinal}`}</Text>
-        {/* <Text style={styles.text}>
-          {`Deudas de clientes: ${data.deudasClientes}`}
-        </Text> */}
-        {/* <Text style={styles.text}>
-          {`Pagos totales: ${data.totalPagos}`}
-        </Text> */}
-        {/* <Text style={styles.text2}>
-          {`Pagos en efectivo: ${data.totalEfectivo}`}
-        </Text>
+        <Text style={styles.titulo}>{`Reporte de ventas: ${data.nombre}`}</Text>
+        <Text style={styles.fechas}>{data.fecha}</Text>
         <Text style={styles.text}>
-          {`Ventas: ${data.totalVentas}`}
-        </Text> */}
-        {data.estados.map((estado) => (
+          {`Dinero inicial: ${data.dineroInicial}`}
+        </Text>
+        <Text
+          style={styles.text}
+        >{`Ventas al público en general : ${data.ventasPublico}`}</Text>
+        <Text
+          style={styles.text}
+        >{`Ventas a clientes: ${data.ventasAClientes}`}</Text>
+        <Text style={styles.text}>
+          {`Pagos en efectivo de clientes: ${data.pagosClientes}`}
+        </Text>
+        <Text
+          style={styles.text}
+        >{`Total de gastos: ${data.totalGastos}`}</Text>
+        <Text style={styles.text}> </Text>
+        <Text
+          style={styles.textBold}
+        >{`Efectivo esperado: ${data.dineroEsperado}`}</Text>
+        <Text style={styles.text}>Efectivo recibido:_____________________</Text>
+        <Text style={styles.text}>Firma:_____________________</Text>
+        {data.gastosArr && (
           <>
-            <Text style={styles.tituloTabla}>
-              {`${estado.nombre}: ${estado.balance}`}
-            </Text>
+            <Text style={styles.tituloTabla}>Desglose de gastos</Text>
             <View style={styles.table}>
               <View style={styles.tableRow}>
-                {['fecha', 'descripción', 'monto', 'balance'].map((header) => (
-                  <View style={styles.tableColFourHeader}>
+                {['Descripción', 'Monto'].map((header) => (
+                  <View style={styles.tableColTwoHeader}>
                     <Text style={styles.tableCellHeader}>{header}</Text>
                   </View>
                 ))}
               </View>
-              {estado.estados.map((obj) => (
+              {data.gastosArr.map((obj) => (
                 <View style={styles.tableRow}>
-                  {['fecha', 'descripción', 'monto', 'balance'].map(
-                    (header) => (
-                      <View style={styles.tableColFour}>
-                        <Text style={styles.tableCell}>{obj[header]}</Text>
-                      </View>
-                    )
-                  )}
+                  {['descripción', 'monto'].map((header) => (
+                    <View style={styles.tableColTwo}>
+                      <Text style={styles.tableCell}>{obj[header]}</Text>
+                    </View>
+                  ))}
                 </View>
               ))}
             </View>
           </>
-        ))}
+        )}
         <Text
           fixed
           render={({ pageNumber, totalPages }) =>
@@ -230,17 +373,31 @@ const CrearReporte = (props) => {
   const handleCrear = async () => {
     setReporteLoading(true);
     const blob = await pdf(doc).toBlob();
-    const pathRef = storage.ref('/file.pdf');
+    const pathRef = storage.ref(`/${session.nombre}: ${data.fecha}.pdf`);
     await pathRef.put(blob, { contentType: 'application/pdf' });
     let url;
     await pathRef.getDownloadURL().then((fileUrl) => {
       url = fileUrl;
     });
-    await enviarReporteUrl({ variables: { url } });
-    await pathRef.delete();
+    await regresoSinAlmacen({
+      variables: {
+        obj: {
+          tipo: 'regreso',
+          articulos: inventario,
+        },
+        puntoId: session.puntoIdActivo,
+        nombre: session.nombre,
+      },
+    });
+    await enviarReporteUrl({
+      variables: { url, nombre: `${session.nombre}: ${data.fecha}` },
+    });
     setReporteLoading(false);
     setDialogOpen(false);
-    setImprimirReporteConfirmation(false);
+    setGenerarReporteConfirmation(false);
+    // eslint-disable-next-line no-new
+    const win = new BrowserWindow({ width: 600, height: 800 });
+    win.loadURL(url);
   };
   const [espera, setEspera] = useState(true);
 
@@ -255,13 +412,14 @@ const CrearReporte = (props) => {
   }, [open]);
 
   return (
-    <Dialog onClose={handleClose} open={open}>
+    <Dialog onClose={!reporteLoading ? handleClose : null} open={open}>
       <DialogContent>
         <Typography>
           <>
             ¿Está seguro de que desea imprimir el reporte? <b>NO</b> se podrán
-            registrar <b>ventas, gastos ni cancelaciones</b> después de esta
-            acción.
+            registrar{' '}
+            <b>ventas, gastos, intercambios, regresos ni cancelaciones</b>{' '}
+            después de esta acción.
           </>
         </Typography>
         {reporteLoading && <LinearProgress />}

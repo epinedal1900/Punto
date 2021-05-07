@@ -310,7 +310,7 @@ const DataTable = (props) => {
 
 DataTable.defaultProps = {
   noDataText: 'Sin registros',
-  pSize: 10,
+  pSize: 50,
 };
 
 export default DataTable;

@@ -23,7 +23,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const Articulos = (props) => {
-  const { opcionesArticulos, incluirPrecio, maxRows } = props;
+  const { opcionesArticulos, incluirPrecio, maxRows, allowNegative, descripcion } = props;
   const { values, errors, setFieldValue } = useFormikContext();
   const classes = useStyles();
   const session = useSelector((state) => state.session);
@@ -33,8 +33,13 @@ const Articulos = (props) => {
     <>
       <Typography variant="subtitle1">Artículos</Typography>
       {session.eliminarPedido && (
-        <Typography color="secondary" variant="h5">
+        <Typography color="secondary" variant="h6">
           se eliminará el pedido al registrar la venta
+        </Typography>
+      )}
+      {descripcion && (
+        <Typography variant="subtitle1">
+          {descripcion}
         </Typography>
       )}
       <FieldArray
@@ -44,7 +49,7 @@ const Articulos = (props) => {
             <Box display="flex" flexDirection="row-reverse" mb={1} mr={2}>
               <Button
                 aria-label="add"
-                color="secondary"
+                color="primary"
                 disabled={values.articulos.length >= maxRows}
                 onClick={() =>
                   arrayHelpers.insert(
@@ -78,6 +83,7 @@ const Articulos = (props) => {
                 >
                   <Grid item sm={2} xs={5}>
                     <NumberFieldArray
+                      allowNegative={allowNegative}
                       index={index}
                       label="Cantidad"
                       property="cantidad"

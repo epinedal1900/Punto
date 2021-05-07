@@ -11,6 +11,7 @@ import Autocomplete from '@material-ui/lab/Autocomplete';
 import Grid from '@material-ui/core/Grid';
 import TextField from '@material-ui/core/TextField';
 import { useFormikContext } from 'formik';
+import { useSelector } from 'react-redux';
 import Tooltip from '@material-ui/core/Tooltip';
 import { MoneyFormat, IntegerFormat } from '../../../utils/TextFieldFormats';
 
@@ -22,11 +23,14 @@ const AgregarForm = (props) => {
     opcionesArticulos,
     arrayHelpers,
     setDialogOpen,
+    selectedTicket,
   } = props;
   const { values, errors, touched, setFieldValue } = useFormikContext();
+  const session = useSelector((state) => state.session);
 
   const handleClose = () => {
     setAgregarOpen(false);
+    setDialogOpen(false);
   };
 
   const handleAgregar = () => {
@@ -99,7 +103,11 @@ const AgregarForm = (props) => {
                       false
                     );
                     if (typeof value === 'object' && value !== null) {
-                      setFieldValue('precio', value.precio, false);
+                      let { precio } = value;
+                      if (session.tickets[selectedTicket].esMenudeo) {
+                        precio += 15;
+                      }
+                      setFieldValue('precio', precio, false);
                     }
                   }}
                   options={opcionesArticulos}

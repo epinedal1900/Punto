@@ -1,10 +1,12 @@
+/* eslint-disable no-alert */
+/* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-restricted-globals */
 /* eslint-disable prettier/prettier */
 /* eslint-disable no-underscore-dangle */
 /* eslint-disable promise/no-nesting */
 /* eslint-disable promise/always-return */
 /* eslint-disable no-unused-vars */
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import { Box, Button, TextField, Grid } from '@material-ui/core';
 import { Formik } from 'formik';
@@ -14,8 +16,9 @@ import { useHistory } from 'react-router-dom';
 
 
 import LinearProgress from '@material-ui/core/LinearProgress';
-import { useLazyQuery } from '@apollo/client';
-import { USUARIO } from '../../../utils/queries';
+import { useQuery } from '@apollo/client';
+import { ipcRenderer } from 'electron';
+import { USUARIO, PUNTO_ID_ACTIVO, MOVIMIENTOS } from '../../../utils/queries';
 import { login } from '../../../actions';
 
 import { auth } from '../../../firebase';
@@ -51,7 +54,21 @@ const useStyles = makeStyles((theme) => ({
 const LoginForm = () => {
   const classes = useStyles();
   const session = useSelector((state) => state.session);
-  const [getUser, { loading }] = useLazyQuery(USUARIO);
+  const [uid, setUid] = useState(null);
+  const [nombre, setNombre] = useState(null);
+  const [idPunto, setidPunto] = useState(null);
+  const {refetch: getMovimientos} = useQuery(MOVIMIENTOS,{
+    variables: idPunto,
+    skip: !idPunto,
+  });
+  const {refetch: getUser} = useQuery(USUARIO,{
+    variables: uid,
+    skip: !uid,
+  });
+  const {refetch: getId} = useQuery(PUNTO_ID_ACTIVO,{
+    variables: nombre,
+    skip: !nombre,
+  });
   const history = useHistory();
   const dispatch = useDispatch()
 
@@ -77,20 +94,51 @@ const LoginForm = () => {
               values.correo.trim().toLowerCase(),
               values.contraseña
             )
-            .then(async (user) => {
-              if (user) {
-                await getUser({ variables: { uid: user.uid } }).then(
-                  (data) => {
-                    if (data.usuario !== null) {
-                      localStorage.setItem('loggedIn', 'true')
-                      localStorage.setItem('roles', JSON.stringify(data.usuario.roles))
-                      localStorage.setItem('nombre', data.data.usuario.nombre)
-                      dispatch(login({
-                        uid: data.usuario._id,
-                        nombre: data.usuario.nombre,
-                        roles: JSON.stringify(data.usuario.roles),
-                      }));
-                      // history.push('/')
+            .then(async (res) => {
+              if (res.user) {
+                let _id;
+                let nombreStr;
+                let roles;
+                let infoPunto;
+                let sinAlmacen=false;
+                await setUid({uid:res.user.uid});
+                await getUser({variables: { uid: res.user.uid } })
+                  .then((data) => {
+                    roles = data.data.usuario.roles;
+                    nombreStr = data.data.usuario.nombre;
+                    _id = data.data.usuario._id;
+                    infoPunto = data.data.usuario.infoPunto;
+                    sinAlmacen = data.data.usuario.sinAlmacen;
+                  });
+                await setNombre({nombre: nombreStr});
+                await getId({ variables: { nombre: nombreStr } })
+                  .then(async (data) => {
+                    localStorage.setItem('loggedIn', 'true');
+                    localStorage.setItem('roles', JSON.stringify(roles));
+                    localStorage.setItem('nombre', nombreStr);
+                    localStorage.setItem('infoPunto', infoPunto);
+                    localStorage.setItem('sinAlmacen', sinAlmacen? 'true': 'false');
+                    await dispatch(
+                      login({
+                        uid: _id,
+                        nombre: nombreStr,
+                        roles: JSON.stringify(roles),
+                        puntoIdActivo: data.data.puntoIdActivo,
+                        infoPunto,
+                        sinAlmacen,
+                      })
+                    );
+                    history.push('/');
+                    if (data.data.puntoIdActivo == null) {
+                      alert('No hay ninguna plaza activa');
+                    } else {
+                      await setidPunto({_id: data.data.puntoIdActivo})
+                      await getMovimientos({
+                        variables: { _id: data.data.puntoIdActivo },
+                      }).then((movData)=>{
+                        ipcRenderer.send('PLAZA',movData.data.movimientos)
+                      });
+                      localStorage.setItem('puntoIdActivo', data.data.puntoIdActivo);
                     }
                   })
               }
@@ -164,14 +212,14 @@ const LoginForm = () => {
             <Box mt={1}>
               <Grid container spacing={2}>
                 <Grid item xs={12}>
-                  {(formikProps.isSubmitting || loading) && <LinearProgress />}
+                  {(formikProps.isSubmitting ) && <LinearProgress />}
                 </Grid>
                 <Grid item xs={12}>
                   <Box width="100%">
                     <Button
                       color="primary"
                       disabled={
-                        formikProps.isSubmitting || status !== '' || loading
+                        formikProps.isSubmitting || status !== ''
                       }
                       fullWidth
                       type="submit"

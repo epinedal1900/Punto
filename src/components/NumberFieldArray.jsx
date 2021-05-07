@@ -1,12 +1,25 @@
+/* eslint-disable no-nested-ternary */
 /* eslint-disable react/jsx-no-duplicate-props */
 import React from 'react';
 import TextField from '@material-ui/core/TextField';
 import { useFormikContext, getIn } from 'formik';
-import { MoneyFormat, IntegerFormat } from '../utils/TextFieldFormats';
+import {
+  MoneyFormat,
+  IntegerFormat,
+  NegativeIntegerFormat,
+} from '../utils/TextFieldFormats';
 
 const NumberFieldArray = (props) => {
   const { values, touched, errors, setFieldValue } = useFormikContext();
-  const { index, valueName, property, label, disabled, moneyFormat } = props;
+  const {
+    index,
+    valueName,
+    property,
+    label,
+    disabled,
+    moneyFormat,
+    allowNegative,
+  } = props;
 
   const accesor = `${valueName}.${index}.${property}`;
   const error = getIn(errors, accesor);
@@ -22,7 +35,9 @@ const NumberFieldArray = (props) => {
       InputProps={
         moneyFormat
           ? { inputComponent: MoneyFormat }
-          : { inputComponent: IntegerFormat }
+          : allowNegative
+            ? { inputComponent: NegativeIntegerFormat }
+            : { inputComponent: IntegerFormat }
       }
       inputProps={{ maxLength: 7 }}
       label={label}

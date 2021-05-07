@@ -14,9 +14,8 @@ const validationSchema = yup.object({
     .array()
     .of(
       yup.object().shape({
-        articulo: yup.string().required('requerido'),
+        articulo: yup.object().required('requerido'),
         cantidad: yup.number().required('requerido').min(1, 'requerido'),
-        precio: yup.number().required('requerido').min(1, 'requerido'),
       })
     )
     .test(
@@ -37,7 +36,7 @@ const EditForm = (props) => {
   } = props;
 
   return (
-    <Dialog onClose={handleEditClose} open={open}>
+    <Dialog fullWidth onClose={handleEditClose} open={open}>
       <Formik
         initialValues={{ articulos }}
         onSubmit={handleSubmit}
@@ -48,7 +47,11 @@ const EditForm = (props) => {
         {(formikProps) => (
           <form onSubmit={formikProps.handleSubmit}>
             <DialogContent>
-              <Articulos opcionesArticulos={opcionesArticulos} />
+              <Articulos
+                descripcion="Modifique para que coincida con los artículos recibidos"
+                incluirPrecio={false}
+                opcionesArticulos={opcionesArticulos}
+              />
               {loading && <LinearProgress />}
             </DialogContent>
             <DialogActions>

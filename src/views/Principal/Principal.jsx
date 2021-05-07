@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Grid, Card, CardContent, CardActions } from '@material-ui/core';
 
 import Paper from '@material-ui/core/Paper';
@@ -14,6 +14,7 @@ import Tickets from './components/Tickets';
 import SuccessErrorMessage from '../../components/SuccessErrorMessage';
 import CancelDialog from '../../components/CancelDialog';
 import AsignarForm from './components/AsignarForm';
+import PagoForm from './components/PagoForm';
 import CobrarForm from './components/CobrarForm';
 import IntercambioForm from './components/IntercambioForm';
 import RegresoForm from './components/RegresoForm';
@@ -21,6 +22,8 @@ import Reporte from './components/Reporte';
 import GastoForm from './components/GastoForm';
 import AuthGuard from '../../components/AuthGuard';
 import { modificarTickets } from '../../actions';
+
+const { ipcRenderer } = window.require('electron');
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -82,12 +85,12 @@ const Principal = () => {
   const [eliminarTicketConfirmation, setEliminarTicketConfirmation] = useState(
     false
   );
-  const [
-    imprimirReporteConfirmation,
-    setImprimirReporteConfirmation,
-  ] = useState(false);
+  const [generarReporteConfirmation, setGenerarReporteConfirmation] = useState(
+    false
+  );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [agregarOpen, setAgregarOpen] = useState(false);
+  const [pagoOpen, setPagoOpen] = useState(null);
   const [asignarOpen, setAsignarOpen] = useState(false);
   const [cobrarOpen, setCobrarOpen] = useState(false);
   const [intercambioOpen, setIntercambioOpen] = useState(false);
@@ -98,17 +101,30 @@ const Principal = () => {
   const [selectedTicket, setSelectedTicket] = useState(0);
   const [gastoOpen, setGastoOpen] = useState(false);
   const session = useSelector((state) => state.session);
+  const [esMenudeo, setEsMenudeo] = useState(
+    Boolean(session.tickets[selectedTicket].esMenudeo)
+  );
 
   useQuery(NUEVA_VENTA_UTILS, {
     variables: {
       _idProductos: 'productos',
     },
     onCompleted: (data) => {
+      ipcRenderer.send('PRODUCTOS', data.productos.objects);
+      ipcRenderer.send('CLIENTES', data.clientes);
       setClientes(data.clientes);
       setOpcionesArticulos(data.productos.objects);
     },
+    skip: !session.online,
   });
-
+  useEffect(() => {
+    if (!session.online) {
+      const store = ipcRenderer.sendSync('STORE');
+      setClientes(store.clientes);
+      setOpcionesArticulos(store.productos);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session.online]);
   const handleExit = () => {
     setSuccess(null);
     setMessage(null);
@@ -129,27 +145,24 @@ const Principal = () => {
         tickets: nuevosTickets,
       })
     );
+    const nuevoSelectedTicket =
+      selectedTicket === length - 1 ? selectedTicket - 1 : selectedTicket;
     formikProps.setFieldValue(
       'articulos',
-      nuevosTickets[
-        selectedTicket === length - 1 ? selectedTicket - 1 : selectedTicket
-      ].articulos
+      nuevosTickets[nuevoSelectedTicket].articulos
     );
     formikProps.setFieldValue(
       'cliente',
-      nuevosTickets[
-        selectedTicket === length - 1 ? selectedTicket - 1 : selectedTicket
-      ].cliente
+      nuevosTickets[nuevoSelectedTicket].cliente
     );
-    setSelectedTicket(
-      selectedTicket === length - 1 ? selectedTicket - 1 : selectedTicket
-    );
+    setSelectedTicket(nuevoSelectedTicket);
+    setEsMenudeo(Boolean(nuevosTickets[nuevoSelectedTicket].esMenudeo));
     setDialogOpen(false);
     setEliminarTicketConfirmation(false);
   };
-  const handleImprimirReporteClose = () => {
+  const handleGenerarReporteClose = () => {
     setDialogOpen(false);
-    setImprimirReporteConfirmation(false);
+    setGenerarReporteConfirmation(false);
   };
 
   return (
@@ -179,10 +192,10 @@ const Principal = () => {
         {(formikProps) => (
           <>
             <Reporte
-              handleClose={handleImprimirReporteClose}
-              open={imprimirReporteConfirmation}
+              handleClose={handleGenerarReporteClose}
+              open={generarReporteConfirmation}
               setDialogOpen={setDialogOpen}
-              setImprimirReporteConfirmation={setImprimirReporteConfirmation}
+              setGenerarReporteConfirmation={setGenerarReporteConfirmation}
               setMessage={setMessage}
               setSuccess={setSuccess}
             />
@@ -215,6 +228,14 @@ const Principal = () => {
               setRegresoOpen={setRegresoOpen}
               setSuccess={setSuccess}
             />
+            <PagoForm
+              clientes={clientes}
+              open={pagoOpen}
+              setDialogOpen={setDialogOpen}
+              setMessage={setMessage}
+              setPagoOpen={setPagoOpen}
+              setSuccess={setSuccess}
+            />
             <AsignarForm
               clientes={clientes}
               open={asignarOpen}
@@ -235,13 +256,15 @@ const Principal = () => {
                 <Paper className={classes.search} elevation={2}>
                   <UpperButtons
                     dialogOpen={dialogOpen}
+                    esMenudeo={esMenudeo}
                     formikProps={formikProps}
                     selectedTicket={selectedTicket}
                     setAgregarOpen={setAgregarOpen}
                     setDialogOpen={setDialogOpen}
+                    setEsMenudeo={setEsMenudeo}
                     setGastoOpen={setGastoOpen}
-                    setImprimirReporteConfirmation={
-                      setImprimirReporteConfirmation
+                    setGenerarReporteConfirmation={
+                      setGenerarReporteConfirmation
                     }
                     setIntercambioOpen={setIntercambioOpen}
                     setRegresoOpen={setRegresoOpen}
@@ -255,11 +278,13 @@ const Principal = () => {
                     <Tickets
                       agregarOpen={agregarOpen}
                       dialogOpen={dialogOpen}
+                      esMenudeo={esMenudeo}
                       formikProps={formikProps}
                       opcionesArticulos={opcionesArticulos}
                       selectedTicket={selectedTicket}
                       setAgregarOpen={setAgregarOpen}
                       setDialogOpen={setDialogOpen}
+                      setEsMenudeo={setEsMenudeo}
                       setSelectedTicket={setSelectedTicket}
                       setTotal={setTotal}
                     />
@@ -274,6 +299,7 @@ const Principal = () => {
                       setEliminarTicketConfirmation={
                         setEliminarTicketConfirmation
                       }
+                      setPagoOpen={setPagoOpen}
                       total={total}
                     />
                   </CardActions>

@@ -7,6 +7,7 @@ export const USUARIO = gql`
       nombre
       roles
       infoPunto
+      sinAlmacen
     }
   }
 `;
@@ -60,12 +61,13 @@ export const NUEVA_VENTA_UTILS = gql`
   }
 `;
 export const NUEVO_REGISTRO_INVENTARIO_UTILS = gql`
-  query Query($_idProductos: String!, $nomrbe: String!) {
+  query Query($_idProductos: String!, $nombre: String!) {
     inventario(nombre: $nombre) {
-      Codigo: codigo
-      Articulo: articulo
-      Cantidad: cantidad
-      Precio: precio
+      fecha
+      inventario {
+        articulo
+        cantidad
+      }
     }
     productos(_id: $_idProductos) {
       objects
@@ -87,10 +89,10 @@ export const VENTAS = gql`
 export const INVENTARIO = gql`
   query Query($nombre: String!) {
     inventario(nombre: $nombre) {
-      Codigo: codigo
-      Articulo: articulo
-      Cantidad: cantidad
-      Precio: precio
+      inventario {
+        articulo
+        cantidad
+      }
     }
   }
 `;
@@ -103,6 +105,7 @@ export const MOVIMIENTOS = gql`
         Fecha: fecha
         Tipo: tipo
         Monto: monto
+        Pago: pago
         Prendas: prendas
         articulos {
           articulo
@@ -116,6 +119,35 @@ export const MOVIMIENTOS = gql`
         Descripcion: descripcion
         Monto: monto
       }
+    }
+  }
+`;
+export const DETALLES_MOVIMIENTOS_UTILS = gql`
+  query Query($_id: String!, $_idProductos: String!) {
+    movimientos(_id: $_id) {
+      fecha
+      movimientos {
+        _id
+        Fecha: fecha
+        Tipo: tipo
+        Monto: monto
+        Pago: pago
+        Prendas: prendas
+        articulos {
+          articulo
+          cantidad
+          precio
+        }
+        comentarios
+      }
+      gastos {
+        Fecha: fecha
+        Descripcion: descripcion
+        Monto: monto
+      }
+    }
+    productos(_id: $_idProductos) {
+      objects
     }
   }
 `;

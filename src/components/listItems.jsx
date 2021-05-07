@@ -7,51 +7,76 @@ import LocalAtmIcon from '@material-ui/icons/LocalAtm';
 import AssignmentIcon from '@material-ui/icons/Assignment';
 import ListAltIcon from '@material-ui/icons/ListAlt';
 import ViewModuleIcon from '@material-ui/icons/ViewModule';
+import List from '@material-ui/core/List';
 import PrintIcon from '@material-ui/icons/Print';
 import CreateIcon from '@material-ui/icons/Create';
 import MonetizationOnOutlinedIcon from '@material-ui/icons/MonetizationOnOutlined';
 import { Link as RouterLink } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
-export const mainListItems = (
-  <div>
-    <ListItem button component={RouterLink} to="/">
-      <ListItemIcon>
-        <LocalAtmIcon />
-      </ListItemIcon>
-      <ListItemText primary="Principal" />
-    </ListItem>
-    <ListItem button component={RouterLink} to="/movimientos">
-      <ListItemIcon>
-        <ListAltIcon />
-      </ListItemIcon>
-      <ListItemText primary="Movimientos" />
-    </ListItem>
-    <ListItem button component={RouterLink} to="/gastos">
-      <ListItemIcon>
-        <MonetizationOnOutlinedIcon />
-      </ListItemIcon>
-      <ListItemText primary="Gastos" />
-    </ListItem>
-    <ListItem button component={RouterLink} to="/registroinventario">
-      <ListItemIcon>
-        <CreateIcon />
-      </ListItemIcon>
-      <ListItemText primary="Registro de inventarío" />
-    </ListItem>
-    <ListItem button component={RouterLink} to="/articulos">
-      <ListItemIcon>
-        <ViewModuleIcon />
-      </ListItemIcon>
-      <ListItemText primary="Artículos" />
-    </ListItem>
-    <ListItem button component={RouterLink} to="/impresoras">
-      <ListItemIcon>
-        <PrintIcon />
-      </ListItemIcon>
-      <ListItemText primary="Impresoras" />
-    </ListItem>
-  </div>
-);
+export const ListItems = () => {
+  const session = useSelector((state) => state.session);
+
+  return (
+    <List>
+      <div>
+        <ListItem button component={RouterLink} to="/">
+          <ListItemIcon>
+            <LocalAtmIcon />
+          </ListItemIcon>
+          <ListItemText primary="Principal" />
+        </ListItem>
+        <ListItem
+          button
+          component={RouterLink}
+          disabled={session.puntoIdActivo == null}
+          to="/movimientos"
+        >
+          <ListItemIcon>
+            <ListAltIcon />
+          </ListItemIcon>
+          <ListItemText primary="Movimientos" />
+        </ListItem>
+        <ListItem
+          button
+          component={RouterLink}
+          disabled={session.puntoIdActivo == null}
+          to="/gastos"
+        >
+          <ListItemIcon>
+            <MonetizationOnOutlinedIcon />
+          </ListItemIcon>
+          <ListItemText primary="Gastos" />
+        </ListItem>
+        {!session.sinAlmacen && (
+          <ListItem
+            button
+            component={RouterLink}
+            disabled={session.puntoIdActivo == null || !session.online}
+            to="/registroinventario"
+          >
+            <ListItemIcon>
+              <CreateIcon />
+            </ListItemIcon>
+            <ListItemText primary="Registro de inventario" />
+          </ListItem>
+        )}
+        <ListItem button component={RouterLink} to="/articulos">
+          <ListItemIcon>
+            <ViewModuleIcon />
+          </ListItemIcon>
+          <ListItemText primary="Artículos" />
+        </ListItem>
+        <ListItem button component={RouterLink} to="/impresoras">
+          <ListItemIcon>
+            <PrintIcon />
+          </ListItemIcon>
+          <ListItemText primary="Impresoras" />
+        </ListItem>
+      </div>
+    </List>
+  );
+};
 
 export const secondaryListItems = (
   <div>

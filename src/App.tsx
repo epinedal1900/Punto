@@ -19,7 +19,7 @@ import { Provider as StoreProvider } from 'react-redux';
 import { configure } from 'react-hotkeys';
 import { logout, login } from './actions';
 
-import { USUARIO, PUNTO_ID_ACTIVO } from './utils/queries';
+import { USUARIO, PUNTO_ID_ACTIVO, MOVIMIENTOS } from './utils/queries';
 
 import { auth } from './firebase';
 import { errorLink, retryLink, authLink, httpLink } from './utils/apolloClient';
@@ -38,13 +38,11 @@ import Impresoras from './views/Impresoras';
 import Dashboard from './layouts/Dashboard';
 import Auth from './layouts/Auth';
 import Error from './layouts/Error';
-import { configureStore } from './store';
+import store from './utils/store';
 
 configure({
   ignoreTags: ['select', 'textarea'],
 });
-
-const store = configureStore();
 
 const client = new ApolloClient({
   link: from([errorLink, authLink, retryLink, httpLink]),
@@ -52,52 +50,82 @@ const client = new ApolloClient({
     addTypename: false,
   }),
 });
-
+// window.addEventListener('online', () => {
+//   if (window.navigator.onLine) {
+//     alert('Became online');
+//   }
+// });
+// window.addEventListener('offline', () => {
+//   if (!window.navigator.onLine) {
+//     alert('Became offline');
+//   }
+// });
+// if (!store.getState().session.online) {
+//   alert('Modo sin conexión activado');
+// }
+// if (window.navigator.onLine) {
+//   alert('Modo sin conexión activado');
+// }
 auth.onAuthStateChanged(async (user) => {
   if (user && client) {
-    // if (store.getState().session.loggedIn === 'false') {
-    // await client.query({ query: INITIAL_LOAD });
-    let _id;
-    let nombre;
-    let roles;
-    let infoPunto;
-    await client
-      .query({ query: USUARIO, variables: { uid: user.uid } })
-      .then((data, error) => {
-        if (!error && !(data.data.usuario == null)) {
-          roles = data.data.usuario.roles;
-          nombre = data.data.usuario.nombre;
-          _id = data.data.usuario._id;
-          infoPunto = data.data.usuario.infoPunto;
-        }
-      });
-    await client
-      .query({ query: PUNTO_ID_ACTIVO, variables: { nombre } })
-      .then(async (data, error) => {
-        if (!error && !(data.data.puntoIdActivo == null)) {
-          localStorage.setItem('loggedIn', 'true');
-          localStorage.setItem('roles', JSON.stringify(roles));
-          localStorage.setItem('nombre', nombre);
-          localStorage.setItem('puntoIdActivo', data.data.puntoIdActivo);
-          localStorage.setItem('infoPunto', infoPunto);
-          await store.dispatch(
-            login({
-              uid: _id,
-              nombre,
-              roles: JSON.stringify(roles),
-              puntoIdActivo: data.data.puntoIdActivo,
-              infoPunto,
-            })
-          );
-          history.push('/');
-        } else {
-          alert('No hay ninguna plaza activa');
-        }
-      })
-      .catch((err) => {
-        alert(JSON.stringify(err));
-      });
-    // }
+    if (
+      store.getState().session.online ||
+      !store.getState().session.puntoIdActivo
+    ) {
+      if (store.getState().session.puntoIdActivo) {
+        // alert(JSON.stringify(user));
+        await client.query({
+          query: MOVIMIENTOS,
+          variables: { _id: store.getState().session.puntoIdActivo },
+        });
+      }
+      let _id;
+      let nombre;
+      let roles;
+      let infoPunto;
+      let sinAlmacen;
+      await client
+        .query({ query: USUARIO, variables: { uid: user.uid } })
+        .then((data, error) => {
+          if (!error && !(data.data.usuario == null)) {
+            roles = data.data.usuario.roles;
+            nombre = data.data.usuario.nombre;
+            _id = data.data.usuario._id;
+            infoPunto = data.data.usuario.infoPunto;
+            sinAlmacen = data.data.usuario.sinAlmacen;
+          }
+        });
+      await client
+        .query({ query: PUNTO_ID_ACTIVO, variables: { nombre } })
+        .then(async (data, error) => {
+          if (!error) {
+            localStorage.setItem('loggedIn', 'true');
+            localStorage.setItem('roles', JSON.stringify(roles));
+            localStorage.setItem('nombre', nombre);
+            localStorage.setItem('infoPunto', infoPunto);
+            localStorage.setItem('sinAlmacen', sinAlmacen ? 'true' : 'false');
+            await store.dispatch(
+              login({
+                uid: _id,
+                nombre,
+                roles: JSON.stringify(roles),
+                puntoIdActivo: data.data.puntoIdActivo,
+                infoPunto,
+                sinAlmacen,
+              })
+            );
+            history.push('/');
+            if (data.data.puntoIdActivo == null) {
+              alert('No hay ninguna plaza activa');
+            } else {
+              localStorage.setItem('puntoIdActivo', data.data.puntoIdActivo);
+            }
+          }
+        })
+        .catch((err) => {
+          alert(JSON.stringify(err));
+        });
+    }
   } else {
     store.dispatch(logout());
     localStorage.setItem('loggedIn', 'false');
@@ -105,6 +133,7 @@ auth.onAuthStateChanged(async (user) => {
     localStorage.removeItem('roles');
     localStorage.removeItem('puntoIdActivo');
     localStorage.removeItem('infoPunto');
+    localStorage.removeItem('sinAlmacen');
     history.push('/ingreso');
     client.resetStore();
   }

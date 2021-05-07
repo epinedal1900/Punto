@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 /* eslint global-require: off, no-console: off */
 
 /**
@@ -15,10 +16,14 @@
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import path from 'path';
-import { app, BrowserWindow, shell } from 'electron';
+import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
-// import MenuBuilder from './menu';
+import Store from 'electron-store';
+import { assign } from 'lodash';
+import MenuBuilder from './menu';
+
+const store = new Store();
 
 export default class AppUpdater {
   constructor() {
@@ -105,8 +110,8 @@ const createWindow = async () => {
     mainWindow = null;
   });
 
-  // const menuBuilder = new MenuBuilder(mainWindow);
-  // menuBuilder.buildMenu();
+  const menuBuilder = new MenuBuilder(mainWindow);
+  menuBuilder.buildMenu();
 
   // Open urls in the user's browser
   mainWindow.webContents.on('new-window', (event, url) => {
@@ -122,6 +127,212 @@ const createWindow = async () => {
 /**
  * Add event listeners...
  */
+ipcMain.on('PRODUCTOS', (_event, data) => {
+  store.set('productos', data);
+});
+ipcMain.on('PLAZA', (_event, data) => {
+  store.set('plaza', data);
+});
+ipcMain.on('CLIENTES', (_event, data) => {
+  store.set('clientes', data);
+});
+ipcMain.on('PAGOS_CLIENTES', (_event, data) => {
+  let obj;
+  if (store.has('pagosClientes')) {
+    obj = store.get('pagosClientes').concat(data);
+  } else {
+    obj = [data];
+  }
+  store.set('pagosClientes', obj);
+});
+ipcMain.on('VENTAS', (_event, data) => {
+  let obj;
+  if (store.has('ventas')) {
+    obj = store.get('ventas').concat(data);
+  } else {
+    obj = [data];
+  }
+  store.set('ventas', obj);
+});
+ipcMain.on('VENTAS_CLIENTES', (_event, data) => {
+  let obj;
+  if (store.has('ventasClientes')) {
+    obj = store.get('ventasClientes').concat(data);
+  } else {
+    obj = [data];
+  }
+  store.set('ventasClientes', obj);
+});
+ipcMain.on('GASTOS', (_event, data) => {
+  let obj;
+  if (store.has('gastos')) {
+    obj = store.get('gastos').concat(data);
+  } else {
+    obj = [data];
+  }
+  store.set('gastos', obj);
+});
+ipcMain.on('REGRESOS', (_event, data) => {
+  let obj;
+  if (store.has('regresos')) {
+    obj = store.get('regresos').concat(data);
+  } else {
+    obj = [data];
+  }
+  store.set('regresos', obj);
+});
+ipcMain.on('INTERCAMBIOS', (_event, data) => {
+  let obj;
+  if (store.has('intercambios')) {
+    obj = store.get('intercambios').concat(data);
+  } else {
+    obj = [data];
+  }
+  store.set('intercambios', obj);
+});
+ipcMain.on('MOVIMIENTOS_OFFLINE', (_event, data) => {
+  let obj;
+  if (store.has('movimientosOffline')) {
+    obj = store.get('movimientosOffline').concat(data);
+  } else {
+    obj = [data];
+  }
+  store.set('movimientosOffline', obj);
+});
+ipcMain.on('GASTOS_OFFLINE', (_event, data) => {
+  let obj;
+  if (store.has('gastosOffline')) {
+    obj = store.get('gastosOffline').concat(data);
+  } else {
+    obj = [data];
+  }
+  store.set('gastosOffline', obj);
+});
+ipcMain.on('CANCELAR_MOVIMIENTO', (_event, data) => {
+  let arr;
+  let nuevoTipo = `${data.tipo} (cancelad${data.tipo
+    .split(':')[0]
+    .charAt(data.tipo.split(':')[0].length - 1)})`;
+  if (data.tipo.split(':')[0] === 'venta' && data.tipo.split(':')[1]) {
+    arr = store.get('ventasClientes').map((val) => {
+      if (val._idOffline === data._idOffline) {
+        const { objVenta } = val;
+        assign(objVenta, { tipo: nuevoTipo });
+        assign(val, { objVenta });
+        return val;
+      }
+      return val;
+    });
+    store.set('ventasClientes', arr);
+  } else if (data.tipo === 'venta') {
+    arr = store.get('ventas').map((val) => {
+      if (val._idOffline === data._idOffline) {
+        const { objVenta } = val;
+        assign(objVenta, { tipo: nuevoTipo });
+        assign(val, { objVenta });
+        return val;
+      }
+      return val;
+    });
+    store.set('ventas', arr);
+  } else if (data.tipo.split(':')[0] === 'pago') {
+    arr = store.get('pagosClientes').map((val) => {
+      if (val._idOffline === data._idOffline) {
+        const obj = JSON.parse(JSON.stringify(val.objPago));
+        assign(obj, { tipo: nuevoTipo });
+        assign(val, { objPago: obj });
+        return val;
+      }
+      return val;
+    });
+    store.set('pagosClientes', arr);
+  } else if (data.tipo === 'regreso') {
+    arr = store.get('regresos').map((val) => {
+      if (val._idOffline === data._idOffline) {
+        const { obj } = val;
+        assign(obj, { tipo: nuevoTipo });
+        assign(val, { obj });
+        return val;
+      }
+      return val;
+    });
+    store.set('regresos', arr);
+  } else if (data.tipo.split(' ')[0] === 'salida') {
+    nuevoTipo = `${data.tipo} (cancelada)`;
+    arr = store.get('intercambios').map((val) => {
+      if (val._idOffline === data._idOffline) {
+        const { obj } = val;
+        assign(obj, { tipo: nuevoTipo });
+        assign(val, { obj });
+        return val;
+      }
+      return val;
+    });
+    store.set('intercambios', arr);
+  }
+  const movimientos = store.get('movimientosOffline').map((val) => {
+    if (val._id === data._idOffline) {
+      assign(val, { Tipo: `Sin conexión: ${nuevoTipo}` });
+      return val;
+    }
+    return val;
+  });
+  store.set('movimientosOffline', movimientos);
+});
+ipcMain.on('ELIMINAR_MOVIMIENTO', (_event, data) => {
+  if (data.tipo === 'ventasClientes') {
+    const arr = store.get('ventasClientes').filter((val) => {
+      return val._idOffline !== data._idOffline;
+    });
+    store.set('ventasClientes', arr);
+  } else if (data.tipo === 'ventas') {
+    const arr = store.get('ventas').filter((val) => {
+      return val._idOffline !== data._idOffline;
+    });
+    store.set('ventas', arr);
+  } else if (data.tipo === 'pagosClientes') {
+    const arr = store.get('pagosClientes').filter((val) => {
+      return val._idOffline !== data._idOffline;
+    });
+    store.set('pagosClientes', arr);
+  } else if (data.tipo === 'regresos') {
+    const arr = store.get('regresos').filter((val) => {
+      return val._idOffline !== data._idOffline;
+    });
+    store.set('regresos', arr);
+  } else if (data.tipo === 'intercambios') {
+    const arr = store.get('intercambios').filter((val) => {
+      return val._idOffline !== data._idOffline;
+    });
+    store.set('intercambios', arr);
+  } else if (data.tipo === 'gastos') {
+    const arr = store.get('gastos').filter((val) => {
+      return val._idOffline !== data._idOffline;
+    });
+    store.set('gastos', arr);
+    const gastos = store.get('gastosOffline').filter((val) => {
+      return val._id !== data._idOffline;
+    });
+    store.set('gastosOffline', gastos);
+  }
+  const movimientos = store.get('movimientosOffline').filter((val) => {
+    return val._id !== data._idOffline;
+  });
+  store.set('movimientosOffline', movimientos);
+});
+ipcMain.on('STORE', (event) => {
+  event.returnValue = store.store;
+});
+ipcMain.on('RESET_MOVIMIENTOS', () => {
+  store.delete('movimientosOffline');
+  store.delete('gastosOffline');
+  store.delete('ventasClientes');
+  store.delete('ventas');
+  store.delete('pagosClientes');
+  store.delete('gastos');
+  store.delete('regresos');
+  store.delete('intercambios');
+});
 
 app.on('window-all-closed', () => {
   // Respect the OSX convention of having the application in memory even
@@ -131,7 +342,7 @@ app.on('window-all-closed', () => {
   }
 });
 
-app.whenReady().then(createWindow).catch(console.log);
+app.whenReady().then(createWindow);
 
 app.on('activate', () => {
   // On macOS it's common to re-create a window in the app when the

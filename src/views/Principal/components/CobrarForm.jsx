@@ -25,12 +25,13 @@ import { assign } from 'lodash';
 import { MoneyFormat } from '../../../utils/TextFieldFormats';
 
 import { NUEVA_VENTA, NUEVO_PAGO } from '../../../utils/mutations';
-import { INVENTARIO, MOVIMIENTOS } from '../../../utils/queries';
+import { MOVIMIENTOS } from '../../../utils/queries';
 import crearTicketData from '../../../utils/crearTicketData';
 import { modificarUltimoTicket } from '../../../actions/sessionActions';
 
 const { remote } = window.require('electron');
 const { PosPrinter } = remote.require('electron-pos-printer');
+const { ipcRenderer } = window.require('electron');
 
 const CobrarForm = (props) => {
   const { open, setCobrarOpen, setDialogOpen, setMessage, setSuccess } = props;
@@ -69,10 +70,6 @@ const CobrarForm = (props) => {
     },
     refetchQueries: [
       {
-        query: INVENTARIO,
-        variables: { nombre: session.nombre },
-      },
-      {
         query: MOVIMIENTOS,
         variables: { _id: session.puntoIdActivo },
       },
@@ -83,12 +80,63 @@ const CobrarForm = (props) => {
     onError: (error) => {
       setMessage(JSON.stringify(error, null, 4));
     },
+    refetchQueries: [
+      {
+        query: MOVIMIENTOS,
+        variables: { _id: session.puntoIdActivo },
+      },
+    ],
   });
+
+  const finalizarVenta = (articulos) => {
+    if (values.tipoDeImpresion === 'imprimir') {
+      const options = {
+        preview: false,
+        width: session.ancho,
+        margin: '0 0 0 0',
+        copies: 1,
+        printerName: session.impresora,
+        timeOutPerLine: 2000,
+        silent: true,
+      };
+      const data = crearTicketData(
+        session.infoPunto,
+        articulos,
+        values.cliente.nombre,
+        values.cantidadPagada,
+        cambio
+      );
+      if (session.ancho && session.impresora) {
+        PosPrinter.print(data, options)
+          .then(() => {})
+          .catch((error) => {
+            // eslint-disable-next-line no-alert
+            alert(error);
+          });
+      } else {
+        // eslint-disable-next-line no-alert
+        alert('seleccione una impresora y un ancho');
+      }
+    }
+    const ultimoTicket = {
+      infoPunto: session.infoPunto,
+      articulos,
+      cliente: values.cliente.nombre,
+      cantidadPagada: values.cantidadPagada,
+      cambio,
+    };
+    dispatch(
+      modificarUltimoTicket({
+        ultimoTicket,
+      })
+    );
+    resetForm();
+    setCobrarOpen(false);
+    setDialogOpen(false);
+  };
 
   const handleCobrar = async () => {
     setSubmitting(true);
-    let data;
-    let options;
     const puntoId = session.puntoIdActivo;
     const { nombre } = session;
     const articulos = values.articulos.map((val) => {
@@ -98,24 +146,17 @@ const CobrarForm = (props) => {
         precio: val.precio,
       };
     });
-    if (values.tipoDeImpresion === 'imprimir') {
-      options = {
-        preview: false,
-        width: session.ancho,
-        margin: '0 0 0 0',
-        copies: 1,
-        printerName: session.impresora,
-        timeOutPerLine: 2000,
-        silent: true,
-      };
-      data = crearTicketData(
-        session.infoPunto,
-        articulos,
-        values.cliente.nombre,
-        values.cantidadPagada,
-        cambio
-      );
-    }
+    let objPagoOffline;
+    const objOffline = {
+      _id: ObjectId().toString(),
+      Fecha: new Date().toISOString(),
+      Tipo: 'Sin conexión: venta',
+      Monto: total,
+      Pago: null,
+      Prendas: NoDeArticulos,
+      articulos,
+      comentarios: values.comentarios,
+    };
     if (values.cliente) {
       const objVenta = {
         cliente: values.cliente._id,
@@ -126,121 +167,119 @@ const CobrarForm = (props) => {
         assign(objVenta, { comentarios: values.comentarios });
       }
       const cliente = values.cliente.nombre;
+      const ventaVariables = {
+        objVenta,
+        monto: total,
+        cliente,
+        nombre,
+        puntoId,
+      };
       if (values.tipoDePago === 'pendiente') {
-        await nuevaVenta({
-          variables: {
-            objVenta,
-            monto: total,
-            cliente,
-            nombre,
-            puntoId,
-          },
-        }).then((res) => {
-          if (res.data.nuevaVenta.success === true) {
-            resetForm();
-          }
-        });
+        if (session.online) {
+          await nuevaVenta({
+            variables: ventaVariables,
+          }).then((res) => {
+            if (res.data.nuevaVenta.success === true) {
+              finalizarVenta(articulos);
+            }
+          });
+        } else {
+          assign(ventaVariables, { _idOffline: objOffline._id });
+          ipcRenderer.send('VENTAS_CLIENTES', ventaVariables);
+          assign(objOffline, {
+            Tipo: `Sin conexión: venta: ${cliente}`,
+            Pago: 0,
+          });
+        }
       } else if (values.tipoDePago === 'efectivo') {
         const objPago = {
           cliente: values.cliente._id,
           tipo: 'efectivo',
           monto: values.cantidadPagada,
         };
-        await nuevaVenta({
-          variables: {
-            objVenta,
-            monto: total,
-            cliente,
-            nombre,
-            puntoId,
-          },
-        }).then((res) => {
-          if (res.data.nuevaVenta.success === true) {
-            if (values.tipoDeImpresion === 'imprimir') {
-              if (session.ancho && session.impresora) {
-                PosPrinter.print(data, options)
-                  .then(() => {})
-                  .catch((error) => {
-                    // eslint-disable-next-line no-alert
-                    alert(error);
-                  });
-              } else {
-                // eslint-disable-next-line no-alert
-                alert('seleccione una impresora y un ancho');
-              }
+        const pagoVariables = {
+          cliente,
+          objPago,
+        };
+        if (session.online) {
+          await nuevoPago({
+            variables: pagoVariables,
+          }).then(async (pagoRes) => {
+            if (pagoRes.data.nuevoPago.success === true) {
+              assign(ventaVariables, { idPago: pagoRes.data.nuevoPago._id });
+              await nuevaVenta({
+                variables: ventaVariables,
+              }).then((res) => {
+                if (res.data.nuevaVenta.success === true) {
+                  finalizarVenta(articulos);
+                }
+              });
             }
-            const ultimoTicket = {
-              infoPunto: session.infoPunto,
-              articulos,
-              cliente: values.cliente.nombre,
-              cantidadPagada: values.cantidadPagada,
-              cambio,
-            };
-            dispatch(
-              modificarUltimoTicket({
-                ultimoTicket,
-              })
-            );
-            resetForm();
-            setCobrarOpen(false);
-            setDialogOpen(false);
-          }
-          nuevoPago({
-            variables: {
-              monto: values.cantidadPagada,
-              cliente,
-              objPago,
-            },
           });
-        });
+        } else {
+          assign(ventaVariables, { _idOffline: objOffline._id });
+          ipcRenderer.send('VENTAS_CLIENTES', ventaVariables);
+          assign(objOffline, {
+            Tipo: `Sin conexión: venta: ${cliente}`,
+            Pago: 0,
+          });
+          objPagoOffline = {
+            _id: ObjectId().toString(),
+            Fecha: new Date().toISOString(),
+            Tipo: `Sin conexión: pago: ${cliente}`,
+            Monto: values.cantidadPagada,
+            Pago: null,
+            Prendas: 0,
+            articulos: null,
+            comentarios: values.comentarios,
+          };
+          assign(pagoVariables, {
+            _idOffline: objPagoOffline._id,
+            puntoId: session.puntoIdActivo,
+          });
+          ipcRenderer.send('PAGOS_CLIENTES', pagoVariables);
+        }
       }
     } else {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      const _id = ObjectId();
       const objVenta = {
-        _id: ObjectId(),
+        _id,
         tipo: 'venta',
         articulos,
       };
       if (values.comentarios !== '') {
         assign(objVenta, { comentarios: values.comentarios });
       }
-      await nuevaVenta({
-        variables: {
-          objVenta,
-          puntoId,
-          nombre,
-        },
-      }).then((res) => {
-        if (res.data.nuevaVenta.success === true) {
-          if (values.tipoDeImpresion === 'imprimir') {
-            if (session.ancho && session.impresora) {
-              PosPrinter.print(data, options)
-                .then(() => {})
-                .catch((error) => {
-                  // eslint-disable-next-line no-alert
-                  alert(error);
-                });
-            } else {
-              // eslint-disable-next-line no-alert
-              alert('seleccione una impresora y un ancho');
-            }
+      const variables = {
+        objVenta,
+        puntoId,
+        nombre,
+      };
+      if (session.online) {
+        await nuevaVenta({
+          variables,
+        }).then((res) => {
+          if (res.data.nuevaVenta.success === true) {
+            finalizarVenta(articulos);
           }
-          const ultimoTicket = {
-            infoPunto: session.infoPunto,
-            articulos,
-            cliente: values.cliente.nombre,
-            cantidadPagada: values.cantidadPagada,
-            cambio,
-          };
-          dispatch(
-            modificarUltimoTicket({
-              ultimoTicket,
-            })
-          );
-          resetForm();
-          setCobrarOpen(false);
-          setDialogOpen(false);
-        }
-      });
+        });
+      } else {
+        assign(variables, {
+          _idOffline: objOffline._id,
+          objVenta: { _id: _id.toString(), tipo: 'venta', articulos },
+        });
+        ipcRenderer.send('VENTAS', variables);
+      }
+    }
+    if (!session.online) {
+      finalizarVenta(articulos);
+      await ipcRenderer.send('MOVIMIENTOS_OFFLINE', objOffline);
+      if (objPagoOffline) {
+        ipcRenderer.send('MOVIMIENTOS_OFFLINE', objPagoOffline);
+      }
+      setMessage(`Venta añadida. Cambio: ${cambio}`);
+      setSuccess(true);
     }
     setSubmitting(false);
   };

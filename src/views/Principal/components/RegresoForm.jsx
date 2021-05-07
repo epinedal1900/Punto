@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 /* eslint-disable promise/always-return */
 import React from 'react';
 import Dialog from '@material-ui/core/Dialog';
@@ -12,11 +13,14 @@ import LinearProgress from '@material-ui/core/LinearProgress';
 import * as yup from 'yup';
 import { Formik } from 'formik';
 import { useSelector } from 'react-redux';
+import ObjectId from 'bson-objectid';
 
 import { assign } from 'lodash';
 import { NUEVO_REGRESO } from '../../../utils/mutations';
-import { INVENTARIO, MOVIMIENTOS } from '../../../utils/queries';
+import { MOVIMIENTOS } from '../../../utils/queries';
 import Articulos from '../../../formPartials/Articulos';
+
+const { ipcRenderer } = window.require('electron');
 
 const validationSchema = yup.object({
   comentarios: yup.string(),
@@ -60,10 +64,6 @@ const RegresoForm = (props) => {
     },
     refetchQueries: [
       {
-        query: INVENTARIO,
-        variables: { nombre: session.nombre },
-      },
-      {
         query: MOVIMIENTOS,
         variables: { _id: session.puntoIdActivo },
       },
@@ -76,28 +76,54 @@ const RegresoForm = (props) => {
   };
 
   const handleSubmit = async (values, actions) => {
+    const articulos = values.articulos.map((val) => {
+      return { articulo: val.articulo.nombre, cantidad: val.cantidad };
+    });
     const obj = {
       tipo: 'regreso',
-      articulos: values.articulos.map((val) => {
-        return { articulo: val.articulo.nombre, cantidad: val.cantidad };
-      }),
+      articulos,
     };
     if (values.comentarios !== '') {
       assign(obj, { comentarios: values.comentarios });
     }
-    await nuevoRegreso({
-      variables: {
-        obj,
-        puntoId: session.puntoIdActivo,
-        nombre: session.nombre,
-      },
-    }).then((res) => {
-      if (res.data.nuevoRegreso.success === true) {
-        actions.resetForm();
-        setDialogOpen(false);
-        setRegresoOpen(false);
-      }
-    });
+    const variables = {
+      obj,
+      puntoId: session.puntoIdActivo,
+      nombre: session.nombre,
+    };
+    if (session.online) {
+      await nuevoRegreso({
+        variables,
+      }).then((res) => {
+        if (res.data.nuevoRegreso.success === true) {
+          actions.resetForm();
+          setDialogOpen(false);
+          setRegresoOpen(false);
+        }
+      });
+    } else {
+      const NoDeArticulos = articulos.reduce((acc, cur) => {
+        return acc + cur.cantidad;
+      }, 0);
+      const objOffline = {
+        _id: ObjectId().toString(),
+        Fecha: new Date().toISOString(),
+        Tipo: 'Sin conexión: regreso',
+        Monto: 0,
+        Pago: null,
+        Prendas: NoDeArticulos,
+        articulos,
+        comentarios: values.comentarios,
+      };
+      assign(variables, { _idOffline: objOffline._id });
+      ipcRenderer.send('REGRESOS', variables);
+      ipcRenderer.send('MOVIMIENTOS_OFFLINE', objOffline);
+      actions.resetForm();
+      setDialogOpen(false);
+      setRegresoOpen(false);
+      setMessage('Regreso añadido');
+      setSuccess(true);
+    }
   };
 
   return (
@@ -122,6 +148,12 @@ const RegresoForm = (props) => {
                   </Typography>
                 </Grid>
                 <Grid item xs={12}>
+                  <Articulos
+                    incluirPrecio={false}
+                    opcionesArticulos={opcionesArticulos}
+                  />
+                </Grid>
+                <Grid item xs={12}>
                   <TextField
                     error={
                       formikProps.touched.comentarios &&
@@ -140,12 +172,6 @@ const RegresoForm = (props) => {
                     onChange={formikProps.handleChange}
                     value={formikProps.values.comentarios}
                     variant="outlined"
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <Articulos
-                    incluirPrecio={false}
-                    opcionesArticulos={opcionesArticulos}
                   />
                   {(loading || formikProps.isSubmitting) && <LinearProgress />}
                   {/* <h2>{JSON.stringify(formikProps.values)}</h2> */}

@@ -5,11 +5,14 @@ import Button from '@material-ui/core/Button';
 import Tooltip from '@material-ui/core/Tooltip';
 import AddIcon from '@material-ui/icons/Add';
 import ReceiptIcon from '@material-ui/icons/Receipt';
+import Switch from '@material-ui/core/Switch';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
 import { useSelector, useDispatch } from 'react-redux';
 import MonetizationOnOutlinedIcon from '@material-ui/icons/MonetizationOnOutlined';
 import SwapHorizIcon from '@material-ui/icons/SwapHoriz';
 import SettingsBackupRestoreIcon from '@material-ui/icons/SettingsBackupRestore';
 import PrintIcon from '@material-ui/icons/Print';
+import { assign } from 'lodash';
 import { modificarTickets } from '../../../actions';
 
 export default function UpperButtons(props) {
@@ -20,10 +23,12 @@ export default function UpperButtons(props) {
     formikProps,
     dialogOpen,
     setIntercambioOpen,
-    setImprimirReporteConfirmation,
+    setGenerarReporteConfirmation,
     setGastoOpen,
     setDialogOpen,
     setRegresoOpen,
+    esMenudeo,
+    setEsMenudeo,
   } = props;
   const dispatch = useDispatch();
   const session = useSelector((state) => state.session);
@@ -35,7 +40,7 @@ export default function UpperButtons(props) {
     }
   };
   const handleIntercambioClick = () => {
-    if (!dialogOpen) {
+    if (!dialogOpen && session.puntoIdActivo) {
       setDialogOpen(true);
       setIntercambioOpen(true);
     }
@@ -46,14 +51,14 @@ export default function UpperButtons(props) {
       setRegresoOpen(true);
     }
   };
-  const handleImprimirReporteClick = () => {
+  const handleGenerarReporteClick = () => {
     if (!dialogOpen) {
       setDialogOpen(true);
-      setImprimirReporteConfirmation(true);
+      setGenerarReporteConfirmation(true);
     }
   };
   const handleGastoClick = () => {
-    if (!dialogOpen) {
+    if (!dialogOpen && session.puntoIdActivo) {
       setDialogOpen(true);
       setGastoOpen(true);
     }
@@ -66,6 +71,7 @@ export default function UpperButtons(props) {
         nuevosTickets[selectedTicket] = {
           cliente: formikProps.cliente || '',
           articulos: formikProps.values.articulos,
+          esMenudeo,
         };
         nuevosTickets.push({ cliente: '', articulos: [] });
         dispatch(
@@ -73,6 +79,7 @@ export default function UpperButtons(props) {
             tickets: nuevosTickets,
           })
         );
+        setEsMenudeo(false);
         formikProps.setFieldValue('articulos', []);
         formikProps.setFieldValue('cliente', '');
         setSelectedTicket(nuevosTickets.length - 1);
@@ -86,19 +93,46 @@ export default function UpperButtons(props) {
       nuevosTickets[selectedTicket] = {
         cliente: formikProps.values.cliente || '',
         articulos: formikProps.values.articulos,
+        esMenudeo,
       };
       dispatch(
         modificarTickets({
           tickets: nuevosTickets,
         })
       );
+      setEsMenudeo(Boolean(nuevosTickets[n - 1].esMenudeo));
       formikProps.setFieldValue('articulos', nuevosTickets[n - 1].articulos);
       formikProps.setFieldValue('cliente', nuevosTickets[n - 1].cliente);
       setSelectedTicket(n - 1);
     }
   };
+  const handleMenudeoClick = () => {
+    let aumento;
+    const nuevosTickets = JSON.parse(JSON.stringify(session.tickets));
+    if (esMenudeo) {
+      aumento = 0;
+      nuevosTickets[selectedTicket].esMenudeo = false;
+      setEsMenudeo(false);
+    } else {
+      aumento = 15;
+      setEsMenudeo(true);
+      nuevosTickets[selectedTicket].esMenudeo = true;
+    }
+    let articulos = JSON.parse(JSON.stringify(formikProps.values.articulos));
+    articulos = articulos.map((val) => {
+      assign(val, { precio: val.articulo.precio + aumento });
+      return val;
+    });
+    formikProps.setFieldValue('articulos', articulos, false);
+    dispatch(
+      modificarTickets({
+        tickets: nuevosTickets,
+      })
+    );
+  };
 
   const keyMap = {
+    MEDUEO: 'ctrl+m',
     AGREGAR: 'ctrl+n',
     INTERCAMBIO: 'ctrl+i',
     GASTO: 'ctrl+g',
@@ -113,6 +147,7 @@ export default function UpperButtons(props) {
   };
 
   const handlers = {
+    MEDUEO: handleMenudeoClick,
     AGREGAR: handleAgregarClick,
     INTERCAMBIO: handleIntercambioClick,
     GASTO: handleGastoClick,
@@ -129,8 +164,8 @@ export default function UpperButtons(props) {
   return (
     <GlobalHotKeys allowChanges handlers={handlers} keyMap={keyMap}>
       <Box display="flex" m={0} p={1} width="100%">
-        <Box flexGrow={1} p={1}>
-          <Tooltip title="CTRL+N">
+        <Box p={1}>
+          <Tooltip title={<h3>CTRL+N</h3>}>
             <Button
               color="primary"
               disabled={formikProps.values.articulos.length >= 20}
@@ -138,34 +173,56 @@ export default function UpperButtons(props) {
               startIcon={<AddIcon />}
               variant="outlined"
             >
-              Agregar
+              Agregar prendas
             </Button>
+          </Tooltip>
+        </Box>
+        <Box flexGrow={1} p={1}>
+          <Tooltip title={<h3>CTRL+M</h3>}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={esMenudeo}
+                  color="primary"
+                  name="switch"
+                  onChange={handleMenudeoClick}
+                  value={esMenudeo}
+                />
+              }
+              label="menudeo"
+              labelPlacement={session.sinAlmacen ? 'end' : 'bottom'}
+            />
           </Tooltip>
         </Box>
         <Box p={1}>
           <Button
             color="secondary"
-            onClick={handleImprimirReporteClick}
+            disabled={session.puntoIdActivo == null || !session.online}
+            onClick={handleGenerarReporteClick}
             startIcon={<PrintIcon />}
             variant="outlined"
           >
-            Imprimir reporte
+            Generar reporte
           </Button>
         </Box>
-        <Box p={1}>
-          <Button
-            color="primary"
-            onClick={handleRegresoClick}
-            startIcon={<SettingsBackupRestoreIcon />}
-            variant="outlined"
-          >
-            Nuevo regreso
-          </Button>
-        </Box>
-        <Box p={1}>
-          <Tooltip title="CTRL+G">
+        {!session.sinAlmacen && (
+          <Box p={1}>
             <Button
               color="primary"
+              disabled={session.puntoIdActivo == null}
+              onClick={handleRegresoClick}
+              startIcon={<SettingsBackupRestoreIcon />}
+              variant="outlined"
+            >
+              Nuevo regreso
+            </Button>
+          </Box>
+        )}
+        <Box p={1}>
+          <Tooltip title={<h3>CTRL+G</h3>}>
+            <Button
+              color="primary"
+              disabled={session.puntoIdActivo == null}
               onClick={handleGastoClick}
               startIcon={<MonetizationOnOutlinedIcon />}
               variant="outlined"
@@ -174,20 +231,23 @@ export default function UpperButtons(props) {
             </Button>
           </Tooltip>
         </Box>
+        {(session.nombre === 'Pasillo 2' || session.nombre === 'Pasillo 6') && (
+          <Box p={1}>
+            <Tooltip title={<h3>CTRL+I</h3>}>
+              <Button
+                color="primary"
+                disabled={session.puntoIdActivo == null}
+                onClick={handleIntercambioClick}
+                startIcon={<SwapHorizIcon />}
+                variant="outlined"
+              >
+                Nuevo intercambio
+              </Button>
+            </Tooltip>
+          </Box>
+        )}
         <Box p={1}>
-          <Tooltip title="CTRL+I">
-            <Button
-              color="primary"
-              onClick={handleIntercambioClick}
-              startIcon={<SwapHorizIcon />}
-              variant="outlined"
-            >
-              Nuevo intercambio
-            </Button>
-          </Tooltip>
-        </Box>
-        <Box p={1}>
-          <Tooltip title="CTRL+SHIT+N">
+          <Tooltip title={<h3>CTRL+SHIFT+N</h3>}>
             <Button
               color="primary"
               disabled={session.tickets.length >= 7}

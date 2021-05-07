@@ -12,6 +12,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import Articulos from './Articulos';
 import { modificarTickets } from '../../../actions';
 
+const { ipcRenderer } = window.require('electron');
+
 const Tickets = (props) => {
   const {
     agregarOpen,
@@ -22,21 +24,26 @@ const Tickets = (props) => {
     setSelectedTicket,
     formikProps,
     setDialogOpen,
+    esMenudeo,
+    setEsMenudeo,
   } = props;
   const session = useSelector((state) => state.session);
   const dispatch = useDispatch();
+  const store = ipcRenderer.sendSync('STORE');
 
   const handleChange = (event, newValue) => {
     const nuevosTickets = JSON.parse(JSON.stringify(session.tickets));
     nuevosTickets[selectedTicket] = {
       cliente: formikProps.values.cliente || '',
       articulos: formikProps.values.articulos,
+      esMenudeo,
     };
     dispatch(
       modificarTickets({
         tickets: nuevosTickets,
       })
     );
+    setEsMenudeo(Boolean(nuevosTickets[newValue].esMenudeo));
     formikProps.setFieldValue('articulos', nuevosTickets[newValue].articulos);
     formikProps.setFieldValue('cliente', nuevosTickets[newValue].cliente);
     setSelectedTicket(newValue);
@@ -72,12 +79,21 @@ const Tickets = (props) => {
               allowNoItems
               handleAgregarClose={handleAgregarClose}
               opcionesArticulos={opcionesArticulos}
+              selectedTicket={selectedTicket}
               setAgregarOpen={setAgregarOpen}
               setDialogOpen={setDialogOpen}
               setTotal={setTotal}
             />
             {/* <h2>{JSON.stringify(formikProps.errors)}</h2>
-            <h2>{JSON.stringify(session)}</h2> */}
+            <h2>{JSON.stringify(session)}</h2>
+            <h2>{JSON.stringify(formikProps.values)}</h2> */}
+            {/* <h2>{JSON.stringify(store.ventas)}</h2>
+            <h2>{JSON.stringify(store.gastos)}</h2>
+            <h2>{JSON.stringify(store.regresos)}</h2>
+            <h2>{JSON.stringify(store.intercambios)}</h2>
+            <h2>{JSON.stringify(store.ventasClientes)}</h2>
+            <h2>{JSON.stringify(store.pagosClientes)}</h2>
+            <h2>{JSON.stringify(store.movimientosOffline)}</h2> */}
           </form>
         </Box>
         <Divider />

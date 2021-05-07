@@ -25,6 +25,7 @@ const Articulos = (props) => {
     handleAgregarClose,
     setDialogOpen,
     setTotal,
+    selectedTicket,
   } = props;
   const { values, errors, setFieldValue } = useFormikContext();
   const session = useSelector((state) => state.session);
@@ -56,6 +57,7 @@ const Articulos = (props) => {
               handleAddClose={handleAgregarClose}
               opcionesArticulos={opcionesArticulos}
               open={agregarOpen}
+              selectedTicket={selectedTicket}
               setAgregarOpen={setAgregarOpen}
               setDialogOpen={setDialogOpen}
             />
@@ -86,7 +88,7 @@ const Articulos = (props) => {
             )}
             {values.articulos.length === 0 && (
               <Box display="flex" flexDirection="center" mb={1} mr={2}>
-                <Typography variant="h6">Sin artículos</Typography>
+                <Typography variant="subtitle1">Sin artículos</Typography>
               </Box>
             )}
             {values.articulos.map((detalle, index) => (
@@ -116,9 +118,13 @@ const Articulos = (props) => {
                       }}
                       handleChange={(value) => {
                         if (typeof value === 'object' && value !== null) {
+                          let { precio } = value;
+                          if (session.tickets[selectedTicket].esMenudeo) {
+                            precio += 15;
+                          }
                           setFieldValue(
                             `articulos.${index}.precio`,
-                            value.precio,
+                            precio,
                             false
                           );
                         }

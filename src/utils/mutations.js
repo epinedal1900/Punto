@@ -18,9 +18,13 @@ export const ENVIAR_REPORTE_URL = gql`
     }
   }
 `;
-export const CREAR_DISCREPANCIA_INVENTARIO = gql`
-  query Query($_id: String!) {
-    crearDiscrepanciaInventario(_id: $_id)
+export const MODIFICAR_PUNTOS_ACTIVOS = gql`
+  mutation Mutation($nombre: String!, $propiedad: String!) {
+    modificarPuntosActivos(nombre: $nombre, propiedad: $propiedad) {
+      success
+      message
+      _id
+    }
   }
 `;
 
@@ -52,6 +56,7 @@ export const CANCELAR_MOVIMIENTO = gql`
     $movimiento: String!
     $articulos: JSON!
     $message: String!
+    $conCliente: Boolean
   ) {
     cancelarMovimiento(
       nombre: $nombre
@@ -60,6 +65,7 @@ export const CANCELAR_MOVIMIENTO = gql`
       movimiento: $movimiento
       articulos: $articulos
       message: $message
+      conCliente: $conCliente
     ) {
       success
       message
@@ -132,6 +138,7 @@ export const NUEVA_VENTA = gql`
     $cliente: String
     $puntoId: String
     $nombre: String
+    $idPago: String
   ) {
     nuevaVenta(
       obj: $objVenta
@@ -139,6 +146,7 @@ export const NUEVA_VENTA = gql`
       cliente: $cliente
       puntoId: $puntoId
       nombre: $nombre
+      idPago: $idPago
     ) {
       success
       message
@@ -182,10 +190,43 @@ export const NUEVO_REGRESO = gql`
     }
   }
 `;
+export const REGISTRAR_DISCREPANCIAS = gql`
+  mutation Mutation(
+    $articulos: [JSON]!
+    $puntoId: String!
+    $tipo: String!
+    $nombre: String
+    $sobrescribir: [JSON]
+    $entradaId: String
+  ) {
+    registrarDiscrepancias(
+      articulos: $articulos
+      puntoId: $puntoId
+      tipo: $tipo
+      sobrescribir: $sobrescribir
+      entradaId: $entradaId
+      nombre: $nombre
+    ) {
+      success
+      message
+      _id
+    }
+  }
+`;
 
 export const NUEVO_PAGO = gql`
-  mutation Mutation($objPago: JSON!, $cliente: String!, $urls: [String]) {
-    nuevoPago(obj: $objPago, cliente: $cliente, urls: $urls) {
+  mutation Mutation(
+    $objPago: JSON!
+    $cliente: String!
+    $urls: [String]
+    $puntoId: String
+  ) {
+    nuevoPago(
+      obj: $objPago
+      cliente: $cliente
+      urls: $urls
+      puntoId: $puntoId
+    ) {
       success
       message
       _id

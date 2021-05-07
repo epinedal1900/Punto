@@ -47,6 +47,28 @@ export const IntegerFormat = (props) => {
     />
   );
 };
+export const NegativeIntegerFormat = (props) => {
+  const { inputRef, onChange, ...other } = props;
+
+  return (
+    <NumberFormat
+      {...other}
+      allowNegative
+      decimalSeparator={null}
+      getInputRef={inputRef}
+      isNumericString
+      onValueChange={(values) => {
+        onChange({
+          target: {
+            name: props.name,
+            value: values.value,
+          },
+        });
+      }}
+      thousandSeparator
+    />
+  );
+};
 
 export const DigitsFormat = (props) => {
   const { inputRef, onChange, ...other } = props;

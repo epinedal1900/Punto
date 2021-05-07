@@ -10,6 +10,7 @@ import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
 import IconButton from '@material-ui/core/IconButton';
 import ClearIcon from '@material-ui/icons/Clear';
 import AttachMoneyIcon from '@material-ui/icons/AttachMoney';
+import AccountBalanceWalletIcon from '@material-ui/icons/AccountBalanceWallet';
 import Tooltip from '@material-ui/core/Tooltip';
 import ReceiptIcon from '@material-ui/icons/Receipt';
 import { useSelector } from 'react-redux';
@@ -29,6 +30,7 @@ export default function UpperButtons(props) {
     formikProps,
     dialogOpen,
     setDialogOpen,
+    setPagoOpen,
   } = props;
 
   const session = useSelector((state) => state.session);
@@ -74,9 +76,15 @@ export default function UpperButtons(props) {
   };
 
   const handleAsignarClick = () => {
-    if (!dialogOpen) {
+    if (!dialogOpen && session.puntoIdActivo) {
       setAsignarOpen(true);
       setDialogOpen(true);
+    }
+  };
+  const handlePagoClick = () => {
+    if (!dialogOpen && session.puntoIdActivo) {
+      setDialogOpen(true);
+      setPagoOpen(true);
     }
   };
 
@@ -84,7 +92,11 @@ export default function UpperButtons(props) {
     if (formikProps.values.articulos.length !== 0) {
       await formikProps.validateForm().then(async (validation) => {
         await formikProps.setTouched(validation);
-        if (validation.articulos == null && !dialogOpen) {
+        if (
+          validation.articulos == null &&
+          !dialogOpen &&
+          session.puntoIdActivo
+        ) {
           setCobrarOpen(true);
           setDialogOpen(true);
         }
@@ -108,7 +120,7 @@ export default function UpperButtons(props) {
     <GlobalHotKeys allowChanges handlers={handlers} keyMap={keyMap}>
       <Box display="flex" m={0} p={1} width="100%">
         <Box p={1}>
-          <Tooltip title="CTRL+DEL">
+          <Tooltip title={<h3>CTRL+DEL</h3>}>
             <Button
               color="secondary"
               disabled={session.tickets.length === 1}
@@ -120,11 +132,12 @@ export default function UpperButtons(props) {
             </Button>
           </Tooltip>
         </Box>
-        <Box flexGrow={1} p={1}>
+        <Box p={1}>
           {formikProps.values.cliente === '' ? (
-            <Tooltip title="ALT+C">
+            <Tooltip title={<h3>ALT+C</h3>}>
               <Button
                 color="primary"
+                disabled={session.puntoIdActivo == null}
                 onClick={handleAsignarClick}
                 startIcon={<PersonIcon />}
                 variant="outlined"
@@ -154,8 +167,19 @@ export default function UpperButtons(props) {
             </div>
           )}
         </Box>
+        <Box flexGrow={1} p={1}>
+          <Button
+            color="primary"
+            disabled={session.puntoIdActivo == null}
+            onClick={handlePagoClick}
+            startIcon={<AccountBalanceWalletIcon />}
+            variant="outlined"
+          >
+            Nuevo pago
+          </Button>
+        </Box>
         <Box p={1}>
-          <Tooltip title="CTRL+R">
+          <Tooltip title={<h3>CTRL+R</h3>}>
             <Button
               color="primary"
               disabled={isEmpty(session.ultimoTicket) || reimprimirDisabled}
@@ -168,10 +192,13 @@ export default function UpperButtons(props) {
           </Tooltip>
         </Box>
         <Box p={1}>
-          <Tooltip title="SHIFT+C">
+          <Tooltip title={<h3>SHIFT+C</h3>}>
             <Button
               color="primary"
-              disabled={formikProps.values.articulos.length === 0}
+              disabled={
+                formikProps.values.articulos.length === 0 ||
+                session.puntoIdActivo == null
+              }
               onClick={handleCobrarClick}
               startIcon={<AttachMoneyIcon />}
               variant="contained"

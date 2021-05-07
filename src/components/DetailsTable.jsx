@@ -65,6 +65,7 @@ function EnhancedTable(props) {
     secondEditText,
     handleSecondEditClick,
     editText,
+    cancelarText,
     detailsPath,
     data,
     movimiento,
@@ -158,7 +159,7 @@ function EnhancedTable(props) {
             {handleCancelClick && (
               <Button onClick={handleCancelClick} size="small">
                 <ClearIcon className={classes.buttonIcon} />
-                {`Cancelar ${movimiento}`}
+                {cancelarText || `Cancelar ${movimiento}`}
               </Button>
             )}
             {handleEliminarClick && (
@@ -202,6 +203,7 @@ const DetailsTable = (props) => {
     loading,
     editText,
     secondEditText,
+    cancelarText,
     movimiento,
     data,
     ids,
@@ -233,6 +235,7 @@ const DetailsTable = (props) => {
         <>
           {data.length !== 0 ? (
             <EnhancedTable
+              cancelarText={cancelarText}
               columns={columns}
               data={data}
               detailsPath={detailsPath}
