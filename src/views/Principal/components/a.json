@@ -1,29 +1,193 @@
 {
-  "_id": "puntosActivos",
-  "puntosActivos": [
+  "_id": "Pasillo 2",
+  "oid": "dd",
+  "inventario": [
     {
-      "id": "6079efb5d8a8fb9aec2e0453",
-      "nombre": "Pasillo 6",
-      "registrarSalidas": false,
-      "registrarRegresos": false
+      "articulo": "Camisola",
+      "cantidad": 0
     },
     {
-      "id": "60942d90d4cbb505a4110079",
-      "nombre": "Pasillo 2",
-      "registrarSalidas": true,
-      "registrarRegresos": false
+      "articulo": "Chaleco",
+      "cantidad": 0
     },
     {
-      "id": null,
-      "nombre": "San Martín",
-      "registrarSalidas": true,
-      "registrarRegresos": false
+      "articulo": "Chamarra",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Conjunto falda chaleco",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Conjunto pantalón chaleco",
+
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Conjunto pantalón chamarra",
+
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Conjunto short chaleco",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Falda dama basic",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Falda dama premium",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Falda niña basic",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Falda niña milenium",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Falda niña olanes",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Falda niña premium",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Falda short superponti",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Leggins",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Nicker niña premium",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Nicker dama basic",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Nicker dama premium",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Overol corto falda dama",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Overol corto falda niña",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Overol corto short dama",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Overol corto short niña ",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Overol largo",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Palapzo",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Pantalón bebe",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Pantalón dama basic",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Pantalón dama basic XL",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Pantalón dama premium",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Pantalón dama premium XL",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Pantalón niña basic",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Pantalón niña premium",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Short dama basic",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Short dama premium",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Short niña basic",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Short niña premium",
+      "cantidad": 0
+    },
+
+    {
+      "articulo": "Short superponti",
+      "cantidad": 0
     },
     {
-      "id": null,
-      "nombre": "Guadalajara",
-      "registrarSalidas": true,
-      "registrarRegresos": false
+      "articulo": "Pantalón básico corte recto",
+      "cantidad": 0
+    },
+    {
+      "articulo": "Niker Dama XL",
+      "cantidad": 0
     }
   ]
 }

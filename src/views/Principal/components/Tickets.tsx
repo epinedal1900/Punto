@@ -10,6 +10,7 @@ import Box from '@material-ui/core/Box';
 import Divider from '@material-ui/core/Divider';
 import { useSelector, useDispatch } from 'react-redux';
 import Articulos from './Articulos';
+// import useMediaQuery from '@material-ui/core/useMediaQuery';
 import { modificarTickets } from '../../../actions';
 
 const { ipcRenderer } = window.require('electron');
@@ -30,6 +31,8 @@ const Tickets = (props) => {
   const session = useSelector((state) => state.session);
   const dispatch = useDispatch();
   const store = ipcRenderer.sendSync('STORE');
+  // const matches = useMediaQuery('(min-height:600px)');
+  const height = window.innerHeight;
 
   const handleChange = (event, newValue) => {
     const nuevosTickets = JSON.parse(JSON.stringify(session.tickets));
@@ -71,7 +74,7 @@ const Tickets = (props) => {
             ))}
           </Tabs>
         </AppBar>
-        <Box height={475} maxHeight={475} overflow="auto" p={3}>
+        <Box height={height * 0.54} maxHeight={425} overflow="auto" p={3}>
           <form onSubmit={formikProps.handleSubmit}>
             <Articulos
               agregarButton={false}

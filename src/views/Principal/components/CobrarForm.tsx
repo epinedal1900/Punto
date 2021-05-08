@@ -29,8 +29,6 @@ import { MOVIMIENTOS } from '../../../utils/queries';
 import crearTicketData from '../../../utils/crearTicketData';
 import { modificarUltimoTicket } from '../../../actions/sessionActions';
 
-const { remote } = window.require('electron');
-const { PosPrinter } = remote.require('electron-pos-printer');
 const { ipcRenderer } = window.require('electron');
 
 const CobrarForm = (props) => {
@@ -90,15 +88,6 @@ const CobrarForm = (props) => {
 
   const finalizarVenta = (articulos) => {
     if (values.tipoDeImpresion === 'imprimir') {
-      const options = {
-        preview: false,
-        width: session.ancho,
-        margin: '0 0 0 0',
-        copies: 1,
-        printerName: session.impresora,
-        timeOutPerLine: 2000,
-        silent: true,
-      };
       const data = crearTicketData(
         session.infoPunto,
         articulos,
@@ -107,12 +96,11 @@ const CobrarForm = (props) => {
         cambio
       );
       if (session.ancho && session.impresora) {
-        PosPrinter.print(data, options)
-          .then(() => {})
-          .catch((error) => {
-            // eslint-disable-next-line no-alert
-            alert(error);
-          });
+        ipcRenderer.send('PRINT', {
+          data,
+          impresora: session.impresora,
+          ancho: session.ancho,
+        });
       } else {
         // eslint-disable-next-line no-alert
         alert('seleccione una impresora y un ancho');

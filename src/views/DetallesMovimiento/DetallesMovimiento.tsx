@@ -26,8 +26,7 @@ import crearTicketData from '../../utils/crearTicketData';
 import crearTicketSinPrecioData from '../../utils/crearTicketSinPrecioData';
 import EditForm from './components/EditForm';
 
-const { remote } = window.require('electron');
-const { PosPrinter } = remote.require('electron-pos-printer');
+const { ipcRenderer } = window.require('electron');
 
 const onCompleted = (
   productos,
@@ -332,7 +331,10 @@ const Detallesmovimiento = (props) => {
   const handleReimprimir = async () => {
     setReimprimirDisabled(true);
     let data;
-    if (tipoDeMovimiento.indexOf('salida') === -1) {
+    if (
+      tipoDeMovimiento.indexOf('salida') === -1 ||
+      tipoDeMovimiento.indexOf('Salida') === -1
+    ) {
       data = crearTicketData(
         session.infoPunto,
         detalles,
@@ -344,19 +346,12 @@ const Detallesmovimiento = (props) => {
     } else {
       data = crearTicketSinPrecioData(session.infoPunto, detalles, fecha);
     }
-    const options = {
-      preview: false,
-      width: session.ancho,
-      margin: '0 0 0 0',
-      copies: 1,
-      printerName: session.impresora,
-      timeOutPerLine: 2000,
-      silent: true,
-    };
+
     if (session.ancho && session.impresora) {
-      PosPrinter.print(data, options).catch((error) => {
-        // eslint-disable-next-line no-alert
-        alert(error);
+      ipcRenderer.send('PRINT', {
+        data,
+        impresora: session.impresora,
+        ancho: session.ancho,
       });
     } else {
       // eslint-disable-next-line no-alert

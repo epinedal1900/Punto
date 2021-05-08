@@ -14,7 +14,8 @@ import { guardarInventario } from '../../../actions/sessionActions';
 
 const StepperForm = (props) => {
   const {
-    steps,
+    StepA,
+    StepB,
     disabled,
     loading,
     lastStep,
@@ -59,7 +60,8 @@ const StepperForm = (props) => {
       <Card>
         <CardContent>
           <form onSubmit={formikProps.handleSubmit}>
-            <Box>{React.cloneElement(steps[activeStep])}</Box>
+            {activeStep === 0 && React.cloneElement(StepA)}
+            {activeStep === 1 && React.cloneElement(StepB)}
             {formikProps.isSubmitting && (
               <Box>
                 <LinearProgress />

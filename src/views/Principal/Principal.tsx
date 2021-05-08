@@ -48,7 +48,9 @@ const useStyles = makeStyles(() => ({
   },
   cardContent: {
     padding: 0,
-    height: 525,
+    '@media (min-height: 800px)': {
+      height: '80%',
+    },
   },
   cardActions: {
     padding: 0,

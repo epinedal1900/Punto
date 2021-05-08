@@ -23,8 +23,6 @@ import { MOVIMIENTOS } from '../../../utils/queries';
 import crearTicketSinPrecioData from '../../../utils/crearTicketSinPrecioData';
 import Articulos from '../../../formPartials/Articulos';
 
-const { remote } = window.require('electron');
-const { PosPrinter } = remote.require('electron-pos-printer');
 const { ipcRenderer } = window.require('electron');
 
 const validationSchema = yup.object({
@@ -84,23 +82,13 @@ const NuevoIntercambio = (props) => {
   };
   const finalizar = (values, articulos) => {
     if (values.tipoDeImpresion === 'imprimir') {
-      const options = {
-        preview: false,
-        width: session.ancho,
-        margin: '0 0 0 0',
-        copies: 1,
-        printerName: session.impresora,
-        timeOutPerLine: 2000,
-        silent: true,
-      };
       const data = crearTicketSinPrecioData(session.infoPunto, articulos);
       if (session.ancho && session.impresora) {
-        PosPrinter.print(data, options)
-          .then(() => {})
-          .catch((error) => {
-            // eslint-disable-next-line no-alert
-            alert(error);
-          });
+        ipcRenderer.send('PRINT', {
+          data,
+          impresora: session.impresora,
+          ancho: session.ancho,
+        });
       } else {
         // eslint-disable-next-line no-alert
         alert('seleccione una impresora y un ancho');

@@ -20,7 +20,7 @@ import { AuthGuard, Header, SuccessErrorMessage } from '../../components';
 import { modificarImpresora } from '../../actions/sessionActions';
 import crearTicketData from '../../utils/crearTicketData';
 
-const { remote } = window.require('electron');
+const { ipcRenderer, remote } = window.require('electron');
 const { PosPrinter } = remote.require('electron-pos-printer');
 const webContents = remote.getCurrentWebContents();
 const printers = webContents.getPrinters();
@@ -72,19 +72,11 @@ const Impresoras = () => {
       100000,
       100
     );
-    const options = {
-      preview: false,
-      width: values.ancho,
-      margin: '0 0 0 0',
-      copies: 1,
-      printerName: values.impresora,
-      timeOutPerLine: 2000,
-      silent: true,
-    };
     if (values.ancho && values.impresora) {
-      PosPrinter.print(data, options).catch((error) => {
-        // eslint-disable-next-line no-alert
-        alert(error);
+      ipcRenderer.send('PRINT', {
+        data,
+        impresora: values.impresora,
+        ancho: values.ancho,
       });
     } else {
       // eslint-disable-next-line no-alert
@@ -132,7 +124,7 @@ const Impresoras = () => {
                           </Field>
                         </Grid>
                         <Grid item xs={12}>
-                          <Typography variant="h6">Ancho</Typography>
+                          <Typography variant="h6">Ancho dd</Typography>
                         </Grid>
                         <Grid item xs={12}>
                           <Field component={RadioGroup} name="ancho">

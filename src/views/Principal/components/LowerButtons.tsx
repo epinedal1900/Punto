@@ -18,8 +18,7 @@ import isEmpty from 'lodash/isEmpty';
 
 import crearTicketData from '../../../utils/crearTicketData';
 
-const { remote } = window.require('electron');
-const { PosPrinter } = remote.require('electron-pos-printer');
+const { ipcRenderer } = window.require('electron');
 
 export default function UpperButtons(props) {
   const {
@@ -45,22 +44,12 @@ export default function UpperButtons(props) {
       session.ultimoTicket.cantidadPagada,
       session.ultimoTicket.cambio
     );
-    const options = {
-      preview: false,
-      width: session.ancho,
-      margin: '0 0 0 0',
-      copies: 1,
-      printerName: session.impresora,
-      timeOutPerLine: 400,
-      silent: true,
-    };
     if (session.ancho && session.impresora) {
-      PosPrinter.print(data, options)
-        .then(() => {})
-        .catch((error) => {
-          // eslint-disable-next-line no-alert
-          alert(error);
-        });
+      ipcRenderer.send('PRINT', {
+        data,
+        impresora: session.impresora,
+        ancho: session.ancho,
+      });
     } else {
       // eslint-disable-next-line no-alert
       alert('seleccione una impresora y un ancho');

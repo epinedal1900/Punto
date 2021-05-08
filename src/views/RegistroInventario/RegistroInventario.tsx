@@ -64,23 +64,23 @@ const NuevaSalidaMercancia = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.online]);
 
-  const steps = {
-    '0': (
-      <Articulos
-        articuloFreeSolo={false}
-        incluirPrecio={false}
-        maxRows={50}
-        opcionesArticulos={articulos}
-      />
-    ),
-    '1': (
-      <Resumen
-        discrepancias={discrepancias}
-        inventario={inventario}
-        setDiscrepancias={setDiscrepancias}
-      />
-    ),
-  };
+  // const steps = {
+  //   '0': (
+  //     <Articulos
+  //       articuloFreeSolo={false}
+  //       incluirPrecio={false}
+  //       maxRows={50}
+  //       opcionesArticulos={articulos}
+  //     />
+  //   ),
+  //   '1': (
+  //     <Resumen
+  //       discrepancias={discrepancias}
+  //       inventario={inventario}
+  //       setDiscrepancias={setDiscrepancias}
+  //     />
+  //   ),
+  // };
 
   const [
     registrarDiscrepancias,
@@ -100,7 +100,7 @@ const NuevaSalidaMercancia = () => {
     },
   });
 
-  const lastStep = Object.keys(steps).length - 1;
+  const lastStep = 1;
 
   const onSubmit = async (values, actions) => {
     if (activeStep === lastStep) {
@@ -127,10 +127,10 @@ const NuevaSalidaMercancia = () => {
       }).then((res) => {
         if (res.data.registrarDiscrepancias.success === true) {
           setDisabled(true);
-          actions.resetForm();
           dispatch(
             guardarInventario({ inventario: [{ articulo: '', cantidad: 0 }] })
           );
+          actions.resetForm();
         }
       });
     } else {
@@ -169,7 +169,21 @@ const NuevaSalidaMercancia = () => {
               message={message}
               registrarDiscrepanciasLoading={registrarDiscrepanciasLoading}
               setActiveStep={setActiveStep}
-              steps={steps}
+              StepA={
+                <Articulos
+                  articuloFreeSolo={false}
+                  incluirPrecio={false}
+                  maxRows={50}
+                  opcionesArticulos={articulos}
+                />
+              }
+              StepB={
+                <Resumen
+                  discrepancias={discrepancias}
+                  inventario={inventario}
+                  setDiscrepancias={setDiscrepancias}
+                />
+              }
               success={success}
             />
           )}

@@ -16,7 +16,7 @@ import reject from 'lodash/reject';
 import LinearProgress from '@material-ui/core/LinearProgress';
 
 import { BlockingContext, TextForm, SuccessErrorMessage } from '../components';
-import { Direccion } from '../formPartials/Direccion';
+import { Direccion } from './Direccion';
 
 import { NUEVO_CLIENTE } from '../utils/mutations';
 import { CLIENTES } from '../utils/queries';

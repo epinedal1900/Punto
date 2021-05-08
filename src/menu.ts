@@ -257,6 +257,13 @@ export default class MenuBuilder {
                     );
                   },
                 },
+                // {
+                //   label: 'Toggle Developer Tools',
+                //   accelerator: 'Alt+Command+I',
+                //   click: () => {
+                //     this.mainWindow.webContents.toggleDevTools();
+                //   },
+                // },
               ],
       },
       // {

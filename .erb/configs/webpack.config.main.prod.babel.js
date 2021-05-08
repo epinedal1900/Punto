@@ -60,6 +60,12 @@ export default merge(baseConfig, {
       NODE_ENV: 'production',
       DEBUG_PROD: false,
       START_MINIMIZED: false,
+      FIREBASE_API_KEY:'AIzaSyDpAXwPV5VgSnuwR-GrHl4HYW74Oh18AxY',
+      FIREBASE_AUTH_DOMAIN:'dark-garden-296622.firebaseapp.com',
+      FIREBASE_PROJECT_ID:'dark-garden-296622',
+      FIREBASE_STORAGE_BUCKET:'dark-garden-296622.appspot.com',
+      FIREBASE_MESSAGING_SENDER_ID:'595121695085',
+      FIREBASE_APP_ID:'1:595121695085:web:f34e64b4fc269bca0c9264',
     }),
   ],
 

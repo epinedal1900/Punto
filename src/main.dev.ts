@@ -20,7 +20,9 @@ import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import Store from 'electron-store';
+const { PosPrinter } = require('electron-pos-printer');
 import { assign } from 'lodash';
+
 import MenuBuilder from './menu';
 
 const store = new Store();
@@ -77,10 +79,10 @@ const createWindow = async () => {
 
   mainWindow = new BrowserWindow({
     show: false,
-    width: 1024,
-    height: 728,
-    minWidth: 1024,
-    minHeight: 728,
+    width: 1400,
+    height: 900,
+    minWidth: 1400,
+    minHeight: 900,
     icon: getAssetPath('icon.png'),
     webPreferences: {
       nodeIntegration: true,
@@ -332,6 +334,24 @@ ipcMain.on('RESET_MOVIMIENTOS', () => {
   store.delete('gastos');
   store.delete('regresos');
   store.delete('intercambios');
+});
+ipcMain.on('PRINT', (_event, data) => {
+  const options = {
+    preview: false,
+    width: data.ancho,
+    margin: '0 0 0 0',
+    copies: 1,
+    silent: true,
+    printerName: data.impresora,
+    timeOutPerLine: 200,
+    // pageSize: { height: 301000, width: 71000 }, // page size
+  };
+  const printerData = data.data;
+  PosPrinter.print(printerData, options)
+    .then(() => {})
+    .catch((error) => {
+      console.log(error);
+    });
 });
 
 app.on('window-all-closed', () => {
