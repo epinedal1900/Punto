@@ -7,7 +7,6 @@ import { makeStyles } from '@material-ui/core/styles';
 
 import {
   Popover,
-  CardHeader,
   Divider,
   colors,
   List,
@@ -38,20 +37,28 @@ const useStyles = makeStyles((theme) => ({
     padding: theme.spacing(3),
   },
 }));
-
-const NotificacionesPopover = (props) => {
-  const { notificaciones, anchorEl, ...rest } = props;
+interface NotificacionesPopoverProps {
+  notificaciones: any[];
+  anchorEl: any;
+  onClose: () => void;
+  open: boolean;
+}
+const NotificacionesPopover = (
+  props: NotificacionesPopoverProps
+): JSX.Element => {
+  const { notificaciones, anchorEl, onClose, open } = props;
 
   const classes = useStyles();
 
   return (
     <Popover
-      {...rest}
       anchorEl={anchorEl}
       anchorOrigin={{
         vertical: 'bottom',
         horizontal: 'center',
       }}
+      onClose={onClose}
+      open={open}
     >
       <div className={classes.root}>
         <Divider />
@@ -69,7 +76,7 @@ const NotificacionesPopover = (props) => {
                   primary={notificacion.nombre}
                   primaryTypographyProps={{ variant: 'body1' }}
                   secondary={dayjs(
-                    ObjectId(notificacion._id).getTimestamp()
+                    new ObjectId(notificacion._id).getTimestamp()
                   ).format('DD/MM/YYYY-HH:mm')}
                 />
                 <ArrowForwardIcon />

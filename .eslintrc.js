@@ -4,16 +4,18 @@ module.exports = {
     // A temporary hack related to IDE not resolving correct package.json
     'import/no-extraneous-dependencies': 'off',
     'comma-dangle': 0,
-    indent: [
-      2,
-      2,
-      {
-        SwitchCase: 1,
-      },
-    ],
+    // indent: [
+    //   2,
+    //   2,
+    //   {
+    //     SwitchCase: 1,
+    //   },
+    // ],
     'jsx-quotes': 1,
     'linebreak-style': [2, 'unix'],
     quotes: [2, 'single'],
+    '@typescript-eslint/no-explicit-any': 'off',
+    'no-unused-vars': ['error', { args: 'none' }],
     'react/display-name': 1,
     'react/forbid-prop-types': 0,
     'react/sort-prop-types': 1,
@@ -22,7 +24,7 @@ module.exports = {
     'react/jsx-closing-bracket-location': 1,
     'react/jsx-curly-spacing': 1,
     'react/jsx-indent-props': [2, 2],
-    'react/jsx-max-props-per-line': 1,
+    // 'react/jsx-max-props-per-line': 1,
     'react/jsx-no-duplicate-props': 1,
     'react/jsx-no-literals': 0,
     'react/jsx-no-undef': 1,
@@ -41,6 +43,15 @@ module.exports = {
     'react/react-in-jsx-scope': 1,
     'react/self-closing-comp': 1,
     'react/sort-comp': 0,
+    'import/no-cycle': 0,
+    'react/jsx-props-no-spreading': 0,
+    'react/no-array-index-key': 0,
+    'react/jsx-no-duplicate-props': 0,
+    'no-underscore-dangle': 0,
+    'promise/always-return': 0,
+    'promise/no-nesting': 0,
+    'react/require-default-props': 0,
+    'no-nested-ternary': 0,
     semi: 0,
   },
   parserOptions: {
@@ -49,6 +60,10 @@ module.exports = {
     project: './tsconfig.json',
     tsconfigRootDir: __dirname,
     createDefaultProgram: true,
+  },
+  ecmaFeatures: {
+    jsx: true,
+    experimentalObjectRestSpread: true,
   },
   plugins: ['react', 'react-hooks'],
   settings: {

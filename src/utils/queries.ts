@@ -1,7 +1,7 @@
 import { gql } from '@apollo/client';
 
 export const USUARIO = gql`
-  query Query($uid: String!) {
+  query Usuario($uid: String!) {
     usuario(uid: $uid) {
       _id
       nombre
@@ -12,18 +12,18 @@ export const USUARIO = gql`
   }
 `;
 export const PUNTO_ID_ACTIVO = gql`
-  query Query($nombre: String!) {
+  query PuntoIdActivo($nombre: String!) {
     puntoIdActivo(nombre: $nombre)
   }
 `;
 export const NOTIFICACIONES_PUNTO = gql`
-  query Query {
+  query NotificacionesPunto {
     notificacionesPunto
   }
 `;
 
 export const CLIENTES = gql`
-  query Query {
+  query Clientes {
     clientes {
       _id
       Nombre: nombre
@@ -34,7 +34,7 @@ export const CLIENTES = gql`
 `;
 
 export const CLIENTE = gql`
-  query Query($_id: String!) {
+  query Cliente($_id: String!) {
     cliente(_id: $_id) {
       Nombre: nombre
       Telefono1: telefono1
@@ -50,7 +50,7 @@ export const CLIENTE = gql`
 `;
 
 export const NUEVA_VENTA_UTILS = gql`
-  query Query($_idProductos: String!) {
+  query NuevaVentaUtils($_idProductos: String!) {
     clientes {
       _id
       nombre
@@ -61,7 +61,7 @@ export const NUEVA_VENTA_UTILS = gql`
   }
 `;
 export const NUEVO_REGISTRO_INVENTARIO_UTILS = gql`
-  query Query($_idProductos: String!, $nombre: String!) {
+  query NuevoRegistroInventarioUtils($_idProductos: String!, $nombre: String!) {
     inventario(nombre: $nombre) {
       fecha
       inventario {
@@ -76,7 +76,7 @@ export const NUEVO_REGISTRO_INVENTARIO_UTILS = gql`
 `;
 
 export const VENTAS = gql`
-  query Query {
+  query Ventas {
     ventas {
       _id
       Fecha: fecha
@@ -87,7 +87,7 @@ export const VENTAS = gql`
   }
 `;
 export const INVENTARIO = gql`
-  query Query($nombre: String!) {
+  query Inventario($nombre: String!) {
     inventario(nombre: $nombre) {
       inventario {
         articulo
@@ -97,7 +97,7 @@ export const INVENTARIO = gql`
   }
 `;
 export const MOVIMIENTOS = gql`
-  query Query($_id: String!) {
+  query Movimientos($_id: String!) {
     movimientos(_id: $_id) {
       fecha
       movimientos {
@@ -123,7 +123,7 @@ export const MOVIMIENTOS = gql`
   }
 `;
 export const DETALLES_MOVIMIENTOS_UTILS = gql`
-  query Query($_id: String!, $_idProductos: String!) {
+  query DetallesMovimientosUtils($_id: String!, $_idProductos: String!) {
     movimientos(_id: $_id) {
       fecha
       movimientos {
@@ -152,7 +152,7 @@ export const DETALLES_MOVIMIENTOS_UTILS = gql`
   }
 `;
 export const NUEVO_PAGO_UTILS = gql`
-  query Query($_idCuentas: String!) {
+  query NuevoPagoUtils($_idCuentas: String!) {
     clientes {
       _id
       nombre
@@ -164,7 +164,7 @@ export const NUEVO_PAGO_UTILS = gql`
 `;
 
 export const OTROS = gql`
-  query Query($_idCuentas: String!, $_idProductos: String!) {
+  query Otros($_idCuentas: String!, $_idProductos: String!) {
     cuentas(_id: $_idCuentas) {
       values
     }
@@ -175,7 +175,7 @@ export const OTROS = gql`
 `;
 
 export const CUENTAS = gql`
-  query Query($_idCuentas: String!) {
+  query Cuentas($_idCuentas: String!) {
     cuentas(_id: $_idCuentas) {
       values
     }
@@ -183,45 +183,9 @@ export const CUENTAS = gql`
 `;
 
 export const PRODUCTOS = gql`
-  query Query($_idProductos: String!) {
+  query Productos($_idProductos: String!) {
     productos(_id: $_idProductos) {
       objects
     }
   }
 `;
-
-// export const VENTAS = gql`
-//   query Query {
-//     ventas {
-//       _id
-//       Fecha: fecha
-//       Nombre: nombre
-//       Monto: monto
-//       Tipo: tipo
-//     }
-//   }
-// `;
-
-// export const VENTA = gql`
-//   query Query($_id: String!, $_idProductos: String!) {
-//     venta(_id: $_id) {
-//       Fecha: fecha
-//       cliente
-//       Nombre: nombre
-//       Tipo: tipo
-//       Ajuste: ajuste
-//       Direccion: direccion
-//       articulos {
-//         articulo
-//         cantidad
-//         precio
-//       }
-//       Monto: monto
-//       Comentarios: comentarios
-//       comprobante
-//     }
-//     productos(_id: $_idProductos) {
-//       objects
-//     }
-//   }
-// `;

@@ -6,7 +6,16 @@ import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
 import LinearProgress from '@material-ui/core/LinearProgress';
 
-const CancelDialog = (props) => {
+interface CancelDialogProps {
+  handleCancel: (a?: number) => void;
+  handleClose: () => void;
+  open: boolean;
+  loading?: boolean;
+  selectedId?: number;
+  message: string;
+  hacerEsperar?: boolean;
+}
+const CancelDialog = (props: CancelDialogProps): JSX.Element => {
   const {
     handleCancel,
     handleClose,
@@ -31,7 +40,7 @@ const CancelDialog = (props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
   return (
-    <Dialog onClose={loading ? null : handleClose} open={open}>
+    <Dialog onClose={loading ? undefined : handleClose} open={open}>
       <DialogContent>
         <Typography>{message}</Typography>
         {loading && <LinearProgress />}

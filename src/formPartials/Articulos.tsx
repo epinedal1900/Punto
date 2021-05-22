@@ -1,6 +1,3 @@
-/* eslint-disable prettier/prettier */
-/* eslint-disable react/no-array-index-key */
-/* eslint-disable no-unused-vars */
 import React from 'react';
 import { useFormikContext, FieldArray } from 'formik';
 import Typography from '@material-ui/core/Typography';
@@ -12,8 +9,8 @@ import IconButton from '@material-ui/core/IconButton';
 import { makeStyles } from '@material-ui/core/styles';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 import ClearIcon from '@material-ui/icons/Clear';
-import { useSelector } from 'react-redux';
 
+import { ArticuloOption } from '../types/types';
 import { NumberFieldArray, AutocompleteFieldArray } from '../components';
 
 const useStyles = makeStyles((theme) => ({
@@ -22,25 +19,30 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const Articulos = (props) => {
-  const { opcionesArticulos, incluirPrecio, maxRows, allowNegative, descripcion } = props;
-  const { values, errors, setFieldValue } = useFormikContext();
+interface ArticulosProps {
+  opcionesArticulos: ArticuloOption[];
+  incluirPrecio?: boolean;
+  maxRows?: number;
+  allowNegative?: boolean;
+  descripcion?: string;
+}
+const Articulos = (props: ArticulosProps): JSX.Element => {
+  const {
+    opcionesArticulos,
+    incluirPrecio = true,
+    maxRows = 15,
+    allowNegative,
+    descripcion,
+  } = props;
+  const { values, errors, setFieldValue } = useFormikContext<any>();
   const classes = useStyles();
-  const session = useSelector((state) => state.session);
   const matches = useMediaQuery('(min-width:600px)');
 
   return (
     <>
       <Typography variant="subtitle1">Artículos</Typography>
-      {session.eliminarPedido && (
-        <Typography color="secondary" variant="h6">
-          se eliminará el pedido al registrar la venta
-        </Typography>
-      )}
       {descripcion && (
-        <Typography variant="subtitle1">
-          {descripcion}
-        </Typography>
+        <Typography variant="subtitle1">{descripcion}</Typography>
       )}
       <FieldArray
         name="articulos"
@@ -56,15 +58,15 @@ const Articulos = (props) => {
                     0,
                     incluirPrecio
                       ? JSON.parse(
-                        JSON.stringify({
-                          articulo: '',
-                          cantidad: 0,
-                          precio: 0,
-                        })
-                      )
+                          JSON.stringify({
+                            articulo: '',
+                            cantidad: 0,
+                            precio: 0,
+                          })
+                        )
                       : JSON.parse(
-                        JSON.stringify({ articulo: '', cantidad: 0 })
-                      )
+                          JSON.stringify({ articulo: '', cantidad: 0 })
+                        )
                   )
                 }
                 size="small"
@@ -73,7 +75,7 @@ const Articulos = (props) => {
                 añadir
               </Button>
             </Box>
-            {values.articulos.map((detalle, index) => (
+            {values.articulos.map((_d: any, index: number) => (
               <Box key={index} mb={1}>
                 <Grid
                   alignItems="center"
@@ -96,7 +98,6 @@ const Articulos = (props) => {
                     xs={incluirPrecio ? 12 : 10}
                   >
                     <AutocompleteFieldArray
-                      articulos
                       getOptionLabel={(option) => {
                         if (option) {
                           if (typeof option === 'object' && option !== null) {
@@ -109,15 +110,15 @@ const Articulos = (props) => {
                       handleChange={
                         incluirPrecio
                           ? (value) => {
-                            if (typeof value === 'object' && value !== null) {
-                              setFieldValue(
-                                `articulos.${index}.precio`,
-                                value.precio,
-                                false
-                              );
+                              if (typeof value === 'object' && value !== null) {
+                                setFieldValue(
+                                  `articulos.${index}.precio`,
+                                  value.precio,
+                                  false
+                                );
+                              }
                             }
-                          }
-                          : null
+                          : undefined
                       }
                       index={index}
                       label="Artículo"
@@ -164,12 +165,6 @@ const Articulos = (props) => {
       />
     </>
   );
-};
-
-Articulos.defaultProps = {
-  incluirPrecio: true,
-  articuloFreeSolo: true,
-  maxRows: 15,
 };
 
 export default Articulos;

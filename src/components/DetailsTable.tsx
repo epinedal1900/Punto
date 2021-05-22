@@ -1,5 +1,5 @@
 /* eslint-disable react/jsx-key */
-/* eslint-disable react/jsx-props-no-spreading */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/no-multi-comp */
 // eslint-disable-next-line no-unused-vars
 import React from 'react';
@@ -25,13 +25,16 @@ import ClearIcon from '@material-ui/icons/Clear';
 import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
 import CloudUploadOutlinedIcon from '@material-ui/icons/CloudUploadOutlined';
 import { useTable } from 'react-table';
-import { useHistory } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { assign } from 'lodash';
+import useRouter from '../utils/useRouter';
 
 import makeColumns from '../utils/makeColumns';
+import { AppRole, Role, Session } from '../types/types';
+import { RootState } from '../types/store';
 import LoadingTable from './LoadingTable';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles((theme: any) => ({
   root: {},
   content: {
     padding: 0,
@@ -51,7 +54,37 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function EnhancedTable(props) {
+interface CommonProps {
+  title?: string;
+  hasHeaderColumns?: boolean;
+  hasViewMoreButton?: boolean;
+  handleAddClick?: () => void;
+  handleEditClick?: () => void;
+  handleMoreClick?: () => void;
+  handleCancelClick?: () => void;
+  handleUploadClick?: () => void;
+  handleEliminarClick?: () => void;
+  handleSecondEditClick?: () => void;
+  secondEditText?: string;
+  editText?: string;
+  detailsPath?: string;
+  data: any;
+  movimiento?: string;
+  ids?: string[];
+  readOnlyRoles?: AppRole[];
+  cancelarText?: string;
+}
+
+interface EnhancedTableProps extends CommonProps {
+  columns: any;
+}
+
+interface DetailsTableProps extends CommonProps {
+  loading: boolean;
+  noDataText?: string;
+}
+
+function EnhancedTable(props: EnhancedTableProps) {
   const {
     title,
     hasHeaderColumns,
@@ -65,26 +98,28 @@ function EnhancedTable(props) {
     secondEditText,
     handleSecondEditClick,
     editText,
-    cancelarText,
     detailsPath,
     data,
     movimiento,
     ids,
     columns,
-    readOnlyRoles,
+    readOnlyRoles = [],
+    cancelarText,
   } = props;
 
   const classes = useStyles();
-  const history = useHistory();
-  const session = useSelector((state) => state.session);
+  const { history } = useRouter();
+  const session: Session = useSelector((state: RootState) => state.session);
 
   const { getTableProps, headerGroups, rows, prepareRow } = useTable({
     columns,
     data,
   });
 
-  const handleRowClick = (e, id) => {
-    history.push(`${detailsPath}/${ids[id]}`);
+  const handleRowClick = (_e: any, id: number) => {
+    if (ids) {
+      history.push(`${detailsPath}/${ids[id]}`);
+    }
   };
   return (
     <Card className={classes.root}>
@@ -134,7 +169,7 @@ function EnhancedTable(props) {
         </div>
       </CardContent>
       <CardActions className={classes.actions} disableSpacing>
-        {JSON.parse(session.roles).some((role) => {
+        {JSON.parse(session.roles).some((role: Role) => {
           return readOnlyRoles.includes(role.role) && role.readOnly === 'false';
         }) && (
           <>
@@ -187,11 +222,11 @@ function EnhancedTable(props) {
   );
 }
 
-const DetailsTable = (props) => {
+const DetailsTable = (props: DetailsTableProps): JSX.Element => {
   const {
     title,
     hasHeaderColumns,
-    hasViewMoreButton,
+    hasViewMoreButton = true,
     handleAddClick,
     handleEditClick,
     handleSecondEditClick,
@@ -201,21 +236,59 @@ const DetailsTable = (props) => {
     handleEliminarClick,
     detailsPath,
     loading,
-    editText,
+    editText = 'Editar',
     secondEditText,
-    cancelarText,
     movimiento,
     data,
     ids,
-    noDataText,
-    readOnlyRoles,
+    noDataText = 'sin registros',
+    readOnlyRoles = [],
+    cancelarText,
   } = props;
   const classes = useStyles();
 
-  let headers;
   let columns;
+  let newData;
   if (data && data.length !== 0) {
-    headers = Object.getOwnPropertyNames(data[0]);
+    const headers = Object.getOwnPropertyNames(data[0]).map((header) => {
+      let newHeader;
+      switch (header) {
+        case 'articulo':
+          newHeader = 'Artículo';
+          break;
+        case 'cantidad':
+          newHeader = 'Cantidad';
+          break;
+        case 'precio':
+          newHeader = 'Precio';
+          break;
+        case 'Direccion':
+          newHeader = 'Dirección';
+          break;
+        default:
+          newHeader = header;
+          break;
+      }
+      return newHeader;
+    });
+    newData = data.map((row: any) => {
+      const { cantidad, precio, articulo, Direccion, ...rest } = row;
+      const newRow = rest;
+      if (cantidad !== undefined) {
+        assign(newRow, { Cantidad: cantidad });
+      }
+      if (precio !== undefined) {
+        assign(newRow, { Precio: precio });
+      }
+      if (articulo !== undefined) {
+        assign(newRow, { Artículo: articulo });
+      }
+      if (typeof Direccion !== 'undefined') {
+        assign(newRow, { Dirección: Direccion });
+      }
+      return newRow;
+    });
+    // alert(JSON.stringify(newData));
     columns = makeColumns(headers);
   }
 
@@ -237,7 +310,7 @@ const DetailsTable = (props) => {
             <EnhancedTable
               cancelarText={cancelarText}
               columns={columns}
-              data={data}
+              data={newData}
               detailsPath={detailsPath}
               editText={editText}
               handleAddClick={handleAddClick}
@@ -262,11 +335,7 @@ const DetailsTable = (props) => {
               <CardContent className={classes.content}>
                 <Box display="flex" justifyContent="center" m={0}>
                   <Box>
-                    <Typography
-                      className={classes.title}
-                      id="tableTitle"
-                      variant="h4"
-                    >
+                    <Typography id="tableTitle" variant="h4">
                       {noDataText}
                     </Typography>
                   </Box>
@@ -288,12 +357,6 @@ const DetailsTable = (props) => {
       )}
     </div>
   );
-};
-
-DetailsTable.defaultProps = {
-  hasViewMoreButton: true,
-  editText: 'Editar',
-  readOnlyRoles: [],
 };
 
 export default DetailsTable;

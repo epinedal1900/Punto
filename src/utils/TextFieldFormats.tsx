@@ -3,7 +3,7 @@
 import React from 'react';
 import NumberFormat from 'react-number-format';
 
-export const MoneyFormat = (props) => {
+export const MoneyFormat = (props: any) => {
   const { inputRef, onChange, ...other } = props;
 
   return (
@@ -25,7 +25,7 @@ export const MoneyFormat = (props) => {
     />
   );
 };
-export const IntegerFormat = (props) => {
+export const IntegerFormat = (props: any) => {
   const { inputRef, onChange, ...other } = props;
 
   return (
@@ -47,7 +47,7 @@ export const IntegerFormat = (props) => {
     />
   );
 };
-export const NegativeIntegerFormat = (props) => {
+export const NegativeIntegerFormat = (props: any) => {
   const { inputRef, onChange, ...other } = props;
 
   return (
@@ -70,7 +70,7 @@ export const NegativeIntegerFormat = (props) => {
   );
 };
 
-export const DigitsFormat = (props) => {
+export const DigitsFormat = (props: any) => {
   const { inputRef, onChange, ...other } = props;
 
   return (

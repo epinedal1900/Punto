@@ -1,5 +1,3 @@
-/* eslint-disable no-underscore-dangle */
-/* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable react/jsx-key */
 /* eslint-disable react/no-multi-comp */
 import React from 'react';
@@ -17,14 +15,15 @@ import Typography from '@material-ui/core/Typography';
 import Card from '@material-ui/core/Card';
 import Box from '@material-ui/core/Box';
 import CardContent from '@material-ui/core/CardContent';
-
-import { useHistory } from 'react-router-dom';
 import {
   useGlobalFilter,
   usePagination,
   useSortBy,
   useTable,
 } from 'react-table';
+
+import { assign } from 'lodash';
+import useRouter from '../utils/useRouter';
 import GlobalFilter from './GlobalFilter';
 import TablePaginationActions from './TablePaginationActions';
 import LoadingTable from './LoadingTable';
@@ -49,8 +48,33 @@ const useStyles = makeStyles((theme) => ({
     flex: '1 1 100%',
   },
 }));
+interface MultipleDetailsPaths {
+  key: string;
+  [x: string]: string;
+}
 
-const EnhancedTable = (props) => {
+interface CommonProps {
+  title?: string;
+  detailsPath?: string;
+  multipleDetailsPaths?: MultipleDetailsPaths;
+  movimiento?: string;
+  pSize?: 5 | 10 | 50;
+}
+
+interface EnhancedTableProps extends CommonProps {
+  data: any;
+  columns: any;
+  ids: string[];
+  primaryIds?: string[];
+}
+
+interface DataTableProps extends CommonProps {
+  rawData: any;
+  firstRowId?: boolean;
+  loading: boolean;
+  noDataText?: string;
+}
+const EnhancedTable = (props: EnhancedTableProps): JSX.Element => {
   const {
     title,
     data,
@@ -98,9 +122,9 @@ const EnhancedTable = (props) => {
 
   const linkToDetails = ids.length > 0;
 
-  const history = useHistory();
+  const { history } = useRouter();
 
-  const handleRowClick = (event, id) => {
+  const handleRowClick = (_e: any, id: number) => {
     if (multipleDetailsPaths) {
       // {{ key: 'Movimiento', pago: '/pagos/clientes', venta: '/ventas' }}
       const path = multipleDetailsPaths[data[id][multipleDetailsPaths.key]];
@@ -110,15 +134,15 @@ const EnhancedTable = (props) => {
     } else if (primaryIds) {
       history.push(`${detailsPath}/${primaryIds[id]}/${movimiento}/${ids[id]}`);
     } else {
-      history.push(`${detailsPath}/${ids[id]}`);
+      history.push(`${detailsPath}/${encodeURI(ids[id])}`);
     }
   };
 
-  const handleChangePage = (event, newPage) => {
+  const handleChangePage = (_e: any, newPage: number) => {
     gotoPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (event) => {
+  const handleChangeRowsPerPage = (event: any) => {
     setPageSize(Number(event.target.value));
   };
 
@@ -202,7 +226,7 @@ const EnhancedTable = (props) => {
   );
 };
 
-const DataTable = (props) => {
+const DataTable = (props: DataTableProps): JSX.Element => {
   const {
     title,
     rawData,
@@ -210,40 +234,88 @@ const DataTable = (props) => {
     detailsPath,
     loading,
     multipleDetailsPaths,
-    noDataText,
+    noDataText = 'Sin registros',
     movimiento,
-    pSize,
+    pSize = 10,
   } = props;
   const classes = useStyles();
 
   let ids;
-  let data;
+  let newData;
   let columns;
   let primaryIds; // ej. idCorte/movimiento/id
 
   if (!loading && rawData.length !== 0) {
-    const headers = Object.getOwnPropertyNames(rawData[0]);
+    const headers = Object.getOwnPropertyNames(rawData[0]).map((header) => {
+      let newHeader;
+      switch (header) {
+        case 'articulo':
+          newHeader = 'Artículo';
+          break;
+        case 'cantidad':
+          newHeader = 'Cantidad';
+          break;
+        case 'precio':
+          newHeader = 'Precio';
+          break;
+        case 'Direccion':
+          newHeader = 'Dirección';
+          break;
+        case 'Telefono':
+          newHeader = 'Teléfono';
+          break;
+        default:
+          newHeader = header;
+          break;
+      }
+      return newHeader;
+    });
+    let data;
     if (firstRowId) {
       data = rawData;
-      ids = rawData.map((obj) => obj[headers[0]]);
+      ids = rawData.map((obj: any) => obj[headers[0]]);
     } else if (headers[0] === '_id') {
       if (headers[1] === '_idCorte') {
-        // eslint-disable-next-line no-unused-vars
-        data = rawData.map(({ _id, _idCorte, ...rest }) => rest);
+        data = rawData.map(
+          // @ts-expect-error: data separation
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          ({ _id, _idCorte, ...rest }) => rest
+        );
         headers.shift();
         headers.shift();
-        ids = rawData.map((obj) => obj._id);
-        primaryIds = rawData.map((obj) => obj._idCorte);
+        ids = rawData.map((obj: any) => obj._id);
+        primaryIds = rawData.map((obj: any) => obj._idCorte);
       } else {
-        // eslint-disable-next-line no-unused-vars
+        // @ts-expect-error: data separation
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         data = rawData.map(({ _id, ...rest }) => rest);
         headers.shift();
-        ids = rawData.map((obj) => obj._id);
+        ids = rawData.map((obj: any) => obj._id);
       }
     } else {
       data = rawData;
       ids = [];
     }
+    newData = data.map((row: any) => {
+      const { cantidad, precio, articulo, Direccion, Telefono, ...rest } = row;
+      const newRow = rest;
+      if (cantidad !== undefined) {
+        assign(newRow, { Cantidad: cantidad });
+      }
+      if (precio !== undefined) {
+        assign(newRow, { Precio: precio });
+      }
+      if (articulo !== undefined) {
+        assign(newRow, { Artículo: articulo });
+      }
+      if (Telefono !== undefined) {
+        assign(newRow, { Teléfono: Telefono });
+      }
+      if (Direccion !== undefined) {
+        assign(newRow, { Dirección: Direccion });
+      }
+      return newRow;
+    });
     columns = makeColumns(headers);
   }
 
@@ -254,7 +326,7 @@ const DataTable = (props) => {
           {rawData.length !== 0 ? (
             <EnhancedTable
               columns={columns}
-              data={data}
+              data={newData}
               detailsPath={detailsPath}
               ids={ids}
               movimiento={movimiento}
@@ -280,7 +352,7 @@ const DataTable = (props) => {
                     <Typography
                       className={classes.title}
                       id="tableTitle"
-                      variant="h5"
+                      variant="h4"
                     >
                       {noDataText}
                     </Typography>
@@ -306,11 +378,6 @@ const DataTable = (props) => {
       )}
     </div>
   );
-};
-
-DataTable.defaultProps = {
-  noDataText: 'Sin registros',
-  pSize: 50,
 };
 
 export default DataTable;

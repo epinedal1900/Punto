@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 
 import Skeleton from '@material-ui/lab/Skeleton';
 import {
@@ -11,7 +10,15 @@ import {
   TableContainer,
 } from '@material-ui/core';
 
-const LoadingTable = ({ rows, columns }) => {
+interface LoadingTableProps {
+  rows: number;
+  columns: number;
+}
+
+const LoadingTable = ({
+  rows = 5,
+  columns = 2,
+}: LoadingTableProps): JSX.Element => {
   const arr = new Array(rows).fill(0);
   const cols = new Array(columns).fill(0);
   return (
@@ -19,7 +26,7 @@ const LoadingTable = ({ rows, columns }) => {
       <Table>
         <TableHead>
           <TableRow key={-1000}>
-            {cols.map((title, k) => (
+            {cols.map((_e: any, k) => (
               <TableCell key={-k}>
                 <Skeleton />
               </TableCell>
@@ -27,11 +34,9 @@ const LoadingTable = ({ rows, columns }) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {arr.map((e, i) => (
-            // eslint-disable-next-line react/no-array-index-key
+          {arr.map((_e: any, i) => (
             <TableRow key={i}>
-              {cols.map((col, j) => (
-                // eslint-disable-next-line radix
+              {cols.map((_e: any, j) => (
                 <TableCell key={parseInt(i.toString() + j.toString())}>
                   <Skeleton key={1} />
                 </TableCell>
@@ -42,10 +47,6 @@ const LoadingTable = ({ rows, columns }) => {
       </Table>
     </TableContainer>
   );
-};
-
-LoadingTable.prototype = {
-  rows: PropTypes.number.isRequired,
 };
 
 export default LoadingTable;

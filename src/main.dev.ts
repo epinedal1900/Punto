@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 /* eslint global-require: off, no-console: off */
 
 /**
@@ -20,10 +19,11 @@ import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import Store from 'electron-store';
-const { PosPrinter } = require('electron-pos-printer');
 import { assign } from 'lodash';
 
 import MenuBuilder from './menu';
+
+const { PosPrinter } = require('electron-pos-printer');
 
 const store = new Store();
 
@@ -141,7 +141,7 @@ ipcMain.on('CLIENTES', (_event, data) => {
 ipcMain.on('PAGOS_CLIENTES', (_event, data) => {
   let obj;
   if (store.has('pagosClientes')) {
-    obj = store.get('pagosClientes').concat(data);
+    obj = store.get<any>('pagosClientes').concat(data);
   } else {
     obj = [data];
   }

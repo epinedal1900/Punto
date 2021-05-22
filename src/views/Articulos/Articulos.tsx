@@ -2,20 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { useQuery } from '@apollo/client';
 import { Grid } from '@material-ui/core';
 import { useSelector } from 'react-redux';
-import { PRODUCTOS } from '../../utils/queries';
 import { AuthGuard, DataTable } from '../../components';
+import { PRODUCTOS } from '../../utils/queries';
+import { RootState } from '../../types/store';
+import { Session } from '../../types/types';
+import { Articulos as ArticulosType } from '../../types/graphql';
+import { Productos, ProductosVariables } from '../../types/apollo';
 
 const { ipcRenderer } = window.require('electron');
 
-const Articulos = () => {
-  const session = useSelector((state) => state.session);
+const Articulos = (): JSX.Element => {
+  const session: Session = useSelector((state: RootState) => state.session);
   const [loading, setLoading] = useState(true);
-  const [productos, setProductos] = useState(null);
-  useQuery(PRODUCTOS, {
+  const [productos, setProductos] = useState<
+    Exclude<ArticulosType, 'cantidad'>[] | null
+  >([]);
+  useQuery<Productos, ProductosVariables>(PRODUCTOS, {
     variables: { _idProductos: 'productos' },
     onCompleted: (data) => {
-      ipcRenderer.send('PRODUCTOS', data.productos.objects);
-      setProductos(data.productos.objects);
+      if (data.productos) {
+        ipcRenderer.send('PRODUCTOS', data.productos.objects);
+        setProductos(data.productos.objects);
+      }
       setLoading(false);
     },
     skip: !session.online,

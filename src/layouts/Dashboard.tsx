@@ -1,13 +1,11 @@
-/* eslint-disable no-underscore-dangle */
-/* eslint-disable promise/always-return */
-/* eslint-disable react/no-multi-comp */
 import React, { Suspense, useState, useRef } from 'react';
 import clsx from 'clsx';
-import { makeStyles } from '@material-ui/core/styles';
+import { makeStyles, Theme } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import Drawer from '@material-ui/core/Drawer';
 
 import Tooltip from '@material-ui/core/Tooltip';
+// @ts-expect-error: error
 import { Offline, Online } from 'react-detect-offline';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
@@ -33,7 +31,23 @@ import { ListItems } from '../components/listItems';
 import NotificacionesPopover from '../components/NotificacionesPopover';
 import CancelDialog from '../components/CancelDialog';
 import SuccessErrorMessage from '../components/SuccessErrorMessage';
-import { NOTIFICACIONES_PUNTO, MOVIMIENTOS } from '../utils/queries';
+import { modificarOnline } from '../actions/sessionActions';
+import { RootState } from '../types/store';
+import { Session } from '../types/types';
+import {
+  Movimientos,
+  MovimientosVariables,
+  NuevaVenta,
+  NuevaVentaVariables,
+  NuevoGasto,
+  NuevoGastoVariables,
+  NuevoIntercambio,
+  NuevoIntercambioVariables,
+  NuevoPago,
+  NuevoPagoVariables,
+  NuevoRegreso,
+  NuevoRegresoVariables,
+} from '../types/apollo';
 import {
   MARCAR_LEIDOS_PUNTO,
   NUEVA_VENTA,
@@ -42,14 +56,14 @@ import {
   NUEVO_REGRESO,
   NUEVO_INTERCAMBIO,
 } from '../utils/mutations';
-import { modificarOnline } from '../actions/sessionActions';
+import { NOTIFICACIONES_PUNTO, MOVIMIENTOS } from '../utils/queries';
 import { auth } from '../firebase';
 
 const { ipcRenderer } = window.require('electron');
 
 const drawerWidth = 240;
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles((theme: Theme) => ({
   root: {
     display: 'flex',
   },
@@ -104,6 +118,7 @@ const useStyles = makeStyles((theme) => ({
     }),
     width: theme.spacing(7),
     // eslint-disable-next-line no-dupe-keys
+    // @ts-expect-error: error
     width: theme.spacing(9),
   },
   appBarSpacer: theme.mixins.toolbar,
@@ -127,12 +142,14 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function Dashboard(props) {
+export default function Dashboard(props: {
+  children: JSX.Element | JSX.Element[];
+}): JSX.Element {
   const classes = useStyles();
   const { children } = props;
-  const session = useSelector((state) => state.session);
+  const session: Session = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch();
-  const [open, setOpen] = React.useState(true);
+  const [open, setOpen] = useState(true);
   const [noLeidos, setNoLeidos] = useState(0);
   const [notificaciones, setNotificaciones] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -140,16 +157,28 @@ export default function Dashboard(props) {
   const [openNotificaciones, setOpenNotificaciones] = useState(false);
   const [success, setSuccess] = useState(false);
   const [subirConfirmationOpen, setSubirConfirmationOpen] = useState(false);
-  const [message, setMessage] = useState(null);
+  const [message, setMessage] = useState<string | null>(null);
   const handleDrawerOpen = () => {
     setOpen(true);
   };
-  const [nuevaVenta] = useMutation(NUEVA_VENTA);
-  const [nuevoPago] = useMutation(NUEVO_PAGO);
-  const [nuevoRegreso] = useMutation(NUEVO_REGRESO);
-  const [nuevoGasto] = useMutation(NUEVO_GASTO);
-  const [nuevoIntercambio] = useMutation(NUEVO_INTERCAMBIO);
-  const { refetch: getMovimientos } = useQuery(MOVIMIENTOS, {
+  const [nuevaVenta] = useMutation<NuevaVenta, NuevaVentaVariables>(
+    NUEVA_VENTA
+  );
+  const [nuevoPago] = useMutation<NuevoPago, NuevoPagoVariables>(NUEVO_PAGO);
+  const [nuevoRegreso] = useMutation<NuevoRegreso, NuevoRegresoVariables>(
+    NUEVO_REGRESO
+  );
+  const [nuevoGasto] = useMutation<NuevoGasto, NuevoGastoVariables>(
+    NUEVO_GASTO
+  );
+  const [nuevoIntercambio] = useMutation<
+    NuevoIntercambio,
+    NuevoIntercambioVariables
+  >(NUEVO_INTERCAMBIO);
+  const { refetch: getMovimientos } = useQuery<
+    Movimientos,
+    MovimientosVariables
+  >(MOVIMIENTOS, {
     variables: { _id: session.puntoIdActivo },
     skip: true,
   });
@@ -167,19 +196,20 @@ export default function Dashboard(props) {
     let hayErrores = false;
     if (store.ventas && store.ventas.length) {
       await Promise.all(
-        store.ventas.map(async (obj) => {
+        store.ventas.map(async (obj: any) => {
           if (obj.objVenta.tipo.indexOf('(') === -1) {
             const o = JSON.parse(JSON.stringify(obj.objVenta));
-            assign(o, { _id: ObjectId(o._id) });
+            assign(o, { _id: new ObjectId(o._id) });
             await nuevaVenta({
               variables: {
                 objVenta: o,
                 puntoId: obj.puntoId,
                 nombre: obj.nombre,
+                enviarMensaje: false,
               },
             })
               .then((res) => {
-                if (res.data.nuevaVenta.success === true) {
+                if (res.data && res.data.nuevaVenta.success === true) {
                   ipcRenderer.send('ELIMINAR_MOVIMIENTO', {
                     _idOffline: obj._idOffline,
                     tipo: 'ventas',
@@ -202,14 +232,15 @@ export default function Dashboard(props) {
     }
     if (store.ventasClientes && store.ventasClientes.length) {
       await Promise.all(
-        store.ventasClientes.map(async (obj) => {
+        store.ventasClientes.map(async (obj: any) => {
           if (obj.objVenta.tipo.indexOf('(') === -1) {
             const o = omit(obj, '_idOffline');
             await nuevaVenta({
+              // @ts-expect-error: error
               variables: o,
             })
               .then((res) => {
-                if (res.data.nuevaVenta.success === true) {
+                if (res.data && res.data.nuevaVenta.success === true) {
                   ipcRenderer.send('ELIMINAR_MOVIMIENTO', {
                     _idOffline: obj._idOffline,
                     tipo: 'ventasClientes',
@@ -232,14 +263,15 @@ export default function Dashboard(props) {
     }
     if (store.pagosClientes && store.pagosClientes.length) {
       await Promise.all(
-        store.pagosClientes.map(async (obj) => {
+        store.pagosClientes.map(async (obj: any) => {
           if (obj.objPago.tipo.indexOf('(') === -1) {
             const o = omit(obj, '_idOffline');
             await nuevoPago({
+              // @ts-expect-error: error
               variables: o,
             })
               .then((res) => {
-                if (res.data.nuevoPago.success === true) {
+                if (res.data && res.data.nuevoPago.success === true) {
                   ipcRenderer.send('ELIMINAR_MOVIMIENTO', {
                     _idOffline: obj._idOffline,
                     tipo: 'pagosClientes',
@@ -262,14 +294,15 @@ export default function Dashboard(props) {
     }
     if (store.regresos && store.regresos.length) {
       await Promise.all(
-        store.regresos.map(async (obj) => {
+        store.regresos.map(async (obj: any) => {
           if (obj.obj.tipo.indexOf('(') === -1) {
             const o = omit(obj, '_idOffline');
             await nuevoRegreso({
+              // @ts-expect-error: error
               variables: o,
             })
               .then((res) => {
-                if (res.data.nuevoRegreso.success === true) {
+                if (res.data && res.data.nuevoRegreso.success === true) {
                   ipcRenderer.send('ELIMINAR_MOVIMIENTO', {
                     _idOffline: obj._idOffline,
                     tipo: 'regresos',
@@ -292,14 +325,16 @@ export default function Dashboard(props) {
     }
     if (store.intercambios && store.intercambios.length) {
       await Promise.all(
-        store.intercambios.map(async (obj) => {
+        store.intercambios.map(async (obj: any) => {
           if (obj.obj.tipo.indexOf('(') === -1) {
             const o = omit(obj, '_idOffline');
+            assign(o, { enviarMensaje: false });
             await nuevoIntercambio({
+              // @ts-expect-error: error
               variables: o,
             })
               .then((res) => {
-                if (res.data.nuevoIntercambio.success === true) {
+                if (res.data && res.data.nuevoIntercambio.success === true) {
                   ipcRenderer.send('ELIMINAR_MOVIMIENTO', {
                     _idOffline: obj._idOffline,
                     tipo: 'intercambios',
@@ -322,13 +357,15 @@ export default function Dashboard(props) {
     }
     if (store.gastos && store.gastos.length) {
       await Promise.all(
-        store.gastos.map(async (obj) => {
+        store.gastos.map(async (obj: any) => {
           const o = omit(obj, '_idOffline');
+          assign(o, { enviarMensaje: false });
           await nuevoGasto({
+            // @ts-expect-error: error
             variables: o,
           })
             .then((res) => {
-              if (res.data.nuevoGasto.success === true) {
+              if (res.data && res.data.nuevoGasto.success === true) {
                 ipcRenderer.send('ELIMINAR_MOVIMIENTO', {
                   _idOffline: obj._idOffline,
                   tipo: 'gastos',
@@ -343,6 +380,7 @@ export default function Dashboard(props) {
         })
       );
     }
+    // @ts-expect-error: error
     await getMovimientos({ variables: { _id: session.puntoIdActivo } }).then(
       (data) => {
         ipcRenderer.send('PLAZA', data.data.movimientos);
@@ -364,16 +402,17 @@ export default function Dashboard(props) {
     setOpen(false);
   };
   const handleLogout = () => {
+    setOpenNotificaciones(false);
     auth.signOut();
   };
   useQuery(NOTIFICACIONES_PUNTO, {
     onCompleted: (data) => {
       if (session.nombre === 'Pasillo 2' || session.nombre === 'Pasillo 6') {
-        const notificacionesArr = data.notificacionesPunto.find((val) => {
+        const notificacionesArr = data.notificacionesPunto.find((val: any) => {
           return val.nombre === session.nombre;
         }).notificaciones;
         setNotificaciones(notificacionesArr);
-        const i = notificacionesArr.reduce((acc, cur) => {
+        const i = notificacionesArr.reduce((acc: any, cur: any) => {
           if (cur.leido) {
             return acc;
           }
@@ -396,7 +435,7 @@ export default function Dashboard(props) {
   });
 
   const handleExit = () => {
-    setSuccess(null);
+    setSuccess(false);
     setMessage(null);
   };
   const handlenotificacionesOpen = () => {
@@ -421,7 +460,13 @@ export default function Dashboard(props) {
       <CssBaseline />
       <AppBar
         className={clsx(classes.appBar, open && classes.appBarShift)}
-        color={session.online ? 'primary' : 'default'}
+        color={
+          process.env.NODE_ENV === 'development'
+            ? 'secondary'
+            : session.online
+            ? 'primary'
+            : 'default'
+        }
         position="absolute"
       >
         <Toolbar className={classes.toolbar}>
@@ -502,7 +547,7 @@ export default function Dashboard(props) {
           <Tooltip title={<h2>Cerrar sesión</h2>}>
             <IconButton
               color="inherit"
-              disabled={!session.online}
+              disabled={!session.online || openNotificaciones}
               onClick={handleLogout}
             >
               <InputIcon />

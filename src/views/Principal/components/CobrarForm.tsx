@@ -1,8 +1,3 @@
-/* eslint-disable promise/no-nesting */
-/* eslint-disable promise/always-return */
-/* eslint-disable no-underscore-dangle */
-/* eslint-disable react/jsx-no-duplicate-props */
-/* eslint-disable react/jsx-props-no-spreading */
 import React, { useState } from 'react';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
@@ -22,6 +17,10 @@ import { useSelector, useDispatch } from 'react-redux';
 import Tooltip from '@material-ui/core/Tooltip';
 import ObjectId from 'bson-objectid';
 import { assign } from 'lodash';
+import { HotKeys } from 'react-hotkeys';
+import { ArticuloDB, PrincipalValues, Session } from '../../../types/types';
+import { RootState } from '../../../types/store';
+import { NuevaVenta, NuevaVentaVariables } from '../../../types/apollo';
 import { MoneyFormat } from '../../../utils/TextFieldFormats';
 
 import { NUEVA_VENTA, NUEVO_PAGO } from '../../../utils/mutations';
@@ -31,7 +30,14 @@ import { modificarUltimoTicket } from '../../../actions/sessionActions';
 
 const { ipcRenderer } = window.require('electron');
 
-const CobrarForm = (props) => {
+interface CobrarFormProps {
+  open: boolean;
+  setCobrarOpen: (a: boolean) => void;
+  setDialogOpen: (a: boolean) => void;
+  setMessage: (a: string | null) => void;
+  setSuccess: (a: boolean) => void;
+}
+const CobrarForm = (props: CobrarFormProps): JSX.Element => {
   const { open, setCobrarOpen, setDialogOpen, setMessage, setSuccess } = props;
   const {
     values,
@@ -41,7 +47,7 @@ const CobrarForm = (props) => {
     handleBlur,
     handleChange,
     resetForm,
-  } = useFormikContext();
+  } = useFormikContext<PrincipalValues>();
   const [submitting, setSubmitting] = useState(false);
   const [cambio, setCambio] = useState('$0.00');
   const total = values.articulos.reduce((acc, cur) => {
@@ -51,28 +57,31 @@ const CobrarForm = (props) => {
     return acc + cur.cantidad;
   }, 0);
 
-  const session = useSelector((state) => state.session);
+  const session: Session = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch();
 
-  const [nuevaVenta] = useMutation(NUEVA_VENTA, {
-    onCompleted: (data) => {
-      if (data.nuevaVenta.success === true) {
-        setMessage(`${data.nuevaVenta.message}. Cambio: ${cambio}`);
-        setSuccess(true);
-      } else {
-        setMessage(data.nuevaVenta.message);
-      }
-    },
-    onError: (error) => {
-      setMessage(JSON.stringify(error, null, 4));
-    },
-    refetchQueries: [
-      {
-        query: MOVIMIENTOS,
-        variables: { _id: session.puntoIdActivo },
+  const [nuevaVenta] = useMutation<NuevaVenta, NuevaVentaVariables>(
+    NUEVA_VENTA,
+    {
+      onCompleted: (data) => {
+        if (data.nuevaVenta.success === true) {
+          setMessage(`${data.nuevaVenta.message}. Cambio: ${cambio}`);
+          setSuccess(true);
+        } else {
+          setMessage(data.nuevaVenta.message);
+        }
       },
-    ],
-  });
+      onError: (error) => {
+        setMessage(JSON.stringify(error, null, 4));
+      },
+      refetchQueries: [
+        {
+          query: MOVIMIENTOS,
+          variables: { _id: session.puntoIdActivo },
+        },
+      ],
+    }
+  );
   // solo para clientes
   const [nuevoPago] = useMutation(NUEVO_PAGO, {
     onError: (error) => {
@@ -86,11 +95,12 @@ const CobrarForm = (props) => {
     ],
   });
 
-  const finalizarVenta = (articulos) => {
+  const finalizarVenta = (articulos: ArticuloDB[]) => {
     if (values.tipoDeImpresion === 'imprimir') {
       const data = crearTicketData(
         session.infoPunto,
         articulos,
+        // @ts-expect-error: error
         values.cliente.nombre,
         values.cantidadPagada,
         cambio
@@ -109,6 +119,7 @@ const CobrarForm = (props) => {
     const ultimoTicket = {
       infoPunto: session.infoPunto,
       articulos,
+      // @ts-expect-error: error
       cliente: values.cliente.nombre,
       cantidadPagada: values.cantidadPagada,
       cambio,
@@ -124,152 +135,154 @@ const CobrarForm = (props) => {
   };
 
   const handleCobrar = async () => {
-    setSubmitting(true);
-    const puntoId = session.puntoIdActivo;
-    const { nombre } = session;
-    const articulos = values.articulos.map((val) => {
+    const articulos: ArticuloDB[] = values.articulos.map((val) => {
       return {
         articulo: val.articulo.nombre,
         cantidad: val.cantidad,
         precio: val.precio,
       };
     });
-    let objPagoOffline;
-    const objOffline = {
-      _id: ObjectId().toString(),
-      Fecha: new Date().toISOString(),
-      Tipo: 'Sin conexión: venta',
-      Monto: total,
-      Pago: null,
-      Prendas: NoDeArticulos,
-      articulos,
-      comentarios: values.comentarios,
-    };
-    if (values.cliente) {
-      const objVenta = {
-        cliente: values.cliente._id,
-        tipo: `entrega en ${session.nombre}`,
+    if (!submitting && articulos.length > 0) {
+      setSubmitting(true);
+      const puntoId = session.puntoIdActivo;
+      const { nombre } = session;
+      let objPagoOffline;
+      const objOffline = {
+        _id: new ObjectId().toString(),
+        Fecha: new Date().toISOString(),
+        Tipo: 'Sin conexión: venta',
+        Monto: total,
+        Pago: null,
+        Prendas: NoDeArticulos,
         articulos,
+        comentarios: values.comentarios,
       };
-      if (values.comentarios !== '') {
-        assign(objVenta, { comentarios: values.comentarios });
-      }
-      const cliente = values.cliente.nombre;
-      const ventaVariables = {
-        objVenta,
-        monto: total,
-        cliente,
-        nombre,
-        puntoId,
-      };
-      if (values.tipoDePago === 'pendiente') {
+      if (values.cliente) {
+        const objVenta = {
+          cliente: values.cliente._id,
+          tipo: `entrega en ${session.nombre}`,
+          articulos,
+        };
+        if (values.comentarios !== '') {
+          assign(objVenta, { comentarios: values.comentarios });
+        }
+        const cliente = values.cliente.nombre;
+        const ventaVariables = {
+          objVenta,
+          monto: total,
+          cliente,
+          nombre,
+          puntoId,
+        };
+        if (values.tipoDePago === 'pendiente') {
+          if (session.online) {
+            await nuevaVenta({
+              variables: ventaVariables,
+            }).then((res) => {
+              if (res.data && res.data.nuevaVenta.success === true) {
+                finalizarVenta(articulos);
+              }
+            });
+          } else {
+            assign(ventaVariables, { _idOffline: objOffline._id });
+            ipcRenderer.send('VENTAS_CLIENTES', ventaVariables);
+            assign(objOffline, {
+              Tipo: `Sin conexión: venta: ${cliente}`,
+              Pago: 0,
+            });
+          }
+        } else if (values.tipoDePago === 'efectivo') {
+          const objPago = {
+            cliente: values.cliente._id,
+            tipo: 'efectivo',
+            monto: values.cantidadPagada,
+          };
+          const pagoVariables = {
+            cliente,
+            objPago,
+          };
+          if (session.online) {
+            await nuevoPago({
+              variables: pagoVariables,
+            }).then(async (pagoRes) => {
+              if (pagoRes.data.nuevoPago.success === true) {
+                assign(ventaVariables, { idPago: pagoRes.data.nuevoPago._id });
+                await nuevaVenta({
+                  variables: ventaVariables,
+                }).then((res) => {
+                  if (res.data && res.data.nuevaVenta.success === true) {
+                    finalizarVenta(articulos);
+                  }
+                });
+              }
+            });
+          } else {
+            assign(ventaVariables, { _idOffline: objOffline._id });
+            ipcRenderer.send('VENTAS_CLIENTES', ventaVariables);
+            assign(objOffline, {
+              Tipo: `Sin conexión: venta: ${cliente}`,
+              Pago: 0,
+            });
+            objPagoOffline = {
+              _id: new ObjectId().toString(),
+              Fecha: new Date().toISOString(),
+              Tipo: `Sin conexión: pago: ${cliente}`,
+              Monto: values.cantidadPagada,
+              Pago: null,
+              Prendas: 0,
+              articulos: null,
+              comentarios: values.comentarios,
+            };
+            assign(pagoVariables, {
+              _idOffline: objPagoOffline._id,
+              puntoId: session.puntoIdActivo,
+            });
+            ipcRenderer.send('PAGOS_CLIENTES', pagoVariables);
+          }
+        }
+      } else {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        const _id = new ObjectId();
+        const objVenta = {
+          _id,
+          tipo: 'venta',
+          articulos,
+        };
+        if (values.comentarios !== '') {
+          assign(objVenta, { comentarios: values.comentarios });
+        }
+        const variables = {
+          objVenta,
+          puntoId,
+          nombre,
+        };
         if (session.online) {
           await nuevaVenta({
-            variables: ventaVariables,
+            variables,
           }).then((res) => {
-            if (res.data.nuevaVenta.success === true) {
+            if (res.data && res.data.nuevaVenta.success === true) {
               finalizarVenta(articulos);
             }
           });
         } else {
-          assign(ventaVariables, { _idOffline: objOffline._id });
-          ipcRenderer.send('VENTAS_CLIENTES', ventaVariables);
-          assign(objOffline, {
-            Tipo: `Sin conexión: venta: ${cliente}`,
-            Pago: 0,
+          assign(variables, {
+            _idOffline: objOffline._id,
+            objVenta: { _id: _id.toString(), tipo: 'venta', articulos },
           });
-        }
-      } else if (values.tipoDePago === 'efectivo') {
-        const objPago = {
-          cliente: values.cliente._id,
-          tipo: 'efectivo',
-          monto: values.cantidadPagada,
-        };
-        const pagoVariables = {
-          cliente,
-          objPago,
-        };
-        if (session.online) {
-          await nuevoPago({
-            variables: pagoVariables,
-          }).then(async (pagoRes) => {
-            if (pagoRes.data.nuevoPago.success === true) {
-              assign(ventaVariables, { idPago: pagoRes.data.nuevoPago._id });
-              await nuevaVenta({
-                variables: ventaVariables,
-              }).then((res) => {
-                if (res.data.nuevaVenta.success === true) {
-                  finalizarVenta(articulos);
-                }
-              });
-            }
-          });
-        } else {
-          assign(ventaVariables, { _idOffline: objOffline._id });
-          ipcRenderer.send('VENTAS_CLIENTES', ventaVariables);
-          assign(objOffline, {
-            Tipo: `Sin conexión: venta: ${cliente}`,
-            Pago: 0,
-          });
-          objPagoOffline = {
-            _id: ObjectId().toString(),
-            Fecha: new Date().toISOString(),
-            Tipo: `Sin conexión: pago: ${cliente}`,
-            Monto: values.cantidadPagada,
-            Pago: null,
-            Prendas: 0,
-            articulos: null,
-            comentarios: values.comentarios,
-          };
-          assign(pagoVariables, {
-            _idOffline: objPagoOffline._id,
-            puntoId: session.puntoIdActivo,
-          });
-          ipcRenderer.send('PAGOS_CLIENTES', pagoVariables);
+          ipcRenderer.send('VENTAS', variables);
         }
       }
-    } else {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      const _id = ObjectId();
-      const objVenta = {
-        _id,
-        tipo: 'venta',
-        articulos,
-      };
-      if (values.comentarios !== '') {
-        assign(objVenta, { comentarios: values.comentarios });
+      if (!session.online) {
+        finalizarVenta(articulos);
+        await ipcRenderer.send('MOVIMIENTOS_OFFLINE', objOffline);
+        if (objPagoOffline) {
+          ipcRenderer.send('MOVIMIENTOS_OFFLINE', objPagoOffline);
+        }
+        setMessage(`Venta añadida. Cambio: ${cambio}`);
+        setSuccess(true);
       }
-      const variables = {
-        objVenta,
-        puntoId,
-        nombre,
-      };
-      if (session.online) {
-        await nuevaVenta({
-          variables,
-        }).then((res) => {
-          if (res.data.nuevaVenta.success === true) {
-            finalizarVenta(articulos);
-          }
-        });
-      } else {
-        assign(variables, {
-          _idOffline: objOffline._id,
-          objVenta: { _id: _id.toString(), tipo: 'venta', articulos },
-        });
-        ipcRenderer.send('VENTAS', variables);
-      }
+      setSubmitting(false);
     }
-    if (!session.online) {
-      finalizarVenta(articulos);
-      await ipcRenderer.send('MOVIMIENTOS_OFFLINE', objOffline);
-      if (objPagoOffline) {
-        ipcRenderer.send('MOVIMIENTOS_OFFLINE', objPagoOffline);
-      }
-      setMessage(`Venta añadida. Cambio: ${cambio}`);
-      setSuccess(true);
-    }
-    setSubmitting(false);
   };
 
   const handleClose = () => {
@@ -278,152 +291,172 @@ const CobrarForm = (props) => {
       setDialogOpen(false);
     }
   };
+  const keyMap = {
+    COBRAR_CLICK: 'ctrl+enter',
+  };
+
+  const handlers = {
+    COBRAR_CLICK: handleCobrar,
+  };
 
   return (
-    <Dialog onClose={handleClose} open={open}>
-      <Box width={400}>
-        <DialogContent>
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              {values.cliente !== '' && (
-                <Typography variant="subtitle1">
-                  {`Cliente: ${values.cliente.nombre}`}
-                </Typography>
-              )}
-              <Typography variant="subtitle1">
-                {`Total: ${Intl.NumberFormat('en-US', {
-                  style: 'currency',
-                  currency: 'USD',
-                }).format(total)}`}
-              </Typography>
-              <Typography variant="subtitle1">
-                {`Número de artículos  : ${NoDeArticulos}`}
-              </Typography>
-              {values.tipoDePago === 'efectivo' && (
-                <Typography variant="subtitle1">{`Cambio: ${cambio}`}</Typography>
-              )}
-            </Grid>
-            <Grid item xs={12}>
-              <Field component={RadioGroup} name="tipoDePago">
-                <FormControlLabel
-                  control={<Radio disabled={submitting} />}
-                  disabled={submitting}
-                  label="Efectivo"
-                  value="efectivo"
-                />
+    <HotKeys allowChanges handlers={handlers} keyMap={keyMap}>
+      <Dialog onClose={handleClose} open={open}>
+        <Box width={400}>
+          <DialogContent>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
                 {values.cliente !== '' && (
+                  <Typography variant="subtitle1">
+                    {`Cliente: ${values.cliente.nombre}`}
+                  </Typography>
+                )}
+                <Typography variant="subtitle1">
+                  {`Total: ${Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                  }).format(total)}`}
+                </Typography>
+                <Typography variant="subtitle1">
+                  {`Número de artículos  : ${NoDeArticulos}`}
+                </Typography>
+                {values.tipoDePago === 'efectivo' && (
+                  <Typography variant="subtitle1">{`Cambio: ${cambio}`}</Typography>
+                )}
+              </Grid>
+              <Grid item xs={12}>
+                <Field component={RadioGroup} name="tipoDePago">
                   <FormControlLabel
                     control={<Radio disabled={submitting} />}
                     disabled={submitting}
-                    label="Dejar pago pendiente"
-                    value="pendiente"
+                    label="Efectivo"
+                    value="efectivo"
                   />
-                )}
-              </Field>
-            </Grid>
-            {values.tipoDePago === 'efectivo' && (
+                  {values.cliente !== '' && (
+                    <FormControlLabel
+                      control={<Radio disabled={submitting} />}
+                      disabled={submitting}
+                      label="Dejar pago pendiente"
+                      value="pendiente"
+                    />
+                  )}
+                </Field>
+              </Grid>
+              {values.tipoDePago === 'efectivo' && (
+                <Grid item xs={12}>
+                  <TextField
+                    error={
+                      (Boolean(touched.cantidadPagada) &&
+                        Boolean(errors.cantidadPagada)) ||
+                      (values.cliente === '' && values.cantidadPagada < total)
+                    }
+                    focused
+                    fullWidth
+                    helperText={touched.cantidadPagada && errors.cantidadPagada}
+                    id="cantidadPagada"
+                    InputProps={{
+                      inputComponent: MoneyFormat,
+                    }}
+                    inputProps={{ maxLength: 11 }}
+                    inputRef={(input) =>
+                      input && input.focus() && input.select()
+                    }
+                    label="Cantidad pagada"
+                    name="cantidadPagada"
+                    onChange={(e) => {
+                      const { value } = e.target;
+                      const nuevoValue =
+                        parseFloat(value.replace(/[,$]+/g, '')) || 0;
+                      let nuevoCambio;
+                      if (nuevoValue - total >= 0) {
+                        nuevoCambio = Intl.NumberFormat('en-US', {
+                          style: 'currency',
+                          currency: 'USD',
+                        }).format(nuevoValue - total);
+                      } else {
+                        nuevoCambio = '-----';
+                      }
+                      setCambio(nuevoCambio);
+                      setFieldValue('cantidadPagada', nuevoValue, false);
+                    }}
+                    onFocus={(event) => {
+                      event.preventDefault();
+                      const { target } = event;
+                      target.focus();
+                      target.select();
+                    }}
+                    value={
+                      values.cantidadPagada === 0
+                        ? total
+                        : values.cantidadPagada
+                    }
+                    variant="outlined"
+                  />
+                </Grid>
+              )}
               <Grid item xs={12}>
                 <TextField
-                  error={
-                    (touched.cantidadPagada && errors.cantidadPagada) ||
-                    (values.cliente === '' && values.cantidadPagada < total)
-                  }
+                  error={touched.comentarios && Boolean(errors.comentarios)}
                   fullWidth
-                  helperText={touched.cantidadPagada && errors.cantidadPagada}
-                  id="cantidadPagada"
-                  InputProps={{
-                    inputComponent: MoneyFormat,
-                  }}
-                  inputProps={{ maxLength: 11 }}
-                  label="Cantidad pagada"
-                  name="cantidadPagada"
-                  onChange={(e) => {
-                    const { value } = e.target;
-                    const nuevoValue =
-                      parseFloat(value.replace(/[,$]+/g, '')) || 0;
-                    let nuevoCambio;
-                    if (nuevoValue - total >= 0) {
-                      nuevoCambio = Intl.NumberFormat('en-US', {
-                        style: 'currency',
-                        currency: 'USD',
-                      }).format(nuevoValue - total);
-                    } else {
-                      nuevoCambio = '-----';
-                    }
-                    setCambio(nuevoCambio);
-                    setFieldValue('cantidadPagada', nuevoValue, false);
-                  }}
-                  onFocus={(event) => {
-                    event.target.select();
-                  }}
-                  value={
-                    values.cantidadPagada === 0 ? total : values.cantidadPagada
-                  }
+                  helperText={touched.comentarios && errors.comentarios}
+                  id="comentarios"
+                  label="Comentarios"
+                  multiline
+                  name="comentarios"
+                  onBlur={handleBlur}
+                  onChange={handleChange}
+                  value={values.comentarios}
                   variant="outlined"
                 />
               </Grid>
-            )}
-            <Grid item xs={12}>
-              <TextField
-                error={touched.comentarios && Boolean(errors.comentarios)}
-                fullWidth
-                helperText={touched.comentarios && errors.comentarios}
-                id="comentarios"
-                label="Comentarios"
-                multiline
-                name="comentarios"
-                onBlur={handleBlur}
-                onChange={handleChange}
-                value={values.comentarios}
+              <Grid item xs={12}>
+                <Field component={RadioGroup} name="tipoDeImpresion">
+                  <FormControlLabel
+                    control={<Radio disabled={submitting} />}
+                    disabled={submitting}
+                    label="Cobrar e imprimir"
+                    value="imprimir"
+                  />
+                  <FormControlLabel
+                    control={<Radio disabled={submitting} />}
+                    disabled={submitting}
+                    label="Cobrar solo registrando la venta"
+                    value="noImprimir"
+                  />
+                </Field>
+                {submitting && (
+                  <Box>
+                    <LinearProgress />
+                  </Box>
+                )}
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions>
+            <Tooltip title="ESC">
+              <Button color="default" onClick={handleClose} size="small">
+                Cancelar
+              </Button>
+            </Tooltip>
+            <Tooltip title="CTRL+ENTER">
+              <Button
+                color="primary"
+                disabled={
+                  submitting ||
+                  (values.cliente === '' && values.cantidadPagada < total)
+                }
+                onClick={handleCobrar}
+                size="small"
+                type="submit"
                 variant="outlined"
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Field component={RadioGroup} name="tipoDeImpresion">
-                <FormControlLabel
-                  control={<Radio disabled={submitting} />}
-                  disabled={submitting}
-                  label="Cobrar e imprimir"
-                  value="imprimir"
-                />
-                <FormControlLabel
-                  control={<Radio disabled={submitting} />}
-                  disabled={submitting}
-                  label="Cobrar solo registrando la venta"
-                  value="noImprimir"
-                />
-              </Field>
-              {submitting && (
-                <Box>
-                  <LinearProgress />
-                </Box>
-              )}
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Tooltip title="ESC">
-            <Button color="default" onClick={handleClose} size="small">
-              Cancelar
-            </Button>
-          </Tooltip>
-          <Button
-            autoFocus
-            color="primary"
-            disabled={
-              submitting ||
-              (values.cliente === '' && values.cantidadPagada < total)
-            }
-            onClick={handleCobrar}
-            size="small"
-            type="submit"
-            variant="outlined"
-          >
-            Cobrar
-          </Button>
-        </DialogActions>
-      </Box>
-    </Dialog>
+              >
+                Cobrar
+              </Button>
+            </Tooltip>
+          </DialogActions>
+        </Box>
+      </Dialog>
+    </HotKeys>
   );
 };
 

@@ -1,13 +1,14 @@
 import * as actionTypes from '../actions';
+import { Session } from '../types/types';
 
-const initialState = {
+const initialState: Session = {
   loggedIn: localStorage.getItem('loggedIn') || 'false',
   online: localStorage.getItem('online') !== 'false',
   nombre: localStorage.getItem('nombre'),
   roles: localStorage.getItem('roles'),
   puntoIdActivo: localStorage.getItem('puntoIdActivo'),
   infoPunto: localStorage.getItem('infoPunto'),
-  tickets: [{ cliente: '', articulos: [] }],
+  tickets: [{ cliente: '', articulos: [], nombre: 'ticket 1' }],
   ultimoTicket: {},
   impresora: localStorage.getItem('impresora'),
   ancho: localStorage.getItem('ancho'),
@@ -16,7 +17,7 @@ const initialState = {
 };
 // roles and name from db
 
-const sessionReducer = (state = initialState, action) => {
+const sessionReducer = (state = initialState, action: any) => {
   switch (action.type) {
     case actionTypes.SESSION_LOGIN: {
       return {

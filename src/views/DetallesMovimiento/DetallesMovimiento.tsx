@@ -7,7 +7,7 @@ import assign from 'lodash/assign';
 import dayjs from 'dayjs';
 import { useSelector } from 'react-redux';
 import groupBy from 'lodash/groupBy';
-import { useHistory } from 'react-router-dom';
+import { RouteComponentProps, useHistory } from 'react-router-dom';
 
 import {
   Header,
@@ -17,6 +17,20 @@ import {
   SuccessErrorMessage,
 } from '../../components';
 
+import {
+  CancelarMovimientoVariables,
+  DetallesMovimientosUtils,
+  DetallesMovimientosUtilsVariables,
+  CancelarMovimiento,
+  Movimientos_movimientos_movimientos,
+} from '../../types/apollo';
+import { RootState } from '../../types/store';
+import {
+  ArticuloDB,
+  ArticuloForm,
+  ArticuloOption,
+  Session,
+} from '../../types/types';
 import { MOVIMIENTOS, DETALLES_MOVIMIENTOS_UTILS } from '../../utils/queries';
 import {
   CANCELAR_MOVIMIENTO,
@@ -26,35 +40,31 @@ import crearTicketData from '../../utils/crearTicketData';
 import crearTicketSinPrecioData from '../../utils/crearTicketSinPrecioData';
 import EditForm from './components/EditForm';
 
-const { ipcRenderer } = window.require('electron');
-
 const onCompleted = (
-  productos,
-  movimientosOnline,
-  setTipoDeMovimiento,
-  setTipo,
-  setCancelButton,
-  setInfoRaw,
-  setInfo,
-  setMessageMutation,
-  setReimprimirButton,
-  setFecha,
-  setOpcionesArticulos,
-  setDetalles,
-  setLoading,
-  session,
-  id,
-  movimientosOffline
+  productos: ArticuloOption[],
+  movimientosOnline: Movimientos_movimientos_movimientos[],
+  setTipoDeMovimiento: (a: string) => void,
+  setTipo: (a: string) => void,
+  setCancelButton: (a: boolean) => void,
+  setInfoRaw: (a: any) => void,
+  setInfo: (a: any) => void,
+  setMessageMutation: (a: string) => void,
+  setReimprimirButton: (a: boolean) => void,
+  setFecha: (a: string) => void,
+  setProductos: (a: any) => void,
+  setDetalles: (a: any) => void,
+  setLoading: (a: boolean) => void,
+  session: Session,
+  id: string,
+  movimientosOffline?: Movimientos_movimientos_movimientos[]
 ) => {
-  let obj = movimientosOnline.find((val) => {
-    // eslint-disable-next-line no-underscore-dangle
+  let obj: any = movimientosOnline.find((val) => {
     return val._id === id;
   });
   let registroOnline = true;
-  if (!obj) {
+  if (!obj && movimientosOffline) {
     registroOnline = false;
     obj = movimientosOffline.find((val) => {
-      // eslint-disable-next-line no-underscore-dangle
       return val._id === id;
     });
   }
@@ -114,13 +124,13 @@ const onCompleted = (
     )
   );
   setInfoRaw(omit(obj, 'articulos', '_id', 'Tipo'));
-  const objDetalles = [];
-  const objOpcionesArticulos = [];
+  const objDetalles: any = [];
+  const objOpcionesArticulos: any = [];
   if (obj.articulos) {
-    obj.articulos.forEach((r) => {
+    obj.articulos.forEach((r: any) => {
       const o = {
         articulo: r.articulo,
-        cantidad: parseInt(r.cantidad),
+        cantidad: r.cantidad,
       };
       if (r.precio) {
         assign(o, { precio: parseFloat(r.precio) });
@@ -131,75 +141,87 @@ const onCompleted = (
       });
       objOpcionesArticulos.push({
         articulo: prendaObj,
-        cantidad: parseInt(r.cantidad),
+        cantidad: r.cantidad,
       });
     });
     setDetalles(objDetalles);
-    setOpcionesArticulos(objOpcionesArticulos);
+    setProductos(objOpcionesArticulos);
   }
   setLoading(false);
 };
 
-const Detallesmovimiento = (props) => {
+const Detallesmovimiento = (
+  props: RouteComponentProps<{ id: string }>
+): JSX.Element => {
   const { match } = props;
   const { id } = match.params;
-  const session = useSelector((state) => state.session);
+  const session: Session = useSelector((state: RootState) => state.session);
   const [loading, setLoading] = useState(true);
-  const [info, setInfo] = useState(null);
+  const [info, setInfo] = useState<any>(null);
   const [success, setSuccess] = useState(false);
-  const [message, setMessage] = useState(null);
+  const [message, setMessage] = useState<string | null>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
-  const [detalles, setDetalles] = useState(null);
+  const [detalles, setDetalles] = useState<
+    ArticuloDB[] | Omit<ArticuloDB, 'precio'>[]
+  >([]);
   const [cancelButton, setCancelButton] = useState(false);
   const [tipoDeMovimiento, setTipoDeMovimiento] = useState('...');
-  const [reimprimirButton, setReimprimirButton] = useState(null);
-  const [reimprimirDisabled, setReimprimirDisabled] = useState(null);
+  const [reimprimirButton, setReimprimirButton] = useState(false);
+  const [reimprimirDisabled, setReimprimirDisabled] = useState(false);
   const [tipo, setTipo] = useState('');
-  const [messageMutation, setMessageMutation] = useState(null);
-  const [fecha, setFecha] = useState(null);
-  const [editOpen, setEditOpen] = useState(null);
-  const [opcionesArticulos, setOpcionesArticulos] = useState(null);
-  const [infoRaw, setInfoRaw] = useState(null);
-  const [productos, setProductos] = useState(null);
-  const [nuevaInfo, setNuevaInfo] = useState(null);
-  const [nuevosArticulos, setNuevosArticulos] = useState(null);
+  const [messageMutation, setMessageMutation] = useState<string | null>(null);
+  const [fecha, setFecha] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [opcionesArticulos, setOpcionesArticulos] = useState<ArticuloOption[]>(
+    []
+  );
+  const [infoRaw, setInfoRaw] = useState<any>(null);
+  const [productos, setProductos] = useState<ArticuloForm[]>([]);
+  const [nuevaInfo, setNuevaInfo] = useState<any>(null);
+  const [nuevosArticulos, setNuevosArticulos] = useState<
+    ArticuloDB[] | Omit<ArticuloDB, 'precio'>[]
+  >([]);
   const history = useHistory();
 
   const { ipcRenderer } = window.require('electron');
 
-  useQuery(DETALLES_MOVIMIENTOS_UTILS, {
-    skip: !session.online,
-    variables: { _id: session.puntoIdActivo, _idProductos: 'productos' },
-    onCompleted: (data) => {
-      if (data.movimiento === null) {
-        history.push('/error/404');
-      } else {
-        setProductos(data.productos.objects);
-        ipcRenderer.send('PRODUCTOS', data.productos.objects);
-        ipcRenderer.send('PLAZA', data.movimientos);
-        onCompleted(
-          data.productos.objects,
-          data.movimientos.movimientos,
-          setTipoDeMovimiento,
-          setTipo,
-          setCancelButton,
-          setInfoRaw,
-          setInfo,
-          setMessageMutation,
-          setReimprimirButton,
-          setFecha,
-          setOpcionesArticulos,
-          setDetalles,
-          setLoading,
-          session,
-          id
-        );
-      }
-    },
-    onError: () => {
-      history.push('/error/405');
-    },
-  });
+  useQuery<DetallesMovimientosUtils, DetallesMovimientosUtilsVariables>(
+    DETALLES_MOVIMIENTOS_UTILS,
+    {
+      skip: !session.online,
+      variables: { _id: session.puntoIdActivo, _idProductos: 'productos' },
+      onCompleted: (data) => {
+        if (data.movimientos === null) {
+          history.push('/error/404');
+        } else {
+          let productosArr: ArticuloOption[] = [];
+          if (data.productos) {
+            setOpcionesArticulos(data.productos.objects || []);
+            ipcRenderer.send('PRODUCTOS', data.productos.objects);
+            productosArr = data.productos.objects || [];
+          }
+          ipcRenderer.send('PLAZA', data.movimientos);
+          onCompleted(
+            productosArr,
+            data.movimientos.movimientos,
+            setTipoDeMovimiento,
+            setTipo,
+            setCancelButton,
+            setInfoRaw,
+            setInfo,
+            setMessageMutation,
+            setReimprimirButton,
+            setFecha,
+            setProductos,
+            setDetalles,
+            setLoading,
+            session,
+            id
+          );
+        }
+      },
+    }
+  );
   useEffect(() => {
     if (!session.online) {
       const store = ipcRenderer.sendSync('STORE');
@@ -224,35 +246,32 @@ const Detallesmovimiento = (props) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.online]);
-  const [cancelarMovimiento, { loading: cancelLoading }] = useMutation(
-    CANCELAR_MOVIMIENTO,
-    {
-      onCompleted: (data) => {
-        if (data.cancelarMovimiento.success === true) {
-          setMessage(data.cancelarMovimiento.message);
-          setSuccess(true);
-          setTipoDeMovimiento(
-            `${tipoDeMovimiento} (cancelad${tipoDeMovimiento
-              .split(' ')[0]
-              .charAt(tipoDeMovimiento.split(': ')[0].length - 1)})`
-          );
-          setCancelOpen(false);
-          setCancelButton(false);
-        } else {
-          setMessage(data.cancelarMovimiento.message);
-        }
+  const [cancelarMovimiento, { loading: cancelLoading }] = useMutation<
+    CancelarMovimiento,
+    CancelarMovimientoVariables
+  >(CANCELAR_MOVIMIENTO, {
+    onCompleted: (data) => {
+      if (data.cancelarMovimiento.success === true) {
+        setMessage(data.cancelarMovimiento.message);
+        setSuccess(true);
+        setTipoDeMovimiento(
+          `${tipoDeMovimiento} (cancelad${tipoDeMovimiento
+            .split(' ')[0]
+            .charAt(tipoDeMovimiento.split(': ')[0].length - 1)})`
+        );
+        setCancelOpen(false);
+        setCancelButton(false);
+      } else {
+        setMessage(data.cancelarMovimiento.message);
+      }
+    },
+    refetchQueries: [
+      {
+        query: MOVIMIENTOS,
+        variables: { _id: session.puntoIdActivo },
       },
-      onError: (error) => {
-        setMessage(JSON.stringify(error, null, 4));
-      },
-      refetchQueries: [
-        {
-          query: MOVIMIENTOS,
-          variables: { _id: session.puntoIdActivo },
-        },
-      ],
-    }
-  );
+    ],
+  });
   const [
     registrarDiscrepancias,
     { loading: registrarDiscrepanciaLoading },
@@ -283,7 +302,7 @@ const Detallesmovimiento = (props) => {
     ],
   });
   const handleExit = () => {
-    setSuccess(null);
+    setSuccess(false);
     setMessage(null);
   };
   const handleCancelClick = () => {
@@ -305,7 +324,7 @@ const Detallesmovimiento = (props) => {
           idMovimiento: id,
           movimiento: tipo,
           articulos: detalles,
-          message: messageMutation,
+          message: messageMutation || '',
           conCliente: tipo.indexOf('venta:') !== -1,
         },
       });
@@ -363,7 +382,7 @@ const Detallesmovimiento = (props) => {
   const handleEditClose = () => {
     setEditOpen(false);
   };
-  const handleEdit = (values) => {
+  const handleEdit = (values: { articulos: ArticuloForm[] }) => {
     const prendas = values.articulos.reduce((acc, cur) => {
       return acc + cur.cantidad;
     }, 0);
@@ -374,18 +393,20 @@ const Detallesmovimiento = (props) => {
       return { articulo: val.articulo.nombre, cantidad: val.cantidad };
     });
     const obj = groupBy(n, 'articulo');
-    const prendasAgrupadas = Object.keys(obj).map((key) => {
-      return {
-        articulo: key,
-        cantidad: obj[key].reduce((acc, cur) => {
-          return acc + cur.cantidad;
-        }, 0),
-      };
-    });
+    const prendasAgrupadas: Omit<ArticuloDB, 'precio'>[] = Object.keys(obj).map(
+      (key) => {
+        return {
+          articulo: key,
+          cantidad: obj[key].reduce((acc, cur) => {
+            return acc + cur.cantidad;
+          }, 0),
+        };
+      }
+    );
     setNuevosArticulos(prendasAgrupadas);
-    const registrosDePrendasNoExistentes = [];
-    const prendasEnComun = [];
-    const prendasQueNoSeRegistraron = [];
+    const registrosDePrendasNoExistentes: Omit<ArticuloDB, 'precio'>[] = [];
+    const prendasEnComun: Omit<ArticuloDB, 'precio'>[] = [];
+    const prendasQueNoSeRegistraron: Omit<ArticuloDB, 'precio'>[] = [];
     detalles.forEach((val) => {
       const p = prendasAgrupadas.find((val2) => {
         return val2.articulo === val.articulo;
@@ -440,7 +461,7 @@ const Detallesmovimiento = (props) => {
         }
         categoria="Movimientos"
         disabled={loading || reimprimirDisabled}
-        handleOpen={reimprimirButton ? handleReimprimir : null}
+        handleOpen={reimprimirButton ? handleReimprimir : undefined}
         titulo={tipoDeMovimiento}
       />
       <SuccessErrorMessage
@@ -457,19 +478,19 @@ const Detallesmovimiento = (props) => {
         open={cancelOpen}
       />
       <EditForm
-        articulos={opcionesArticulos}
+        articulos={productos}
         handleEditClose={handleEditClose}
         handleSubmit={handleEdit}
         loading={registrarDiscrepanciaLoading}
-        opcionesArticulos={productos}
+        opcionesArticulos={opcionesArticulos}
         open={editOpen}
       />
       <Grid container spacing={3}>
         <Grid item lg={4} md={4} xl={3} xs={12}>
           <DetailsTable
-            cancelarText={tipo === 'entrada' ? 'Corregir entrada' : null}
+            cancelarText={tipo === 'entrada' ? 'Corregir entrada' : undefined}
             data={info}
-            handleCancelClick={cancelButton ? handleCancelClick : null}
+            handleCancelClick={cancelButton ? handleCancelClick : undefined}
             hasHeaderColumns={false}
             loading={loading}
             movimiento="movimiento"

@@ -1,5 +1,3 @@
-/* eslint-disable promise/always-return */
-/* eslint-disable no-unused-vars */
 import React, { useState, useEffect } from 'react';
 import Button from '@material-ui/core/Button';
 import Box from '@material-ui/core/Box';
@@ -11,8 +9,23 @@ import { useFormikContext } from 'formik';
 
 import { SuccessErrorMessage } from '../../../components';
 import { guardarInventario } from '../../../actions/sessionActions';
+import { RootState } from '../../../types/store';
+import { ArticuloForm, Session } from '../../../types/types';
 
-const StepperForm = (props) => {
+interface StepperFormProps {
+  StepA: JSX.Element;
+  StepB: JSX.Element;
+  disabled: boolean;
+  loading: boolean;
+  lastStep: number;
+  activeStep: number;
+  setActiveStep: (a: number) => void;
+  success: boolean;
+  message: string | null;
+  handleExit: () => void;
+  registrarDiscrepanciasLoading: boolean;
+}
+const StepperForm = (props: StepperFormProps): JSX.Element => {
   const {
     StepA,
     StepB,
@@ -27,10 +40,10 @@ const StepperForm = (props) => {
     registrarDiscrepanciasLoading,
   } = props;
 
-  const formikProps = useFormikContext();
+  const formikProps = useFormikContext<{ articulos: ArticuloForm[] }>();
   const [esperaResumen, setEsperaResumen] = useState(false);
   const dispatch = useDispatch();
-  const session = useSelector((state) => state.session);
+  const session: Session = useSelector((state: RootState) => state.session);
 
   useEffect(() => {
     return () => {
@@ -67,7 +80,7 @@ const StepperForm = (props) => {
                 <LinearProgress />
               </Box>
             )}
-            <Box bm={2} display="flex" flexDirection="row-reverse" m={1} p={1}>
+            <Box display="flex" flexDirection="row-reverse" m={1} p={1}>
               <Button
                 color={formikProps.isValid ? 'primary' : 'default'}
                 disabled={
@@ -94,7 +107,7 @@ const StepperForm = (props) => {
               )}
             </Box>
             <SuccessErrorMessage
-              anchorOrigin={{ vertical: 'top', horizontal: 'top' }}
+              anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
               handleExit={handleExit}
               message={message}
               success={success}

@@ -1,5 +1,4 @@
-/* eslint-disable react/jsx-no-duplicate-props */
-/* eslint-disable promise/always-return */
+/* eslint-disable import/no-cycle */
 import React from 'react';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
@@ -11,7 +10,7 @@ import { useMutation } from '@apollo/client';
 import Typography from '@material-ui/core/Typography';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import * as yup from 'yup';
-import { Formik, Field } from 'formik';
+import { Formik, Field, FormikHelpers } from 'formik';
 import { useSelector } from 'react-redux';
 import { RadioGroup } from 'formik-material-ui';
 import Radio from '@material-ui/core/Radio';
@@ -22,6 +21,9 @@ import { assign } from 'lodash';
 import { MoneyFormat } from '../../../utils/TextFieldFormats';
 import { NUEVO_GASTO } from '../../../utils/mutations';
 import { MOVIMIENTOS } from '../../../utils/queries';
+import { RootState } from '../../../types/store';
+import { GastoValues, Session } from '../../../types/types';
+import { NuevoGasto, NuevoGastoVariables } from '../../../types/apollo';
 
 const { ipcRenderer } = window.require('electron');
 
@@ -34,11 +36,21 @@ const validationSchema = yup.object({
   }),
 });
 
-const NuevoGasto = (props) => {
+interface NuevoGastoProps {
+  open: boolean;
+  setDialogOpen: (a: boolean) => void;
+  setGastoOpen: (a: boolean) => void;
+  setMessage: (a: string | null) => void;
+  setSuccess: (a: boolean) => void;
+}
+const GastoForm = (props: NuevoGastoProps): JSX.Element => {
   const { open, setDialogOpen, setGastoOpen, setMessage, setSuccess } = props;
-  const session = useSelector((state) => state.session);
+  const session: Session = useSelector((state: RootState) => state.session);
 
-  const [nuevoGasto, { loading }] = useMutation(NUEVO_GASTO, {
+  const [nuevoGasto, { loading }] = useMutation<
+    NuevoGasto,
+    NuevoGastoVariables
+  >(NUEVO_GASTO, {
     onCompleted: (data) => {
       if (data.nuevoGasto.success === true) {
         setMessage(data.nuevoGasto.message);
@@ -63,7 +75,10 @@ const NuevoGasto = (props) => {
     setGastoOpen(false);
   };
 
-  const handleSubmit = async (values, actions) => {
+  const handleSubmit = async (
+    values: GastoValues,
+    actions: FormikHelpers<GastoValues>
+  ) => {
     let descripcion = values.tipoDeGasto;
     if (values.tipoDeGasto === 'otro') {
       descripcion = values.especificar;
@@ -82,7 +97,7 @@ const NuevoGasto = (props) => {
       await nuevoGasto({
         variables,
       }).then((res) => {
-        if (res.data.nuevoGasto.success === true) {
+        if (res.data && res.data.nuevoGasto.success === true) {
           actions.resetForm();
           setDialogOpen(false);
           setGastoOpen(false);
@@ -90,7 +105,7 @@ const NuevoGasto = (props) => {
       });
     } else {
       const objOffline = {
-        _id: ObjectId().toString(),
+        _id: new ObjectId().toString(),
         Fecha: new Date().toISOString(),
         Descripcion: `Sin conexión: ${descripcion}`,
         Monto: values.monto,
@@ -109,7 +124,7 @@ const NuevoGasto = (props) => {
 
   return (
     <Dialog fullWidth onClose={handleClose} open={open}>
-      <Formik
+      <Formik<GastoValues>
         initialValues={{
           tipoDeGasto: 'gasolina',
           especificar: '',
@@ -130,32 +145,32 @@ const NuevoGasto = (props) => {
                 <Grid item xs={12}>
                   <Field component={RadioGroup} name="tipoDeGasto">
                     <FormControlLabel
-                      control={<Radio disabled={formikProps.submitting} />}
-                      disabled={formikProps.submitting}
+                      control={<Radio disabled={formikProps.isSubmitting} />}
+                      disabled={formikProps.isSubmitting}
                       label="Gasolina"
                       value="gasolina"
                     />
                     <FormControlLabel
-                      control={<Radio disabled={formikProps.submitting} />}
-                      disabled={formikProps.submitting}
+                      control={<Radio disabled={formikProps.isSubmitting} />}
+                      disabled={formikProps.isSubmitting}
                       label="Casetas"
                       value="casetas"
                     />
                     <FormControlLabel
-                      control={<Radio disabled={formikProps.submitting} />}
-                      disabled={formikProps.submitting}
+                      control={<Radio disabled={formikProps.isSubmitting} />}
+                      disabled={formikProps.isSubmitting}
                       label="Comida"
                       value="comida"
                     />
                     <FormControlLabel
-                      control={<Radio disabled={formikProps.submitting} />}
-                      disabled={formikProps.submitting}
+                      control={<Radio disabled={formikProps.isSubmitting} />}
+                      disabled={formikProps.isSubmitting}
                       label="Ingreso de efectivo"
                       value="ingreso"
                     />
                     <FormControlLabel
-                      control={<Radio disabled={formikProps.submitting} />}
-                      disabled={formikProps.submitting}
+                      control={<Radio disabled={formikProps.isSubmitting} />}
+                      disabled={formikProps.isSubmitting}
                       label="Otro"
                       value="otro"
                     />
@@ -187,7 +202,8 @@ const NuevoGasto = (props) => {
                 <Grid item xs={12}>
                   <TextField
                     error={
-                      formikProps.touched.monto && formikProps.errors.monto
+                      Boolean(formikProps.touched.monto) &&
+                      Boolean(formikProps.errors.monto)
                     }
                     fullWidth
                     helperText={
@@ -252,4 +268,4 @@ const NuevoGasto = (props) => {
   );
 };
 
-export default NuevoGasto;
+export default GastoForm;

@@ -3,10 +3,11 @@ import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogActions from '@material-ui/core/DialogActions';
 import Button from '@material-ui/core/Button';
-import { Formik } from 'formik';
+import { Formik, FormikHelpers } from 'formik';
 import * as yup from 'yup';
 import LinearProgress from '@material-ui/core/LinearProgress';
 
+import { ArticuloForm, ArticuloOption } from 'types/types';
 import Articulos from '../../../formPartials/Articulos';
 
 const validationSchema = yup.object({
@@ -21,11 +22,22 @@ const validationSchema = yup.object({
     .test(
       'selected',
       'Ingrese al menos 1 artículo',
-      (values) => values.length > 0
+      (values: any) => values.length > 0
     ),
 });
+interface EditFormProps {
+  articulos: ArticuloForm[];
+  opcionesArticulos: ArticuloOption[];
+  open: boolean;
+  handleEditClose: () => void;
+  handleSubmit: (
+    values: { articulos: ArticuloForm[] },
+    actions?: FormikHelpers<{ articulos: ArticuloForm[] }>
+  ) => void;
+  loading: boolean;
+}
 
-const EditForm = (props) => {
+const EditForm = (props: EditFormProps): JSX.Element => {
   const {
     articulos,
     opcionesArticulos,

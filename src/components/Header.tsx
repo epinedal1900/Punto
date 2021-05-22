@@ -8,25 +8,39 @@ import PrintIcon from '@material-ui/icons/Print';
 import { useSelector } from 'react-redux';
 
 import { Link as RouterLink } from 'react-router-dom';
+import { AppRole, Role, Session } from '../types/types';
+import { RootState } from '../types/store';
 
-const Header = ({
-  categoria,
-  titulo,
-  addPath,
-  handleOpen,
-  buttonText,
-  buttonIcon,
-  loading,
-  disabled,
-  readOnlyRoles,
-}) => {
+interface HeaderProps {
+  categoria?: string;
+  titulo: string;
+  addPath?: string;
+  handleOpen?: () => Promise<void> | void;
+  buttonText?: string;
+  buttonIcon?: 'añadir' | 'editar' | 'flecha' | 'imprimir';
+  loading?: boolean;
+  disabled?: boolean;
+  readOnlyRoles?: AppRole[];
+}
+const Header = (props: HeaderProps): JSX.Element => {
+  const {
+    categoria,
+    titulo,
+    addPath,
+    handleOpen,
+    buttonText,
+    buttonIcon,
+    loading,
+    disabled,
+    readOnlyRoles = [],
+  } = props;
   const icon = {
     añadir: <AddCircleOutlineOutlinedIcon />,
     editar: <EditOutlinedIcon />,
     flecha: <ArrowRightAltIcon />,
     imprimir: <PrintIcon />,
   };
-  const session = useSelector((state) => state.session);
+  const session: Session = useSelector((state: RootState) => state.session);
 
   return (
     <Grid alignItems="center" container justify="space-between" spacing={3}>
@@ -46,8 +60,10 @@ const Header = ({
       </Grid>
       {(addPath || handleOpen) && (
         <>
-          {JSON.parse(session.roles).some((role) => {
-            return readOnlyRoles.includes(role.role) && role.readOnly === false;
+          {JSON.parse(session.roles).some((role: Role) => {
+            return (
+              readOnlyRoles.includes(role.role) && role.readOnly === 'false'
+            );
           }) && (
             <>
               {addPath && (
@@ -71,7 +87,7 @@ const Header = ({
                 color="primary"
                 disabled={disabled}
                 onClick={handleOpen}
-                startIcon={icon[buttonIcon]}
+                startIcon={buttonIcon ? icon[buttonIcon] : undefined}
                 variant="contained"
               >
                 {buttonText}

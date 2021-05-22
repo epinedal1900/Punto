@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import React from 'react';
 
 import InputBase from '@material-ui/core/InputBase';
@@ -15,8 +17,10 @@ const useStyles = makeStyles((theme) => ({
     marginRight: theme.spacing(2),
     marginLeft: 0,
     width: '100%',
+    [theme.breakpoints.up('sm')]: {
       marginLeft: theme.spacing(3),
       width: 'auto',
+    },
   },
   searchIcon: {
     width: theme.spacing(7),
@@ -34,6 +38,9 @@ const useStyles = makeStyles((theme) => ({
     padding: theme.spacing(1, 1, 1, 7),
     transition: theme.transitions.create('width'),
     width: '100%',
+    [theme.breakpoints.up('md')]: {
+      width: 200,
+    },
   },
 }));
 
@@ -41,7 +48,7 @@ const GlobalFilter = ({
   preGlobalFilteredRows,
   globalFilter,
   setGlobalFilter,
-}) => {
+}: any): JSX.Element => {
   const classes = useStyles();
   const count = preGlobalFilteredRows.length;
 

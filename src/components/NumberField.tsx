@@ -2,14 +2,18 @@ import React from 'react';
 import TextField from '@material-ui/core/TextField';
 import { useFormikContext, Field } from 'formik';
 
-const NumberField = (props) => {
-  const { touched, errors } = useFormikContext();
+interface NumberFieldProps {
+  value: string;
+  label: string;
+}
+const NumberField = (props: NumberFieldProps): JSX.Element => {
+  const { touched, errors } = useFormikContext<any>();
   const { value, label } = props;
 
   return (
     <Field
       as={TextField}
-      error={errors[value] && touched[value]}
+      error={Boolean(errors[value]) && Boolean(touched[value])}
       helperText={errors[value] && touched[value]}
       label={label}
       name={value}

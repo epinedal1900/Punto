@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import TextField from '@material-ui/core/TextField';
 import Grid from '@material-ui/core/Grid';
@@ -9,14 +10,19 @@ import EmailOutlinedIcon from '@material-ui/icons/EmailOutlined';
 import PhoneOutlinedIcon from '@material-ui/icons/PhoneOutlined';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 
-const TextForm = (props) => {
+interface TextFormProps {
+  value: string;
+  lable: string;
+  icono?: 'telefono' | 'persona' | 'lugar' | 'correo';
+}
+const TextForm = (props: TextFormProps): JSX.Element => {
   const {
     values,
     handleBlur,
     handleChange,
     touched,
     errors,
-  } = useFormikContext();
+  } = useFormikContext<any>();
   const { value, lable, icono, ...rest } = props;
   const matches = useMediaQuery('(min-width:600px)');
   const icon = {
@@ -34,7 +40,6 @@ const TextForm = (props) => {
       )}
       <Grid item xs={matches ? 11 : 10}>
         <TextField
-          // eslint-disable-next-line react/jsx-props-no-spreading
           {...rest}
           error={Boolean(touched[value]) && Boolean(errors[value])}
           fullWidth

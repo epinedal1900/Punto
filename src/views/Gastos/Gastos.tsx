@@ -5,19 +5,28 @@ import { useSelector } from 'react-redux';
 import { omit } from 'lodash';
 import { MOVIMIENTOS } from '../../utils/queries';
 import { AuthGuard, DataTable } from '../../components';
+import { RootState } from '../../types/store';
+import { Session } from '../../types/types';
+import {
+  Movimientos,
+  MovimientosVariables,
+  Movimientos_movimientos_gastos,
+} from '../../types/apollo';
 
 const { ipcRenderer } = window.require('electron');
 
 const Gastos = () => {
-  const [gastos, setGastos] = useState(null);
+  const [gastos, setGastos] = useState<Movimientos_movimientos_gastos[]>([]);
   const [loading, setLoading] = useState(true);
-  const session = useSelector((state) => state.session);
-  useQuery(MOVIMIENTOS, {
+  const session: Session = useSelector((state: RootState) => state.session);
+  useQuery<Movimientos, MovimientosVariables>(MOVIMIENTOS, {
     skip: !session.online,
     variables: { _id: session.puntoIdActivo },
     onCompleted: (data) => {
-      ipcRenderer.send('PLAZA', data.movimientos);
-      setGastos(data.movimientos.gastos);
+      if (data.movimientos) {
+        ipcRenderer.send('PLAZA', data.movimientos);
+        setGastos(data.movimientos.gastos);
+      }
       setLoading(false);
     },
   });
@@ -27,7 +36,7 @@ const Gastos = () => {
       let gastosArr = store.plaza.gastos;
       if (store.gastosOffline) {
         gastosArr = gastosArr.concat(
-          store.gastosOffline.map((val) => {
+          store.gastosOffline.map((val: any) => {
             return omit(val, '_id');
           })
         );

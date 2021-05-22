@@ -8,7 +8,9 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-const Error = (props) => {
+const Error = (props: {
+  children: JSX.Element | JSX.Element[];
+}): JSX.Element => {
   const { children } = props;
 
   const classes = useStyles();

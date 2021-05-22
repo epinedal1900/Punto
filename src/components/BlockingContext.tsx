@@ -1,13 +1,17 @@
 import React from 'react';
 import { useFormikContext } from 'formik';
 
-const BlockingContext = ({ setIsBlocking }) => {
+const BlockingContext = ({
+  setIsBlocking,
+}: {
+  setIsBlocking: (a: boolean) => void;
+}) => {
   const { dirty } = useFormikContext();
 
   React.useEffect(() => {
     if (dirty) {
       setIsBlocking(true);
-      onbeforeunload = () => "Don't leave";
+      onbeforeunload = () => 'err';
     } else {
       setIsBlocking(false);
       onbeforeunload = null;

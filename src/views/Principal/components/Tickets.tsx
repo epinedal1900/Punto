@@ -1,21 +1,42 @@
 /* eslint-disable react/jsx-key */
 /* eslint-disable react/no-multi-comp */
-import React from 'react';
+/* eslint-disable import/no-cycle */
+import React, { useState, useEffect } from 'react';
 
 import CssBaseline from '@material-ui/core/CssBaseline';
 import AppBar from '@material-ui/core/AppBar';
 import Tabs from '@material-ui/core/Tabs';
+import InputBase from '@material-ui/core/InputBase';
 import Tab from '@material-ui/core/Tab';
 import Box from '@material-ui/core/Box';
 import Divider from '@material-ui/core/Divider';
 import { useSelector, useDispatch } from 'react-redux';
-import Articulos from './Articulos';
-// import useMediaQuery from '@material-ui/core/useMediaQuery';
+import { FormikProps } from 'formik';
+import { RootState } from '../../../types/store';
+import {
+  ArticuloOption,
+  PrincipalValues,
+  Session,
+  Ticket,
+} from '../../../types/types';
 import { modificarTickets } from '../../../actions';
+import Articulos from './Articulos';
 
-const { ipcRenderer } = window.require('electron');
+// const { ipcRenderer } = window.require('electron');
 
-const Tickets = (props) => {
+interface TicketsProps {
+  agregarOpen: boolean;
+  setAgregarOpen: (a: boolean) => void;
+  setTotal: (a: number) => void;
+  opcionesArticulos: ArticuloOption[];
+  selectedTicket: number;
+  setSelectedTicket: (a: number) => void;
+  formikProps: FormikProps<PrincipalValues>;
+  setDialogOpen: (a: boolean) => void;
+  esMenudeo: boolean;
+  setEsMenudeo: (a: boolean) => void;
+}
+const Tickets = (props: TicketsProps): JSX.Element => {
   const {
     agregarOpen,
     setAgregarOpen,
@@ -28,18 +49,30 @@ const Tickets = (props) => {
     esMenudeo,
     setEsMenudeo,
   } = props;
-  const session = useSelector((state) => state.session);
+  const [ticketNameDisabled, setTicketNameDisabled] = useState(true);
+  const session: Session = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch();
-  const store = ipcRenderer.sendSync('STORE');
-  // const matches = useMediaQuery('(min-height:600px)');
+  // const store = ipcRenderer.sendSync('STORE');
   const height = window.innerHeight;
 
-  const handleChange = (event, newValue) => {
-    const nuevosTickets = JSON.parse(JSON.stringify(session.tickets));
+  useEffect(() => {
+    return () => {
+      dispatch(
+        modificarTickets({
+          tickets: [{ cliente: '', articulos: [], nombre: 'ticket 1' }],
+        })
+      );
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleChange = (_e: any, newValue: number) => {
+    const nuevosTickets: Ticket[] = JSON.parse(JSON.stringify(session.tickets));
     nuevosTickets[selectedTicket] = {
       cliente: formikProps.values.cliente || '',
       articulos: formikProps.values.articulos,
       esMenudeo,
+      nombre: nuevosTickets[selectedTicket].nombre,
     };
     dispatch(
       modificarTickets({
@@ -54,6 +87,24 @@ const Tickets = (props) => {
   const handleAgregarClose = () => {
     setAgregarOpen(false);
     setDialogOpen(false);
+  };
+  const handleTicketNameChange = (e: any, i: number) => {
+    if (e.target.value.length <= 15) {
+      const nuevosTickets: Ticket[] = JSON.parse(
+        JSON.stringify(session.tickets)
+      );
+      nuevosTickets[i] = {
+        cliente: nuevosTickets[i].cliente,
+        articulos: nuevosTickets[i].articulos,
+        esMenudeo: Boolean(nuevosTickets[i].esMenudeo),
+        nombre: e.target.value,
+      };
+      dispatch(
+        modificarTickets({
+          tickets: nuevosTickets,
+        })
+      );
+    }
   };
 
   return (
@@ -70,16 +121,31 @@ const Tickets = (props) => {
             variant="scrollable"
           >
             {session.tickets.map((ticket, i) => (
-              <Tab label={`ticket ${i + 1}`} />
+              <Tab
+                disableRipple
+                label={
+                  <Box
+                    component="div"
+                    onDoubleClick={() => setTicketNameDisabled(false)}
+                    overflow="visible"
+                  >
+                    <InputBase
+                      disabled={ticketNameDisabled}
+                      onBlur={() => setTicketNameDisabled(true)}
+                      onChange={(e) => handleTicketNameChange(e, i)}
+                      value={ticket.nombre}
+                    />
+                  </Box>
+                }
+              />
             ))}
           </Tabs>
         </AppBar>
         <Box height={height * 0.54} maxHeight={425} overflow="auto" p={3}>
           <form onSubmit={formikProps.handleSubmit}>
             <Articulos
-              agregarButton={false}
+              addButton={false}
               agregarOpen={agregarOpen}
-              allowNoItems
               handleAgregarClose={handleAgregarClose}
               opcionesArticulos={opcionesArticulos}
               selectedTicket={selectedTicket}
@@ -87,9 +153,9 @@ const Tickets = (props) => {
               setDialogOpen={setDialogOpen}
               setTotal={setTotal}
             />
-            {/* <h2>{JSON.stringify(formikProps.errors)}</h2>
-            <h2>{JSON.stringify(session)}</h2>
-            <h2>{JSON.stringify(formikProps.values)}</h2> */}
+            {/* <h2>{JSON.stringify(formikProps.errors)}</h2> */}
+            {/* <h2>{JSON.stringify(session.tickets)}</h2>
+            <h2>{JSON.stringify(formikProps.values.articulos)}</h2> */}
             {/* <h2>{JSON.stringify(store.ventas)}</h2>
             <h2>{JSON.stringify(store.gastos)}</h2>
             <h2>{JSON.stringify(store.regresos)}</h2>

@@ -13,9 +13,31 @@ import SwapHorizIcon from '@material-ui/icons/SwapHoriz';
 import SettingsBackupRestoreIcon from '@material-ui/icons/SettingsBackupRestore';
 import PrintIcon from '@material-ui/icons/Print';
 import { assign } from 'lodash';
+import { FormikProps } from 'formik';
 import { modificarTickets } from '../../../actions';
+import {
+  ArticuloForm,
+  PrincipalValues,
+  Session,
+  Ticket,
+} from '../../../types/types';
+import { RootState } from '../../../types/store';
 
-export default function UpperButtons(props) {
+interface UpperButtonsProps {
+  setAgregarOpen: (a: boolean) => void;
+  setSelectedTicket: (a: number) => void;
+  selectedTicket: number;
+  formikProps: FormikProps<PrincipalValues>;
+  dialogOpen: boolean;
+  setIntercambioOpen: (a: boolean) => void;
+  setGenerarReporteConfirmation: (a: boolean) => void;
+  setGastoOpen: (a: boolean) => void;
+  setDialogOpen: (a: boolean) => void;
+  setRegresoOpen: (a: boolean) => void;
+  esMenudeo: boolean;
+  setEsMenudeo: (a: boolean) => void;
+}
+const UpperButtons = (props: UpperButtonsProps): JSX.Element => {
   const {
     setAgregarOpen,
     setSelectedTicket,
@@ -31,7 +53,7 @@ export default function UpperButtons(props) {
     setEsMenudeo,
   } = props;
   const dispatch = useDispatch();
-  const session = useSelector((state) => state.session);
+  const session: Session = useSelector((state: RootState) => state.session);
 
   const handleAgregarClick = () => {
     if (!dialogOpen) {
@@ -66,14 +88,21 @@ export default function UpperButtons(props) {
 
   const handleNuevoTicketClick = () => {
     if (dialogOpen === false) {
-      const nuevosTickets = JSON.parse(JSON.stringify(session.tickets));
+      const nuevosTickets: Ticket[] = JSON.parse(
+        JSON.stringify(session.tickets)
+      );
       if (nuevosTickets.length < 7) {
         nuevosTickets[selectedTicket] = {
-          cliente: formikProps.cliente || '',
+          cliente: formikProps.values.cliente || '',
           articulos: formikProps.values.articulos,
           esMenudeo,
+          nombre: nuevosTickets[selectedTicket].nombre,
         };
-        nuevosTickets.push({ cliente: '', articulos: [] });
+        nuevosTickets.push({
+          cliente: '',
+          articulos: [],
+          nombre: `ticket ${nuevosTickets.length+1}`,
+        });
         dispatch(
           modificarTickets({
             tickets: nuevosTickets,
@@ -87,13 +116,14 @@ export default function UpperButtons(props) {
     }
   };
 
-  const handleTicketChange = (n) => {
-    const nuevosTickets = JSON.parse(JSON.stringify(session.tickets));
+  const handleTicketChange = (n: number) => {
+    const nuevosTickets: Ticket[] = JSON.parse(JSON.stringify(session.tickets));
     if (n <= nuevosTickets.length) {
       nuevosTickets[selectedTicket] = {
         cliente: formikProps.values.cliente || '',
         articulos: formikProps.values.articulos,
         esMenudeo,
+        nombre: nuevosTickets[selectedTicket].nombre,
       };
       dispatch(
         modificarTickets({
@@ -107,8 +137,8 @@ export default function UpperButtons(props) {
     }
   };
   const handleMenudeoClick = () => {
-    let aumento;
-    const nuevosTickets = JSON.parse(JSON.stringify(session.tickets));
+    let aumento: number;
+    const nuevosTickets: Ticket[] = JSON.parse(JSON.stringify(session.tickets));
     if (esMenudeo) {
       aumento = 0;
       nuevosTickets[selectedTicket].esMenudeo = false;
@@ -118,7 +148,9 @@ export default function UpperButtons(props) {
       setEsMenudeo(true);
       nuevosTickets[selectedTicket].esMenudeo = true;
     }
-    let articulos = JSON.parse(JSON.stringify(formikProps.values.articulos));
+    let articulos: ArticuloForm[] = JSON.parse(
+      JSON.stringify(formikProps.values.articulos)
+    );
     articulos = articulos.map((val) => {
       assign(val, { precio: val.articulo.precio + aumento });
       return val;
@@ -133,10 +165,16 @@ export default function UpperButtons(props) {
 
   const keyMap = {
     MEDUEO: 'ctrl+m',
+    MEDUEOM: 'ctrl+M',
     AGREGAR: 'ctrl+n',
+    AGREGARM: 'ctrl+N',
+    AGREGARI: 'ins',
     INTERCAMBIO: 'ctrl+i',
+    INTERCAMBIOM: 'ctrl+I',
     GASTO: 'ctrl+g',
+    GASTOM: 'ctrl+G',
     NUEVO_TICKET: 'ctrl+shift+n',
+    NUEVO_TICKETM: 'ctrl+shift+N',
     TICKET1: 'ctrl+1',
     TICKET2: 'ctrl+2',
     TICKET3: 'ctrl+3',
@@ -148,10 +186,16 @@ export default function UpperButtons(props) {
 
   const handlers = {
     MEDUEO: handleMenudeoClick,
+    MEDUEOM: handleMenudeoClick,
     AGREGAR: handleAgregarClick,
+    AGREGARM: handleAgregarClick,
+    AGREGARI: handleAgregarClick,
     INTERCAMBIO: handleIntercambioClick,
+    INTERCAMBIOM: handleIntercambioClick,
     GASTO: handleGastoClick,
+    GASTOM: handleGastoClick,
     NUEVO_TICKET: handleNuevoTicketClick,
+    NUEVO_TICKETM: handleNuevoTicketClick,
     TICKET1: () => handleTicketChange(1),
     TICKET2: () => handleTicketChange(2),
     TICKET3: () => handleTicketChange(3),
@@ -262,4 +306,6 @@ export default function UpperButtons(props) {
       </Box>
     </GlobalHotKeys>
   );
-}
+};
+
+export default UpperButtons;

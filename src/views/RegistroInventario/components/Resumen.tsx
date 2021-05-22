@@ -6,10 +6,16 @@ import Grid from '@material-ui/core/Grid';
 import Box from '@material-ui/core/Box';
 import groupBy from 'lodash/groupBy';
 import Divider from '@material-ui/core/Divider';
+import { ArticuloDB, ArticuloForm } from 'types/types';
 
-const Resumen = (props) => {
+interface ResumenProps {
+  inventario: Omit<ArticuloDB, 'precio'>[];
+  discrepancias: any;
+  setDiscrepancias: (a: any) => void;
+}
+const Resumen = (props: ResumenProps): JSX.Element => {
   const { inventario, discrepancias, setDiscrepancias } = props;
-  const { values } = useFormikContext();
+  const { values } = useFormikContext<{ articulos: ArticuloForm[] }>();
   const NoDeArticulos = values.articulos.reduce((acc, cur) => {
     return acc + cur.cantidad;
   }, 0);
@@ -26,9 +32,9 @@ const Resumen = (props) => {
     };
   });
   useEffect(() => {
-    const registrosDePrendasNoExistentes = [];
-    const prendasEnComun = [];
-    const prendasQueNoSeRegistraron = [];
+    const registrosDePrendasNoExistentes: Omit<ArticuloDB, 'precio'>[] = [];
+    const prendasEnComun: Omit<ArticuloDB, 'precio'>[] = [];
+    const prendasQueNoSeRegistraron: Omit<ArticuloDB, 'precio'>[] = [];
     inventario.forEach((val) => {
       const p = prendasAgrupadas.find((val2) => {
         return val2.articulo === val.articulo;
@@ -92,7 +98,7 @@ const Resumen = (props) => {
                   Artículos con discrepancias
                 </Typography>
                 <Divider />
-                {discrepancias.map((r) => (
+                {discrepancias.map((r: any) => (
                   <Typography color="error" variant="subtitle1">
                     {r.articulo}
                   </Typography>

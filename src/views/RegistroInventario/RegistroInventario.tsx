@@ -7,8 +7,14 @@ import { useSelector, useDispatch } from 'react-redux';
 import dayjs from 'dayjs';
 import groupBy from 'lodash/groupBy';
 import { useHistory } from 'react-router-dom';
-import { Formik } from 'formik';
+import { Formik, FormikHelpers } from 'formik';
 
+import { RootState } from 'types/store';
+import { ArticuloDB, ArticuloForm, ArticuloOption, Session } from 'types/types';
+import {
+  NuevoRegistroInventarioUtils,
+  NuevoRegistroInventarioUtilsVariables,
+} from 'types/apollo';
 import { AuthGuard, Header } from '../../components';
 import Articulos from '../../formPartials/Articulos';
 import { NUEVO_REGISTRO_INVENTARIO_UTILS } from '../../utils/queries';
@@ -19,44 +25,52 @@ import Resumen from './components/Resumen';
 import StepperForm from './components/StepperForm';
 
 const NuevaSalidaMercancia = () => {
-  const session = useSelector((state) => state.session);
+  const session: Session = useSelector((state: RootState) => state.session);
   const history = useHistory();
   const dispatch = useDispatch();
   const initialValues = {
-    tipoDeMovimiento: 'salida',
-    puntoId: '',
     articulos: session.inventario,
-    comentarios: '',
   };
-  const [articulos, setArticulos] = useState([]);
-  const [inventario, setInventario] = useState(null);
-  const [discrepancias, setDiscrepancias] = useState(null);
-  const [disabled, setDisabled] = useState(null);
+  const [articulos, setArticulos] = useState<ArticuloOption[]>([]);
+  const [inventario, setInventario] = useState<Omit<ArticuloDB, 'precio'>[]>(
+    []
+  );
+  const [discrepancias, setDiscrepancias] = useState<any>(null);
+  const [disabled, setDisabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeStep, setActiveStep] = useState(0);
-  const [success, setSuccess] = useState(null);
-  const [message, setMessage] = useState(null);
+  const [success, setSuccess] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
-  useQuery(NUEVO_REGISTRO_INVENTARIO_UTILS, {
-    variables: {
-      _idProductos: 'productos',
-      nombre: session.nombre,
-    },
-    onCompleted: (data) => {
-      setDisabled(
-        Math.abs(dayjs().diff(dayjs(data.inventario.fecha), 'day', true)) <= 1
-      );
-      setInventario(
-        data.inventario.inventario.map((val) => {
-          // eslint-disable-next-line radix
-          return { articulo: val.articulo, cantidad: parseInt(val.cantidad) };
-        })
-      );
-      setArticulos(data.productos.objects);
-      setLoading(false);
-    },
-    fetchPolicy: 'network-only',
-  });
+  useQuery<NuevoRegistroInventarioUtils, NuevoRegistroInventarioUtilsVariables>(
+    NUEVO_REGISTRO_INVENTARIO_UTILS,
+    {
+      variables: {
+        _idProductos: 'productos',
+        nombre: session.nombre,
+      },
+      onCompleted: (data) => {
+        if (data.inventario && data.productos) {
+          setDisabled(
+            Math.abs(dayjs().diff(dayjs(data.inventario.fecha), 'day', true)) <=
+              1
+          );
+          setInventario(
+            data.inventario.inventario.map((val) => {
+              // eslint-disable-next-line radix
+              return {
+                articulo: val.articulo,
+                cantidad: val.cantidad,
+              };
+            })
+          );
+          setArticulos(data.productos.objects || []);
+        }
+        setLoading(false);
+      },
+      fetchPolicy: 'network-only',
+    }
+  );
   useEffect(() => {
     if (!session.online) {
       history.push('/');
@@ -102,7 +116,10 @@ const NuevaSalidaMercancia = () => {
 
   const lastStep = 1;
 
-  const onSubmit = async (values, actions) => {
+  const onSubmit = async (
+    values: { articulos: ArticuloForm[] },
+    actions: FormikHelpers<{ articulos: ArticuloForm[] }>
+  ) => {
     if (activeStep === lastStep) {
       const articulosObj = values.articulos.map((val) => {
         return { articulo: val.articulo.nombre, cantidad: val.cantidad };
@@ -143,7 +160,7 @@ const NuevaSalidaMercancia = () => {
   const schema = validationSchema[activeStep];
 
   const handleExit = () => {
-    setSuccess(null);
+    setSuccess(false);
     setMessage(null);
   };
 
@@ -152,17 +169,17 @@ const NuevaSalidaMercancia = () => {
       <Header titulo="Registro de inventario" />
       <Box display="flex" justifyContent="center" m={0}>
         <Formik
+          // @ts-expect-error: error
           initialValues={initialValues}
           onSubmit={onSubmit}
           validateOnBlur={false}
           validateOnChange={false}
           validationSchema={schema}
         >
-          {(formikProps) => (
+          {() => (
             <StepperForm
               activeStep={activeStep}
               disabled={disabled}
-              formikProps={formikProps}
               handleExit={handleExit}
               lastStep={lastStep}
               loading={loading}
@@ -171,7 +188,6 @@ const NuevaSalidaMercancia = () => {
               setActiveStep={setActiveStep}
               StepA={
                 <Articulos
-                  articuloFreeSolo={false}
                   incluirPrecio={false}
                   maxRows={50}
                   opcionesArticulos={articulos}

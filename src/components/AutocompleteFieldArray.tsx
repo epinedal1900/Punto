@@ -5,14 +5,27 @@ import TextField from '@material-ui/core/TextField';
 import { useFormikContext, getIn } from 'formik';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 
-const AutocompleteFieldArray = (props) => {
+interface AutocompleteFieldArrayProps {
+  options: any[];
+  getOptionLabel: (a: any) => string;
+  index: number;
+  valueName: string;
+  property: string;
+  label: string;
+  handleChange?: (value: any) => void;
+  renderOption?: any;
+  onBlur?: () => void;
+}
+const AutocompleteFieldArray = (
+  props: AutocompleteFieldArrayProps
+): JSX.Element => {
   const {
     values,
     setFieldValue,
     initialValues,
     touched,
     errors,
-  } = useFormikContext();
+  } = useFormikContext<any>();
   const {
     options,
     getOptionLabel,
@@ -21,8 +34,6 @@ const AutocompleteFieldArray = (props) => {
     property,
     label,
     handleChange,
-    freeSolo,
-    articulos,
     renderOption,
     onBlur,
   } = props;
@@ -33,9 +44,8 @@ const AutocompleteFieldArray = (props) => {
       disableClearable
       getOptionLabel={getOptionLabel}
       id={`${valueName}.${index}.${property}`}
-      name={`${valueName}.${index}.${property}`}
       onBlur={onBlur}
-      onChange={(e, value) => {
+      onChange={(_e, value) => {
         setFieldValue(
           `${valueName}.${index}.${property}`,
           value !== null ? value : initialValues.value.property,

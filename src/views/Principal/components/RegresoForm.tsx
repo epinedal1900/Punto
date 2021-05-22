@@ -1,5 +1,3 @@
-/* eslint-disable no-underscore-dangle */
-/* eslint-disable promise/always-return */
 import React from 'react';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
@@ -11,11 +9,14 @@ import { useMutation } from '@apollo/client';
 import Typography from '@material-ui/core/Typography';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import * as yup from 'yup';
-import { Formik } from 'formik';
+import { Formik, FormikHelpers } from 'formik';
 import { useSelector } from 'react-redux';
 import ObjectId from 'bson-objectid';
 
 import { assign } from 'lodash';
+import { ArticuloForm, ArticuloOption, Session } from '../../../types/types';
+import { RootState } from '../../../types/store';
+import { NuevoRegreso, NuevoRegresoVariables } from '../../../types/apollo';
 import { NUEVO_REGRESO } from '../../../utils/mutations';
 import { MOVIMIENTOS } from '../../../utils/queries';
 import Articulos from '../../../formPartials/Articulos';
@@ -35,11 +36,23 @@ const validationSchema = yup.object({
     .test(
       'selected',
       'Ingrese al menos 1 artículo',
-      (values) => values.length > 0
+      (values: any) => values.length > 0
     ),
 });
+interface RegresoValues {
+  articulos: ArticuloForm[];
+  comentarios: string;
+}
 
-const RegresoForm = (props) => {
+interface RegresoFormProps {
+  opcionesArticulos: ArticuloOption[];
+  open: boolean;
+  setDialogOpen: (a: boolean) => void;
+  setRegresoOpen: (a: boolean) => void;
+  setMessage: (a: string | null) => void;
+  setSuccess: (a: boolean) => void;
+}
+const RegresoForm = (props: RegresoFormProps): JSX.Element => {
   const {
     opcionesArticulos,
     open,
@@ -48,9 +61,12 @@ const RegresoForm = (props) => {
     setMessage,
     setSuccess,
   } = props;
-  const session = useSelector((state) => state.session);
+  const session: Session = useSelector((state: RootState) => state.session);
 
-  const [nuevoRegreso, { loading }] = useMutation(NUEVO_REGRESO, {
+  const [nuevoRegreso, { loading }] = useMutation<
+    NuevoRegreso,
+    NuevoRegresoVariables
+  >(NUEVO_REGRESO, {
     onCompleted: (data) => {
       if (data.nuevoRegreso.success === true) {
         setMessage(data.nuevoRegreso.message);
@@ -58,9 +74,6 @@ const RegresoForm = (props) => {
       } else {
         setMessage(data.nuevoRegreso.message);
       }
-    },
-    onError: (error) => {
-      setMessage(JSON.stringify(error, null, 4));
     },
     refetchQueries: [
       {
@@ -75,7 +88,10 @@ const RegresoForm = (props) => {
     setRegresoOpen(false);
   };
 
-  const handleSubmit = async (values, actions) => {
+  const handleSubmit = async (
+    values: RegresoValues,
+    actions: FormikHelpers<RegresoValues>
+  ) => {
     const articulos = values.articulos.map((val) => {
       return { articulo: val.articulo.nombre, cantidad: val.cantidad };
     });
@@ -95,7 +111,7 @@ const RegresoForm = (props) => {
       await nuevoRegreso({
         variables,
       }).then((res) => {
-        if (res.data.nuevoRegreso.success === true) {
+        if (res.data && res.data.nuevoRegreso.success === true) {
           actions.resetForm();
           setDialogOpen(false);
           setRegresoOpen(false);
@@ -106,7 +122,7 @@ const RegresoForm = (props) => {
         return acc + cur.cantidad;
       }, 0);
       const objOffline = {
-        _id: ObjectId().toString(),
+        _id: new ObjectId().toString(),
         Fecha: new Date().toISOString(),
         Tipo: 'Sin conexión: regreso',
         Monto: 0,
@@ -130,6 +146,7 @@ const RegresoForm = (props) => {
     <Dialog onClose={handleClose} open={open}>
       <Formik
         initialValues={{
+          // @ts-expect-error: error
           articulos: [{ articulo: '', cantidad: 0 }],
           comentarios: '',
         }}

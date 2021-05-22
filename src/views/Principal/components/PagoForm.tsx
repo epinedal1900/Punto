@@ -1,13 +1,10 @@
-/* eslint-disable react/jsx-no-duplicate-props */
-/* eslint-disable promise/always-return */
-/* eslint-disable no-underscore-dangle */
 import React from 'react';
 import Button from '@material-ui/core/Button';
 import Grid from '@material-ui/core/Grid';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogActions from '@material-ui/core/DialogActions';
-import { Formik } from 'formik';
+import { Formik, FormikHelpers } from 'formik';
 import * as yup from 'yup';
 import { useMutation } from '@apollo/client';
 import { useSelector } from 'react-redux';
@@ -17,12 +14,14 @@ import ObjectId from 'bson-objectid';
 import TextField from '@material-ui/core/TextField';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import Typography from '@material-ui/core/Typography';
-import { MoneyFormat } from '../../../utils/TextFieldFormats';
-
 import { AutocompleteField } from '../../../components';
+import { RootState } from '../../../types/store';
+import { MoneyFormat } from '../../../utils/TextFieldFormats';
 
 import { NUEVO_PAGO } from '../../../utils/mutations';
 import { MOVIMIENTOS } from '../../../utils/queries';
+import { ClienteForm, PagoValues, Session } from '../../../types/types';
+import { NuevoPago, NuevoPagoVariables } from '../../../types/apollo';
 
 const { ipcRenderer } = window.require('electron');
 
@@ -31,8 +30,16 @@ const validationSchema = yup.object({
   monto: yup.number().min(1, 'requerido').required('requerido'),
   comentarios: yup.string(),
 });
+interface NuevoPagoProps {
+  clientes: ClienteForm[];
+  setMessage: (a: string | null) => void;
+  setSuccess: (a: boolean) => void;
+  setDialogOpen: (a: boolean) => void;
+  setPagoOpen: (a: boolean) => void;
+  open: boolean;
+}
 
-const NuevoPago = (props) => {
+const NuevoPagoComponent = (props: NuevoPagoProps): JSX.Element => {
   const {
     clientes,
     setMessage,
@@ -46,9 +53,9 @@ const NuevoPago = (props) => {
     monto: 0,
     comentarios: '',
   };
-  const session = useSelector((state) => state.session);
+  const session: Session = useSelector((state: RootState) => state.session);
 
-  const [nuevoPago] = useMutation(NUEVO_PAGO, {
+  const [nuevoPago] = useMutation<NuevoPago, NuevoPagoVariables>(NUEVO_PAGO, {
     onCompleted: (data) => {
       if (data.nuevoPago.success === true) {
         setMessage(data.nuevoPago.message);
@@ -70,7 +77,10 @@ const NuevoPago = (props) => {
     ],
   });
 
-  const handleAgregar = async (values, actions) => {
+  const handleAgregar = async (
+    values: PagoValues,
+    actions: FormikHelpers<PagoValues>
+  ) => {
     const cliente = values.cliente.nombre;
     const objPago = {
       cliente: values.cliente._id,
@@ -87,13 +97,13 @@ const NuevoPago = (props) => {
       await nuevoPago({
         variables,
       }).then((res) => {
-        if (res.data.nuevoPago.success === true) {
+        if (res.data && res.data.nuevoPago.success === true) {
           actions.resetForm();
         }
       });
     } else {
       const objOffline = {
-        _id: ObjectId().toString(),
+        _id: new ObjectId().toString(),
         Fecha: new Date().toISOString(),
         Tipo: `Sin conexión: pago: ${values.cliente.nombre}`,
         Monto: values.monto,
@@ -122,7 +132,8 @@ const NuevoPago = (props) => {
 
   return (
     <Dialog onClose={handleClose} open={open}>
-      <Formik
+      <Formik<PagoValues>
+        // @ts-expect-error: error
         initialValues={initialValues}
         onSubmit={handleAgregar}
         validateOnBlur={false}
@@ -157,7 +168,7 @@ const NuevoPago = (props) => {
                 </Grid>
                 <Grid item xs={12}>
                   <TextField
-                    error={touched.monto && errors.monto}
+                    error={Boolean(touched.monto) && Boolean(errors.monto)}
                     fullWidth
                     helperText={touched.monto && errors.monto}
                     id="monto"
@@ -168,9 +179,10 @@ const NuevoPago = (props) => {
                     label="Monto"
                     name="monto"
                     onBlur={(e) => {
-                      let { value } = e.target;
-                      value = parseFloat(value.replace(/[,$]+/g, '')) || 0;
-                      setFieldValue('monto', value, false);
+                      const { value } = e.target;
+                      const newValue =
+                        parseFloat(value.replace(/[,$]+/g, '')) || 0;
+                      setFieldValue('monto', newValue, false);
                     }}
                     value={values.monto === 0 ? '' : values.monto}
                     variant="outlined"
@@ -226,4 +238,4 @@ const NuevoPago = (props) => {
   );
 };
 
-export default NuevoPago;
+export default NuevoPagoComponent;

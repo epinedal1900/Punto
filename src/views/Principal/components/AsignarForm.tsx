@@ -1,5 +1,3 @@
-/* eslint-disable react/jsx-no-duplicate-props */
-/* eslint-disable react/jsx-props-no-spreading */
 import React from 'react';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
@@ -11,10 +9,19 @@ import Grid from '@material-ui/core/Grid';
 import TextField from '@material-ui/core/TextField';
 import { useFormikContext } from 'formik';
 import Tooltip from '@material-ui/core/Tooltip';
+import { ClienteForm, PrincipalValues } from 'types/types';
 
-const AsignarForm = (props) => {
+interface AsignarFormProps {
+  open: boolean;
+  setAsignarOpen: (a: any) => void;
+  clientes: ClienteForm[];
+  setDialogOpen: (a: any) => void;
+}
+const AsignarForm = (props: AsignarFormProps): JSX.Element => {
   const { open, setAsignarOpen, clientes, setDialogOpen } = props;
-  const { values, errors, touched, setFieldValue } = useFormikContext();
+  const { values, errors, touched, setFieldValue } = useFormikContext<
+    PrincipalValues
+  >();
 
   const handleClose = () => {
     setDialogOpen(false);
@@ -43,8 +50,7 @@ const AsignarForm = (props) => {
                   return '';
                 }}
                 id="cliente"
-                name="cliente"
-                onChange={(e, value) => {
+                onChange={(_e, value) => {
                   setFieldValue('cliente', value !== null ? value : '', false);
                 }}
                 options={clientes}
@@ -52,7 +58,7 @@ const AsignarForm = (props) => {
                   <TextField
                     {...params}
                     autoFocus
-                    error={errors.cliente && touched.cliente}
+                    error={Boolean(errors.cliente) && Boolean(touched.cliente)}
                     helperText={
                       errors.cliente && touched.cliente ? errors.cliente : ''
                     }
@@ -63,6 +69,7 @@ const AsignarForm = (props) => {
                     variant="outlined"
                   />
                 )}
+                // @ts-expect-error: error
                 value={values.cliente}
               />
             </Grid>

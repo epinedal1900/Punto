@@ -4,7 +4,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import { Typography, Button, useTheme, useMediaQuery } from '@material-ui/core';
 import { auth } from '../../firebase';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles((theme: any) => ({
   root: {
     padding: theme.spacing(3),
     paddingTop: '10vh',
@@ -30,7 +30,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const Error401 = () => {
+const Error401 = (): JSX.Element => {
   const classes = useStyles();
   const theme = useTheme();
   const mobileDevice = useMediaQuery(theme.breakpoints.down('sm'));

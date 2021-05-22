@@ -1,4 +1,3 @@
-/* eslint-disable promise/always-return */
 import React from 'react';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
@@ -13,7 +12,7 @@ import FormControlLabel from '@material-ui/core/FormControlLabel';
 import { RadioGroup } from 'formik-material-ui';
 import Radio from '@material-ui/core/Radio';
 import * as yup from 'yup';
-import { Formik, Field } from 'formik';
+import { Formik, Field, FormikHelpers } from 'formik';
 import { useSelector } from 'react-redux';
 import ObjectId from 'bson-objectid';
 
@@ -22,6 +21,17 @@ import { NUEVO_INTERCAMBIO } from '../../../utils/mutations';
 import { MOVIMIENTOS } from '../../../utils/queries';
 import crearTicketSinPrecioData from '../../../utils/crearTicketSinPrecioData';
 import Articulos from '../../../formPartials/Articulos';
+import {
+  ArticuloDB,
+  ArticuloOption,
+  IntercambioValues,
+  Session,
+} from '../../../types/types';
+import { RootState } from '../../../types/store';
+import {
+  NuevoIntercambio,
+  NuevoIntercambioVariables,
+} from '../../../types/apollo';
 
 const { ipcRenderer } = window.require('electron');
 
@@ -38,11 +48,19 @@ const validationSchema = yup.object({
     .test(
       'selected',
       'Ingrese al menos 1 artículo',
-      (values) => values.length > 0
+      (values: any) => values.length > 0
     ),
 });
 
-const NuevoIntercambio = (props) => {
+interface NuevoIntercambioProps {
+  opcionesArticulos: ArticuloOption[];
+  open: boolean;
+  setDialogOpen: (a: boolean) => void;
+  setIntercambioOpen: (a: boolean) => void;
+  setMessage: (a: string | null) => void;
+  setSuccess: (a: boolean) => void;
+}
+const IntercambioForm = (props: NuevoIntercambioProps): JSX.Element => {
   const {
     opcionesArticulos,
     open,
@@ -51,12 +69,15 @@ const NuevoIntercambio = (props) => {
     setMessage,
     setSuccess,
   } = props;
-  const session = useSelector((state) => state.session);
+  const session: Session = useSelector((state: RootState) => state.session);
 
   const nombreEntrada =
     session.nombre === 'Pasillo 2' ? 'Pasillo 6' : 'Pasillo 2';
 
-  const [nuevoIntercambio, { loading }] = useMutation(NUEVO_INTERCAMBIO, {
+  const [nuevoIntercambio, { loading }] = useMutation<
+    NuevoIntercambio,
+    NuevoIntercambioVariables
+  >(NUEVO_INTERCAMBIO, {
     onCompleted: (data) => {
       if (data.nuevoIntercambio.success === true) {
         setMessage(data.nuevoIntercambio.message);
@@ -64,9 +85,6 @@ const NuevoIntercambio = (props) => {
       } else {
         setMessage(data.nuevoIntercambio.message);
       }
-    },
-    onError: (error) => {
-      setMessage(JSON.stringify(error, null, 4));
     },
     refetchQueries: [
       {
@@ -80,7 +98,7 @@ const NuevoIntercambio = (props) => {
     setDialogOpen(false);
     setIntercambioOpen(false);
   };
-  const finalizar = (values, articulos) => {
+  const finalizar = (values: IntercambioValues, articulos: ArticuloDB[]) => {
     if (values.tipoDeImpresion === 'imprimir') {
       const data = crearTicketSinPrecioData(session.infoPunto, articulos);
       if (session.ancho && session.impresora) {
@@ -96,8 +114,12 @@ const NuevoIntercambio = (props) => {
     }
   };
 
-  const handleSubmit = async (values, actions) => {
-    const articulos = values.articulos.map((val) => {
+  const handleSubmit = async (
+    values: IntercambioValues,
+    actions: FormikHelpers<IntercambioValues>
+  ) => {
+    // @ts-expect-error: error
+    const articulos: ArticuloDB[] = values.articulos.map((val) => {
       return { articulo: val.articulo.nombre, cantidad: val.cantidad };
     });
     const obj = {
@@ -116,7 +138,7 @@ const NuevoIntercambio = (props) => {
       await nuevoIntercambio({
         variables,
       }).then((res) => {
-        if (res.data.nuevoIntercambio.success === true) {
+        if (res.data && res.data.nuevoIntercambio.success === true) {
           finalizar(values, articulos);
           actions.resetForm();
           setDialogOpen(false);
@@ -128,7 +150,7 @@ const NuevoIntercambio = (props) => {
         return acc + cur.cantidad;
       }, 0);
       const objOffline = {
-        _id: ObjectId().toString(),
+        _id: new ObjectId().toString(),
         Fecha: new Date().toISOString(),
         Tipo: `Sin conexión: salida a ${nombreEntrada}`,
         Monto: 0,
@@ -152,8 +174,9 @@ const NuevoIntercambio = (props) => {
 
   return (
     <Dialog onClose={handleClose} open={open}>
-      <Formik
+      <Formik<IntercambioValues>
         initialValues={{
+          // @ts-expect-error: error
           articulos: [{ articulo: '', cantidad: 0 }],
           tipoDeImpresion: 'imprimir',
           comentarios: '',
@@ -179,14 +202,14 @@ const NuevoIntercambio = (props) => {
                 <Grid item xs={12}>
                   <Field component={RadioGroup} name="tipoDeImpresion">
                     <FormControlLabel
-                      control={<Radio disabled={formikProps.submitting} />}
-                      disabled={formikProps.submitting}
+                      control={<Radio disabled={formikProps.isSubmitting} />}
+                      disabled={formikProps.isSubmitting}
                       label="Registrar e imprimir"
                       value="imprimir"
                     />
                     <FormControlLabel
-                      control={<Radio disabled={formikProps.submitting} />}
-                      disabled={formikProps.submitting}
+                      control={<Radio disabled={formikProps.isSubmitting} />}
+                      disabled={formikProps.isSubmitting}
                       label="Solo registrar"
                       value="noImprimir"
                     />
@@ -244,4 +267,4 @@ const NuevoIntercambio = (props) => {
   );
 };
 
-export default NuevoIntercambio;
+export default IntercambioForm;

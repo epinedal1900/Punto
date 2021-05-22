@@ -1,12 +1,23 @@
+/* eslint-disable import/no-cycle */
 import React, { useState, useEffect } from 'react';
 import { Grid, Card, CardContent, CardActions } from '@material-ui/core';
 
 import Paper from '@material-ui/core/Paper';
 import { makeStyles } from '@material-ui/core/styles';
-import { Formik } from 'formik';
+import { Formik, FormikProps } from 'formik';
 import { useQuery } from '@apollo/client';
+import { Prompt } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import * as yup from 'yup';
+import { RootState } from '../../types/store';
+import {
+  Session,
+  Ticket,
+  PrincipalValues,
+  ArticuloOption,
+  ClienteForm,
+} from '../../types/types';
+import { NuevaVentaUtils, NuevaVentaUtilsVariables } from '../../types/apollo';
 import { NUEVA_VENTA_UTILS } from '../../utils/queries';
 import UpperButtons from './components/UpperButtons';
 import LowerButtons from './components/LowerButtons';
@@ -74,16 +85,16 @@ const validationSchema = yup.object({
     .test(
       'selected',
       'Ingrese al menos 1 artículo',
-      (values) => values.length > 0
+      (values: any) => values.length > 0
     ),
   cantidadPagada: yup.number(),
 });
 
-const Principal = () => {
+const Principal = (): JSX.Element => {
   const dispatch = useDispatch();
   const classes = useStyles();
-  const [success, setSuccess] = useState(null);
-  const [message, setMessage] = useState(null);
+  const [success, setSuccess] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
   const [eliminarTicketConfirmation, setEliminarTicketConfirmation] = useState(
     false
   );
@@ -92,30 +103,35 @@ const Principal = () => {
   );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [agregarOpen, setAgregarOpen] = useState(false);
-  const [pagoOpen, setPagoOpen] = useState(null);
+  const [pagoOpen, setPagoOpen] = useState(false);
   const [asignarOpen, setAsignarOpen] = useState(false);
   const [cobrarOpen, setCobrarOpen] = useState(false);
   const [intercambioOpen, setIntercambioOpen] = useState(false);
-  const [total, setTotal] = useState(null);
-  const [opcionesArticulos, setOpcionesArticulos] = useState(null);
-  const [clientes, setClientes] = useState(null);
-  const [regresoOpen, setRegresoOpen] = useState(null);
+  const [total, setTotal] = useState<number | null>(null);
+  const [opcionesArticulos, setOpcionesArticulos] = useState<
+    ArticuloOption[] | null
+  >([]);
+  const [clientes, setClientes] = useState<ClienteForm[]>([]);
+  const [regresoOpen, setRegresoOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(0);
   const [gastoOpen, setGastoOpen] = useState(false);
-  const session = useSelector((state) => state.session);
+  const session: Session = useSelector((state: RootState) => state.session);
   const [esMenudeo, setEsMenudeo] = useState(
     Boolean(session.tickets[selectedTicket].esMenudeo)
   );
 
-  useQuery(NUEVA_VENTA_UTILS, {
+  useQuery<NuevaVentaUtils, NuevaVentaUtilsVariables>(NUEVA_VENTA_UTILS, {
     variables: {
       _idProductos: 'productos',
     },
     onCompleted: (data) => {
-      ipcRenderer.send('PRODUCTOS', data.productos.objects);
+      if (data.productos) {
+        ipcRenderer.send('PRODUCTOS', data.productos.objects);
+        setOpcionesArticulos(data.productos.objects);
+      }
       ipcRenderer.send('CLIENTES', data.clientes);
-      setClientes(data.clientes);
-      setOpcionesArticulos(data.productos.objects);
+      const clientesArr: ClienteForm[] = data.clientes || [];
+      setClientes(clientesArr);
     },
     skip: !session.online,
   });
@@ -128,7 +144,7 @@ const Principal = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.online]);
   const handleExit = () => {
-    setSuccess(null);
+    setSuccess(false);
     setMessage(null);
   };
 
@@ -136,10 +152,10 @@ const Principal = () => {
     setDialogOpen(false);
     setEliminarTicketConfirmation(false);
   };
-  const handleEliminarTicket = (formikProps) => {
-    let nuevosTickets = JSON.parse(JSON.stringify(session.tickets));
+  const handleEliminarTicket = (formikProps: FormikProps<PrincipalValues>) => {
+    let nuevosTickets: Ticket[] = JSON.parse(JSON.stringify(session.tickets));
     const { length } = nuevosTickets;
-    nuevosTickets = nuevosTickets.filter((val, i) => {
+    nuevosTickets = nuevosTickets.filter((_val, i) => {
       return i !== selectedTicket;
     });
     dispatch(
@@ -175,7 +191,7 @@ const Principal = () => {
         message={message}
         success={success}
       />
-      <Formik
+      <Formik<PrincipalValues>
         initialValues={{
           articulos: session.tickets[selectedTicket].articulos,
           cliente: session.tickets[selectedTicket].cliente,
@@ -187,12 +203,20 @@ const Principal = () => {
           comentarios: '',
           cantidadPagada: 0,
         }}
+        onSubmit={() => {}}
         validateOnBlur={false}
         validateOnChange={false}
         validationSchema={validationSchema}
       >
         {(formikProps) => (
           <>
+            <Prompt
+              message={() => '¿Desea salir? No se guardarán los cambios'}
+              when={
+                session.tickets.length > 1 ||
+                formikProps.values.articulos.length > 0
+              }
+            />
             <Reporte
               handleClose={handleGenerarReporteClose}
               open={generarReporteConfirmation}
@@ -215,7 +239,7 @@ const Principal = () => {
               setSuccess={setSuccess}
             />
             <IntercambioForm
-              opcionesArticulos={opcionesArticulos}
+              opcionesArticulos={opcionesArticulos || []}
               open={intercambioOpen}
               setDialogOpen={setDialogOpen}
               setIntercambioOpen={setIntercambioOpen}
@@ -223,7 +247,7 @@ const Principal = () => {
               setSuccess={setSuccess}
             />
             <RegresoForm
-              opcionesArticulos={opcionesArticulos}
+              opcionesArticulos={opcionesArticulos || []}
               open={regresoOpen}
               setDialogOpen={setDialogOpen}
               setMessage={setMessage}
@@ -245,17 +269,15 @@ const Principal = () => {
               setDialogOpen={setDialogOpen}
             />
             <CobrarForm
-              clientes={clientes}
               open={cobrarOpen}
               setCobrarOpen={setCobrarOpen}
               setDialogOpen={setDialogOpen}
               setMessage={setMessage}
               setSuccess={setSuccess}
-              total={total}
             />
             <Grid container spacing={3}>
               <Grid item xs={12}>
-                <Paper className={classes.search} elevation={2}>
+                <Paper elevation={2}>
                   <UpperButtons
                     dialogOpen={dialogOpen}
                     esMenudeo={esMenudeo}
@@ -275,14 +297,13 @@ const Principal = () => {
                 </Paper>
               </Grid>
               <Grid item xs={12}>
-                <Card className={classes.search} elevation={2}>
+                <Card elevation={2}>
                   <CardContent className={classes.cardContent}>
                     <Tickets
                       agregarOpen={agregarOpen}
-                      dialogOpen={dialogOpen}
                       esMenudeo={esMenudeo}
                       formikProps={formikProps}
-                      opcionesArticulos={opcionesArticulos}
+                      opcionesArticulos={opcionesArticulos || []}
                       selectedTicket={selectedTicket}
                       setAgregarOpen={setAgregarOpen}
                       setDialogOpen={setDialogOpen}
@@ -302,7 +323,7 @@ const Principal = () => {
                         setEliminarTicketConfirmation
                       }
                       setPagoOpen={setPagoOpen}
-                      total={total}
+                      total={total || 0}
                     />
                   </CardActions>
                 </Card>

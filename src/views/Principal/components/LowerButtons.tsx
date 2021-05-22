@@ -1,5 +1,3 @@
-/* eslint-disable promise/always-return */
-/* eslint-disable promise/catch-or-return */
 import React, { useState } from 'react';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
@@ -16,11 +14,24 @@ import ReceiptIcon from '@material-ui/icons/Receipt';
 import { useSelector } from 'react-redux';
 import isEmpty from 'lodash/isEmpty';
 
+import { FormikProps } from 'formik';
 import crearTicketData from '../../../utils/crearTicketData';
+import { PrincipalValues, Session } from '../../../types/types';
+import { RootState } from '../../../types/store';
 
 const { ipcRenderer } = window.require('electron');
 
-export default function UpperButtons(props) {
+interface UpperButtonsProps {
+  total: number;
+  setEliminarTicketConfirmation: (a: boolean) => void;
+  setAsignarOpen: (a: boolean) => void;
+  setCobrarOpen: (a: boolean) => void;
+  formikProps: FormikProps<PrincipalValues>;
+  dialogOpen: boolean;
+  setDialogOpen: (a: boolean) => void;
+  setPagoOpen: (a: boolean) => void;
+}
+const UpperButtons = (props: UpperButtonsProps): JSX.Element => {
   const {
     total,
     setEliminarTicketConfirmation,
@@ -32,8 +43,8 @@ export default function UpperButtons(props) {
     setPagoOpen,
   } = props;
 
-  const session = useSelector((state) => state.session);
-  const [reimprimirDisabled, setReimprimirDisabled] = useState(null);
+  const session: Session = useSelector((state: RootState) => state.session);
+  const [reimprimirDisabled, setReimprimirDisabled] = useState(false);
 
   const handleReimprimirClick = async () => {
     setReimprimirDisabled(true);
@@ -80,6 +91,7 @@ export default function UpperButtons(props) {
   const handleCobrarClick = async () => {
     if (formikProps.values.articulos.length !== 0) {
       await formikProps.validateForm().then(async (validation) => {
+        // @ts-expect-error: error
         await formikProps.setTouched(validation);
         if (
           validation.articulos == null &&
@@ -96,13 +108,17 @@ export default function UpperButtons(props) {
   const keyMap = {
     ELIMINAR_TICKET: 'ctrl+del',
     ASIGNAR_CLICK: 'alt+c',
+    ASIGNAR_CLICKM: 'alt+C',
     COBRAR_CLICK: 'shift+c',
+    COBRAR_CLICKM: 'shift+C',
   };
 
   const handlers = {
     ELIMINAR_TICKET: handleEliminarClick,
     ASIGNAR_CLICK: handleAsignarClick,
+    ASIGNAR_CLICKM: handleAsignarClick,
     COBRAR_CLICK: handleCobrarClick,
+    COBRAR_CLICKM: handleCobrarClick,
   };
 
   return (
@@ -207,4 +223,6 @@ export default function UpperButtons(props) {
       </Box>
     </GlobalHotKeys>
   );
-}
+};
+
+export default UpperButtons;

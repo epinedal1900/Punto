@@ -2,8 +2,6 @@
 /* eslint-disable func-names */
 /* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable no-alert */
-/* eslint-disable no-underscore-dangle */
-/* eslint-disable promise/always-return */
 /* eslint-disable react/no-multi-comp */
 import React from 'react';
 import { Router, Switch, Route } from 'react-router-dom';
@@ -17,6 +15,8 @@ import {
 import { Provider as StoreProvider } from 'react-redux';
 
 import { configure } from 'react-hotkeys';
+import { Role } from './types/types';
+import { Usuario } from './types/graphql';
 import { logout, login } from './actions';
 
 import { USUARIO, PUNTO_ID_ACTIVO, MOVIMIENTOS } from './utils/queries';
@@ -79,26 +79,29 @@ auth.onAuthStateChanged(async (user) => {
           variables: { _id: store.getState().session.puntoIdActivo },
         });
       }
-      let _id;
-      let nombre;
-      let roles;
-      let infoPunto;
-      let sinAlmacen;
+      let _id: string;
+      let nombre = '';
+      let roles: Role[];
+      let infoPunto: string;
+      let sinAlmacen: boolean;
       await client
-        .query({ query: USUARIO, variables: { uid: user.uid } })
-        .then((data, error) => {
-          if (!error && !(data.data.usuario == null)) {
+        .query({
+          query: USUARIO,
+          variables: { uid: user.uid },
+        })
+        .then((data: { data: { usuario: Usuario } }) => {
+          if (data.data.usuario) {
             roles = data.data.usuario.roles;
             nombre = data.data.usuario.nombre;
             _id = data.data.usuario._id;
-            infoPunto = data.data.usuario.infoPunto;
-            sinAlmacen = data.data.usuario.sinAlmacen;
+            infoPunto = data.data.usuario.infoPunto || '';
+            sinAlmacen = Boolean(data.data.usuario.sinAlmacen);
           }
         });
       await client
         .query({ query: PUNTO_ID_ACTIVO, variables: { nombre } })
-        .then(async (data, error) => {
-          if (!error) {
+        .then(async (data: { data: { puntoIdActivo: string } }) => {
+          if (data.data.puntoIdActivo) {
             localStorage.setItem('loggedIn', 'true');
             localStorage.setItem('roles', JSON.stringify(roles));
             localStorage.setItem('nombre', nombre);
@@ -139,7 +142,7 @@ auth.onAuthStateChanged(async (user) => {
   }
 });
 
-function RouteWrapper({ component: Component, layout: Layout, ...rest }) {
+function RouteWrapper({ component: Component, layout: Layout, ...rest }: any) {
   return (
     <Route
       {...rest}

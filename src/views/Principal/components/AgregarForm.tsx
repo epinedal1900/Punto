@@ -1,5 +1,3 @@
-/* eslint-disable react/jsx-no-duplicate-props */
-/* eslint-disable react/jsx-props-no-spreading */
 import React from 'react';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
@@ -10,12 +8,23 @@ import Box from '@material-ui/core/Box';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import Grid from '@material-ui/core/Grid';
 import TextField from '@material-ui/core/TextField';
-import { useFormikContext } from 'formik';
+import { ArrayHelpers, useFormikContext } from 'formik';
 import { useSelector } from 'react-redux';
 import Tooltip from '@material-ui/core/Tooltip';
+import { RootState } from '../../../types/store';
+import { ArticuloOption, Session, PrincipalValues } from '../../../types/types';
 import { MoneyFormat, IntegerFormat } from '../../../utils/TextFieldFormats';
 
-const AgregarForm = (props) => {
+interface AgregarFormProps {
+  open: boolean;
+  handleAddClose: () => void;
+  setAgregarOpen: (a: boolean) => void;
+  opcionesArticulos: ArticuloOption[];
+  arrayHelpers: ArrayHelpers;
+  setDialogOpen: (a: boolean) => void;
+  selectedTicket: number;
+}
+const AgregarForm = (props: AgregarFormProps): JSX.Element => {
   const {
     open,
     handleAddClose,
@@ -25,8 +34,10 @@ const AgregarForm = (props) => {
     setDialogOpen,
     selectedTicket,
   } = props;
-  const { values, errors, touched, setFieldValue } = useFormikContext();
-  const session = useSelector((state) => state.session);
+  const { values, errors, touched, setFieldValue } = useFormikContext<
+    PrincipalValues
+  >();
+  const session: Session = useSelector((state: RootState) => state.session);
 
   const handleClose = () => {
     setAgregarOpen(false);
@@ -64,7 +75,7 @@ const AgregarForm = (props) => {
               <Grid item xs={12}>
                 <TextField
                   autoFocus
-                  error={errors.cantidad && touched.cantidad}
+                  error={Boolean(errors.cantidad) && touched.cantidad}
                   helperText={
                     errors.cantidad && touched.cantidad ? errors.cantidad : ''
                   }
@@ -74,7 +85,7 @@ const AgregarForm = (props) => {
                   label="Cantidad"
                   margin="dense"
                   name="cantidad"
-                  onBlur={(e) => {
+                  onChange={(e) => {
                     const val =
                       parseFloat(e.target.value.replace(/[,$]+/g, '')) || 0;
                     setFieldValue('cantidad', val, false);
@@ -95,8 +106,7 @@ const AgregarForm = (props) => {
                     return '';
                   }}
                   id="articulo"
-                  name="articulo"
-                  onChange={(e, value) => {
+                  onChange={(_e, value) => {
                     setFieldValue(
                       'articulo',
                       value !== null ? value : '',
@@ -114,7 +124,9 @@ const AgregarForm = (props) => {
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      error={errors.articulo && touched.articulo}
+                      error={
+                        Boolean(errors.articulo) && Boolean(touched.articulo)
+                      }
                       helperText={
                         errors.articulo && touched.articulo
                           ? errors.articulo
@@ -127,13 +139,14 @@ const AgregarForm = (props) => {
                       variant="outlined"
                     />
                   )}
+                  // @ts-expect-error: error
                   value={values.articulo}
                 />
               </Grid>
               <Grid item xs={12}>
                 <TextField
                   // defaultValue={value > 0 ? value : ''}
-                  error={errors.precio && touched.precio}
+                  error={Boolean(errors.precio) && touched.precio}
                   helperText={
                     errors.precio && touched.precio ? errors.precio : ''
                   }
@@ -143,7 +156,7 @@ const AgregarForm = (props) => {
                   label="Precio"
                   margin="dense"
                   name="precio"
-                  onBlur={(e) => {
+                  onChange={(e) => {
                     const val =
                       parseFloat(e.target.value.replace(/[,$]+/g, '')) || 0;
                     setFieldValue('precio', val, false);

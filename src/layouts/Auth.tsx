@@ -12,7 +12,9 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const Auth = (props) => {
+const Auth = (props: {
+  children: JSX.Element | JSX.Element[];
+}): JSX.Element => {
   const { children } = props;
 
   const classes = useStyles();

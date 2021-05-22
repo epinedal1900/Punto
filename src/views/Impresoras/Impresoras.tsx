@@ -16,12 +16,13 @@ import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Radio from '@material-ui/core/Radio';
 import { RadioGroup } from 'formik-material-ui';
 
+import { RootState } from '../../types/store';
+import { Session, ImpresoraValues } from '../../types/types';
 import { AuthGuard, Header, SuccessErrorMessage } from '../../components';
 import { modificarImpresora } from '../../actions/sessionActions';
 import crearTicketData from '../../utils/crearTicketData';
 
 const { ipcRenderer, remote } = window.require('electron');
-const { PosPrinter } = remote.require('electron-pos-printer');
 const webContents = remote.getCurrentWebContents();
 const printers = webContents.getPrinters();
 // const remote = electron.remote
@@ -31,10 +32,10 @@ const validationSchema = yup.object({
 });
 
 const Impresoras = () => {
-  const [success, setSuccess] = useState(null);
-  const [message, setMessage] = useState(null);
-  const [reimprimirDisabled, setReimprimirDisabled] = useState(null);
-  const session = useSelector((state) => state.session);
+  const [success, setSuccess] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [reimprimirDisabled, setReimprimirDisabled] = useState(false);
+  const session: Session = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch();
 
   const initialValues = {
@@ -42,7 +43,7 @@ const Impresoras = () => {
     ancho: session.ancho,
   };
 
-  const handleSubmit = async (values) => {
+  const handleSubmit = async (values: ImpresoraValues) => {
     dispatch(
       modificarImpresora({
         impresora: values.impresora,
@@ -55,7 +56,7 @@ const Impresoras = () => {
     setMessage('Impresora guardada');
   };
 
-  const handleImpresionDePrueba = async (values) => {
+  const handleImpresionDePrueba = async (values: ImpresoraValues) => {
     setReimprimirDisabled(true);
     const detalles = [
       { articulo: 'Leggins', cantidad: 100, precio: 100 },
@@ -87,7 +88,7 @@ const Impresoras = () => {
   };
 
   const handleExit = () => {
-    setSuccess(null);
+    setSuccess(false);
     setMessage(null);
   };
 
@@ -95,8 +96,9 @@ const Impresoras = () => {
     <AuthGuard denyReadOnly roles={['ADMIN', 'PUNTO']}>
       <Header categoria="Ventas" titulo="Impresoras" />
       <Box display="flex" justifyContent="center" m={0}>
-        <Formik
+        <Formik<ImpresoraValues>
           initialValues={initialValues}
+          onSubmit={() => {}}
           validateOnBlur={false}
           validateOnChange={false}
           validationSchema={validationSchema}
@@ -105,7 +107,7 @@ const Impresoras = () => {
             <Box minHeight={500} width={800}>
               <Card>
                 <CardContent>
-                  <form onSubmit={handleSubmit}>
+                  <form>
                     <Box>
                       <Grid container spacing={2}>
                         <Grid item xs={12}>
@@ -113,7 +115,7 @@ const Impresoras = () => {
                         </Grid>
                         <Grid item xs={12}>
                           <Field component={RadioGroup} name="impresora">
-                            {printers.map((val) => (
+                            {printers.map((val: any) => (
                               <FormControlLabel
                                 control={<Radio disabled={isSubmitting} />}
                                 disabled={isSubmitting}
@@ -124,7 +126,7 @@ const Impresoras = () => {
                           </Field>
                         </Grid>
                         <Grid item xs={12}>
-                          <Typography variant="h6">Ancho dd</Typography>
+                          <Typography variant="h6">Ancho</Typography>
                         </Grid>
                         <Grid item xs={12}>
                           <Field component={RadioGroup} name="ancho">
@@ -143,7 +145,6 @@ const Impresoras = () => {
                         </Grid>
                       </Grid>
                       <Box
-                        bm={2}
                         display="flex"
                         flexDirection="row-reverse"
                         m={1}

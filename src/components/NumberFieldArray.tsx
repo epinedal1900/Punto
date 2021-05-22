@@ -9,8 +9,17 @@ import {
   NegativeIntegerFormat,
 } from '../utils/TextFieldFormats';
 
-const NumberFieldArray = (props) => {
-  const { values, touched, errors, setFieldValue } = useFormikContext();
+interface NumberFieldArrayProps {
+  index: number;
+  valueName: string;
+  property: string;
+  label: string;
+  disabled?: boolean;
+  moneyFormat?: boolean;
+  allowNegative?: boolean;
+}
+const NumberFieldArray = (props: NumberFieldArrayProps): JSX.Element => {
+  const { values, touched, errors, setFieldValue } = useFormikContext<any>();
   const {
     index,
     valueName,
@@ -36,14 +45,14 @@ const NumberFieldArray = (props) => {
         moneyFormat
           ? { inputComponent: MoneyFormat }
           : allowNegative
-            ? { inputComponent: NegativeIntegerFormat }
-            : { inputComponent: IntegerFormat }
+          ? { inputComponent: NegativeIntegerFormat }
+          : { inputComponent: IntegerFormat }
       }
       inputProps={{ maxLength: 7 }}
       label={label}
       margin="dense"
       name={accesor}
-      onBlur={(e) => {
+      onChange={(e) => {
         const val = parseFloat(e.target.value.replace(/[,$]+/g, '')) || 0;
         setFieldValue(accesor, val, false);
       }}

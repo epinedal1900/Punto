@@ -1,6 +1,3 @@
-/* eslint-disable react/no-array-index-key */
-/* eslint-disable indent */
-/* eslint-disable no-unused-vars */
 import React, { useEffect } from 'react';
 import { useFormikContext, FieldArray } from 'formik';
 import Typography from '@material-ui/core/Typography';
@@ -11,24 +8,35 @@ import IconButton from '@material-ui/core/IconButton';
 import ClearIcon from '@material-ui/icons/Clear';
 import { useSelector } from 'react-redux';
 
+import { ArticuloOption, Session, PrincipalValues } from '../../../types/types';
+import { RootState } from '../../../types/store';
 import AutocompleteFieldArray from '../../../components/AutocompleteFieldArray';
 import NumberFieldArray from '../../../components/NumberFieldArray';
 import AgregarForm from './AgregarForm';
 
-const Articulos = (props) => {
+interface ArticulosProps {
+  opcionesArticulos: ArticuloOption[];
+  agregarOpen: boolean;
+  setAgregarOpen: (a: boolean) => void;
+  handleAgregarClose: () => void;
+  setDialogOpen: (a: boolean) => void;
+  setTotal: (a: number) => void;
+  selectedTicket: number;
+  addButton?: boolean;
+}
+const Articulos = (props: ArticulosProps): JSX.Element => {
   const {
-    allowNoItems,
     opcionesArticulos,
-    agregarButton,
     agregarOpen,
     setAgregarOpen,
     handleAgregarClose,
     setDialogOpen,
     setTotal,
     selectedTicket,
+    addButton,
   } = props;
-  const { values, errors, setFieldValue } = useFormikContext();
-  const session = useSelector((state) => state.session);
+  const { values, errors, setFieldValue } = useFormikContext<PrincipalValues>();
+  const session: Session = useSelector((state: RootState) => state.session);
 
   useEffect(() => {
     if (setTotal) {
@@ -43,11 +51,6 @@ const Articulos = (props) => {
 
   return (
     <>
-      {session.eliminarPedido && (
-        <Typography color="secondary" variant="h5">
-          se eliminará el pedido al registrar la venta
-        </Typography>
-      )}
       <FieldArray
         name="articulos"
         render={(arrayHelpers) => (
@@ -61,7 +64,7 @@ const Articulos = (props) => {
               setAgregarOpen={setAgregarOpen}
               setDialogOpen={setDialogOpen}
             />
-            {agregarButton && (
+            {addButton && (
               <Box display="flex" flexDirection="row-reverse" mb={1} mr={2}>
                 <Button
                   aria-label="add"
@@ -91,7 +94,7 @@ const Articulos = (props) => {
                 <Typography variant="subtitle1">Sin artículos</Typography>
               </Box>
             )}
-            {values.articulos.map((detalle, index) => (
+            {values.articulos.map((_e, index) => (
               <Box key={index} mb={1}>
                 <Grid
                   alignItems="center"
@@ -109,14 +112,13 @@ const Articulos = (props) => {
                   </Grid>
                   <Grid item sm={7} xs={12}>
                     <AutocompleteFieldArray
-                      articulos
-                      getOptionLabel={(option) => {
+                      getOptionLabel={(option: ArticuloOption) => {
                         if (option) {
                           return `${option.codigo}: ${option.nombre}`;
                         }
                         return '';
                       }}
-                      handleChange={(value) => {
+                      handleChange={(value: ArticuloOption) => {
                         if (typeof value === 'object' && value !== null) {
                           let { precio } = value;
                           if (session.tickets[selectedTicket].esMenudeo) {
@@ -149,9 +151,6 @@ const Articulos = (props) => {
                     <IconButton
                       aria-label="delete"
                       color="default"
-                      disabled={
-                        allowNoItems ? false : values.articulos.length <= 1
-                      }
                       onClick={() => arrayHelpers.remove(index)}
                       size="medium"
                     >
@@ -173,12 +172,6 @@ const Articulos = (props) => {
       />
     </>
   );
-};
-
-Articulos.defaultProps = {
-  incluirPrecio: true,
-  agregarButton: true,
-  allowNoItems: false,
 };
 
 export default Articulos;

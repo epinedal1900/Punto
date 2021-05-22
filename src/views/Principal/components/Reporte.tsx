@@ -1,8 +1,6 @@
-/* eslint-disable radix */
-/* eslint-disable promise/always-return */
 /* eslint-disable react/jsx-key */
-/* eslint-disable no-unused-vars */
-/* eslint-disable no-dupe-keys */
+/* eslint-disable import/no-cycle */
+
 import React, { useState, useEffect } from 'react';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
@@ -29,8 +27,20 @@ import {
   MODIFICAR_PUNTOS_ACTIVOS,
   NUEVO_REGRESO,
 } from '../../../utils/mutations';
-import { storage } from '../../../firebase';
 import { desactivarPunto } from '../../../actions';
+import { RootState } from '../../../types/store';
+import { ArticuloDB, Session } from '../../../types/types';
+import {
+  Inventario,
+  InventarioVariables,
+  ModificarPuntosActivos,
+  ModificarPuntosActivosVariables,
+  Movimientos,
+  MovimientosVariables,
+  NuevoRegreso,
+  NuevoRegresoVariables,
+} from '../../../types/apollo';
+import { storage } from '../../../firebase';
 
 const dayjs = require('dayjs');
 
@@ -38,7 +48,15 @@ const electron = window.require('electron');
 const { remote } = electron;
 const { BrowserWindow } = remote;
 
-const CrearReporte = (props) => {
+interface CrearReporteProps {
+  open: boolean;
+  handleClose: () => void;
+  setMessage: (a: string | null) => void;
+  setSuccess: (a: boolean) => void;
+  setDialogOpen: (a: boolean) => void;
+  setGenerarReporteConfirmation: (a: boolean) => void;
+}
+const CrearReporte = (props: CrearReporteProps): JSX.Element => {
   const {
     open,
     handleClose,
@@ -49,12 +67,17 @@ const CrearReporte = (props) => {
   } = props;
   const [reporteLoading, setReporteLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
-  const [data, setData] = useState(null);
-  const session = useSelector((state) => state.session);
+  const [data, setData] = useState<any>(null);
+  const session: Session = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch();
-  const [inventario, setInventario] = useState(null);
+  const [inventario, setInventario] = useState<
+    Omit<ArticuloDB, 'precio'>[] | null
+  >(null);
 
-  const [modificarPuntosActivos] = useMutation(MODIFICAR_PUNTOS_ACTIVOS, {
+  const [modificarPuntosActivos] = useMutation<
+    ModificarPuntosActivos,
+    ModificarPuntosActivosVariables
+  >(MODIFICAR_PUNTOS_ACTIVOS, {
     onCompleted: (res) => {
       if (res.modificarPuntosActivos.success === true) {
         dispatch(desactivarPunto());
@@ -63,119 +86,135 @@ const CrearReporte = (props) => {
     },
   });
 
-  const [regresoSinAlmacen] = useMutation(NUEVO_REGRESO);
+  const [regresoSinAlmacen] = useMutation<NuevoRegreso, NuevoRegresoVariables>(
+    NUEVO_REGRESO
+  );
 
-  const [getInventario] = useLazyQuery(INVENTARIO, {
-    onCompleted(invRes) {
-      const invObj = invRes.inventario.inventario
-        .filter((val) => {
-          return val.cantidad > 0;
-        })
-        .map((val) => {
-          return { articulo: val.articulo, cantidad: parseInt(val.cantidad) };
-        });
-      setInventario(invObj);
-    },
-  });
+  const [getInventario] = useLazyQuery<Inventario, InventarioVariables>(
+    INVENTARIO,
+    {
+      onCompleted(invRes) {
+        if (invRes.inventario) {
+          const invObj = invRes.inventario.inventario
+            .filter((val) => {
+              return val.cantidad > 0;
+            })
+            .map((val) => {
+              return {
+                articulo: val.articulo,
+                cantidad: val.cantidad,
+              };
+            });
+          setInventario(invObj);
+        }
+      },
+    }
+  );
 
-  const [getMovimientos] = useLazyQuery(MOVIMIENTOS, {
-    onCompleted(res) {
-      const { movimientos, gastos } = res.movimientos;
-      let ventasPublico = 0;
-      let ventasAClientes = 0;
-      let pagosClientes = 0;
-      let totalGastos = 0;
-      let gastosArr;
-      let dineroInicial = 0;
-      if (gastos.length > 0) {
-        const gastosFiltered = gastos.filter((val) => {
-          return val.Descripcion !== 'ingreso de efectivo';
-        });
-        gastos.forEach((val) => {
-          if (val.Descripcion === 'ingreso de efectivo') {
-            dineroInicial += val.Monto;
+  const [getMovimientos] = useLazyQuery<Movimientos, MovimientosVariables>(
+    MOVIMIENTOS,
+    {
+      onCompleted(res) {
+        if (res.movimientos) {
+          const { movimientos } = res.movimientos;
+          const { gastos } = res.movimientos;
+          let ventasPublico = 0;
+          let ventasAClientes = 0;
+          let pagosClientes = 0;
+          let totalGastos = 0;
+          let gastosArr;
+          let dineroInicial = 0;
+          if (gastos.length > 0) {
+            const gastosFiltered = gastos.filter((val) => {
+              return val.Descripcion !== 'ingreso de efectivo';
+            });
+            gastos.forEach((val) => {
+              if (val.Descripcion === 'ingreso de efectivo') {
+                dineroInicial += val.Monto;
+              }
+            });
+            const objGastos = groupBy(gastosFiltered, 'Descripcion');
+            if (gastosFiltered.length > 0) {
+              gastosArr = Object.keys(objGastos).map((key) => {
+                return {
+                  descripción: key,
+                  monto: Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                  }).format(
+                    objGastos[key].reduce((acc, cur) => {
+                      return acc + cur.Monto;
+                    }, 0)
+                  ),
+                };
+              });
+              totalGastos = gastosFiltered.reduce((acc, cur) => {
+                return acc + cur.Monto;
+              }, 0);
+            }
           }
-        });
-        const objGastos = groupBy(gastosFiltered, 'Descripcion');
-        if (gastosFiltered.length > 0) {
-          gastosArr = Object.keys(objGastos).map((key) => {
-            return {
-              descripción: key,
-              monto: Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD',
-              }).format(
-                objGastos[key].reduce((acc, cur) => {
-                  return acc + cur.Monto;
-                }, 0)
-              ),
-            };
+          movimientos.forEach((movimiento) => {
+            if (movimiento.Tipo === 'venta') {
+              ventasPublico += movimiento.Monto;
+            } else if (
+              movimiento.Tipo.split(':').length === 2 &&
+              movimiento.Tipo.split(':')[0] === 'venta'
+            ) {
+              // es de cliente y no esta cancelada
+              if (movimiento.Tipo.split('(').length === 1) {
+                ventasAClientes += movimiento.Monto;
+              }
+              if (movimiento.Pago) {
+                pagosClientes += movimiento.Pago;
+              }
+            } else if (
+              movimiento.Tipo.split(':').length === 2 &&
+              movimiento.Tipo.split(':')[0] === 'pago' &&
+              movimiento.Tipo.split('(').length === 1
+            ) {
+              pagosClientes += movimiento.Monto;
+            }
           });
-          totalGastos = gastosFiltered.reduce((acc, cur) => {
-            return acc + cur.Monto;
-          }, 0);
+          const dineroEsperado =
+            dineroInicial + ventasPublico + pagosClientes - totalGastos;
+          const dataObj = {
+            nombre: session.nombre,
+            fecha: dayjs(
+              new ObjectId(session.puntoIdActivo).getTimestamp()
+            ).format('DD-MM-YYYY'),
+            dineroInicial: Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'USD',
+            }).format(dineroInicial),
+            ventasPublico: Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'USD',
+            }).format(ventasPublico),
+            ventasAClientes: Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'USD',
+            }).format(ventasAClientes),
+            pagosClientes: Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'USD',
+            }).format(pagosClientes),
+            totalGastos: Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'USD',
+            }).format(totalGastos),
+            gastosArr,
+            dineroEsperado: Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: 'USD',
+            }).format(dineroEsperado),
+          };
+          setData(dataObj);
         }
-      }
-      movimientos.forEach((movimiento) => {
-        if (movimiento.Tipo === 'venta') {
-          ventasPublico += movimiento.Monto;
-        } else if (
-          movimiento.Tipo.split(':').length === 2 &&
-          movimiento.Tipo.split(':')[0] === 'venta'
-        ) {
-          // es de cliente y no esta cancelada
-          if (movimiento.Tipo.split('(').length === 1) {
-            ventasAClientes += movimiento.Monto;
-          }
-          if (movimiento.Pago) {
-            pagosClientes += movimiento.Pago;
-          }
-        } else if (
-          movimiento.Tipo.split(':').length === 2 &&
-          movimiento.Tipo.split(':')[0] === 'pago' &&
-          movimiento.Tipo.split('(').length === 1
-        ) {
-          pagosClientes += movimiento.Monto;
-        }
-      });
-      const dineroEsperado =
-        dineroInicial + ventasPublico + pagosClientes - totalGastos;
-      const dataObj = {
-        nombre: session.nombre,
-        fecha: dayjs(ObjectId(session.puntoIdActivo).getTimestamp()).format(
-          'DD-MM-YYYY'
-        ),
-        dineroInicial: Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'USD',
-        }).format(dineroInicial),
-        ventasPublico: Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'USD',
-        }).format(ventasPublico),
-        ventasAClientes: Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'USD',
-        }).format(ventasAClientes),
-        pagosClientes: Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'USD',
-        }).format(pagosClientes),
-        totalGastos: Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'USD',
-        }).format(totalGastos),
-        gastosArr,
-        dineroEsperado: Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'USD',
-        }).format(dineroEsperado),
-      };
-      setData(dataObj);
-      setDataLoading(false);
-    },
-    fetchPolicy: 'network-only',
-  });
+        setDataLoading(false);
+      },
+      fetchPolicy: 'network-only',
+    }
+  );
 
   useEffect(() => {
     if (open) {
@@ -282,12 +321,15 @@ const CrearReporte = (props) => {
     },
     tableCellHeader: {
       margin: 'auto',
+      // @ts-expect-error: error
       margin: 5,
       fontSize: 12,
       fontWeight: 500,
     },
     tableCell: {
       margin: 'auto',
+      // @ts-expect-error: error
+
       margin: 5,
       fontSize: 10,
     },
@@ -347,7 +389,7 @@ const CrearReporte = (props) => {
                   </View>
                 ))}
               </View>
-              {data.gastosArr.map((obj) => (
+              {data.gastosArr.map((obj: any) => (
                 <View style={styles.tableRow}>
                   {['descripción', 'monto'].map((header) => (
                     <View style={styles.tableColTwo}>
@@ -379,16 +421,18 @@ const CrearReporte = (props) => {
     await pathRef.getDownloadURL().then((fileUrl) => {
       url = fileUrl;
     });
-    await regresoSinAlmacen({
-      variables: {
-        obj: {
-          tipo: 'regreso',
-          articulos: inventario,
+    if (inventario && inventario.length > 0) {
+      await regresoSinAlmacen({
+        variables: {
+          obj: {
+            tipo: 'regreso',
+            articulos: inventario,
+          },
+          puntoId: session.puntoIdActivo,
+          nombre: session.nombre,
         },
-        puntoId: session.puntoIdActivo,
-        nombre: session.nombre,
-      },
-    });
+      });
+    }
     await enviarReporteUrl({
       variables: { url, nombre: `${session.nombre}: ${data.fecha}` },
     });
@@ -412,7 +456,7 @@ const CrearReporte = (props) => {
   }, [open]);
 
   return (
-    <Dialog onClose={!reporteLoading ? handleClose : null} open={open}>
+    <Dialog onClose={!reporteLoading ? handleClose : undefined} open={open}>
       <DialogContent>
         <Typography>
           <>

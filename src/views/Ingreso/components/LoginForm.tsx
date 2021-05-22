@@ -1,11 +1,4 @@
-/* eslint-disable no-alert */
 /* eslint-disable @typescript-eslint/naming-convention */
-/* eslint-disable no-restricted-globals */
-/* eslint-disable prettier/prettier */
-/* eslint-disable no-underscore-dangle */
-/* eslint-disable promise/no-nesting */
-/* eslint-disable promise/always-return */
-/* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import { Box, Button, TextField, Grid } from '@material-ui/core';
@@ -14,13 +7,22 @@ import * as yup from 'yup';
 import { useSelector, useDispatch } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 
-
 import LinearProgress from '@material-ui/core/LinearProgress';
 import { useQuery } from '@apollo/client';
 import { ipcRenderer } from 'electron';
-import { USUARIO, PUNTO_ID_ACTIVO, MOVIMIENTOS } from '../../../utils/queries';
 import { login } from '../../../actions';
+import { USUARIO, PUNTO_ID_ACTIVO, MOVIMIENTOS } from '../../../utils/queries';
 
+import { RootState } from '../../../types/store';
+import { Role, Session } from '../../../types/types';
+import {
+  Movimientos,
+  MovimientosVariables,
+  PuntoIdActivo,
+  PuntoIdActivoVariables,
+  Usuario,
+  UsuarioVariables,
+} from '../../../types/apollo';
 import { auth } from '../../../firebase';
 
 // eslint-disable-next-line no-undef
@@ -53,25 +55,33 @@ const useStyles = makeStyles((theme) => ({
 
 const LoginForm = () => {
   const classes = useStyles();
-  const session = useSelector((state) => state.session);
-  const [uid, setUid] = useState(null);
-  const [nombre, setNombre] = useState(null);
-  const [idPunto, setidPunto] = useState(null);
-  const {refetch: getMovimientos} = useQuery(MOVIMIENTOS,{
+  const session: Session = useSelector((state: RootState) => state.session);
+  const [uid, setUid] = useState<{ uid: string } | null>(null);
+  const [nombre, setNombre] = useState<{ nombre: string } | null>(null);
+  const [idPunto, setidPunto] = useState<{ _id: string } | null>(null);
+  const { refetch: getMovimientos } = useQuery<
+    Movimientos,
+    MovimientosVariables
+  >(MOVIMIENTOS, {
+    // @ts-expect-error: error
     variables: idPunto,
     skip: !idPunto,
   });
-  const {refetch: getUser} = useQuery(USUARIO,{
-    variables: uid,
+  const { refetch: getUser } = useQuery<Usuario, UsuarioVariables>(USUARIO, {
+    // @ts-expect-error: error
+    variables: uid || '',
     skip: !uid,
   });
-  const {refetch: getId} = useQuery(PUNTO_ID_ACTIVO,{
-    variables: nombre,
-    skip: !nombre,
-  });
+  const { refetch: getId } = useQuery<PuntoIdActivo, PuntoIdActivoVariables>(
+    PUNTO_ID_ACTIVO,
+    {
+      // @ts-expect-error: error
+      variables: nombre || '',
+      skip: !nombre,
+    }
+  );
   const history = useHistory();
-  const dispatch = useDispatch()
-
+  const dispatch = useDispatch();
 
   useEffect(() => {
     if (session.loggedIn === 'true') {
@@ -96,28 +106,36 @@ const LoginForm = () => {
             )
             .then(async (res) => {
               if (res.user) {
-                let _id;
-                let nombreStr;
-                let roles;
-                let infoPunto;
-                let sinAlmacen=false;
-                await setUid({uid:res.user.uid});
-                await getUser({variables: { uid: res.user.uid } })
-                  .then((data) => {
-                    roles = data.data.usuario.roles;
-                    nombreStr = data.data.usuario.nombre;
-                    _id = data.data.usuario._id;
-                    infoPunto = data.data.usuario.infoPunto;
-                    sinAlmacen = data.data.usuario.sinAlmacen;
-                  });
-                await setNombre({nombre: nombreStr});
-                await getId({ variables: { nombre: nombreStr } })
-                  .then(async (data) => {
+                let _id: string;
+                let nombreStr = '';
+                let roles: Role[];
+                let infoPunto: string | null;
+                let sinAlmacen: boolean | null = false;
+                await setUid({ uid: res.user.uid });
+                // @ts-expect-error: error
+                await getUser({ variables: { uid: res.user.uid } }).then(
+                  (data) => {
+                    if (data.data && data.data.usuario) {
+                      roles = data.data.usuario.roles;
+                      nombreStr = data.data.usuario.nombre;
+                      _id = data.data.usuario._id;
+                      infoPunto = data.data.usuario.infoPunto;
+                      sinAlmacen = data.data.usuario.sinAlmacen;
+                    }
+                  }
+                );
+                await setNombre({ nombre: nombreStr });
+                // @ts-expect-error: error
+                await getId({ variables: { nombre: nombreStr } }).then(
+                  async (data) => {
                     localStorage.setItem('loggedIn', 'true');
                     localStorage.setItem('roles', JSON.stringify(roles));
                     localStorage.setItem('nombre', nombreStr);
-                    localStorage.setItem('infoPunto', infoPunto);
-                    localStorage.setItem('sinAlmacen', sinAlmacen? 'true': 'false');
+                    localStorage.setItem('infoPunto', infoPunto || '');
+                    localStorage.setItem(
+                      'sinAlmacen',
+                      sinAlmacen ? 'true' : 'false'
+                    );
                     await dispatch(
                       login({
                         uid: _id,
@@ -130,17 +148,23 @@ const LoginForm = () => {
                     );
                     history.push('/');
                     if (data.data.puntoIdActivo == null) {
+                      // eslint-disable-next-line no-alert
                       alert('No hay ninguna plaza activa');
                     } else {
-                      await setidPunto({_id: data.data.puntoIdActivo})
+                      await setidPunto({ _id: data.data.puntoIdActivo });
                       await getMovimientos({
+                        // @ts-expect-error: error
                         variables: { _id: data.data.puntoIdActivo },
-                      }).then((movData)=>{
-                        ipcRenderer.send('PLAZA',movData.data.movimientos)
+                      }).then((movData) => {
+                        ipcRenderer.send('PLAZA', movData.data.movimientos);
                       });
-                      localStorage.setItem('puntoIdActivo', data.data.puntoIdActivo);
+                      localStorage.setItem(
+                        'puntoIdActivo',
+                        data.data.puntoIdActivo
+                      );
                     }
-                  })
+                  }
+                );
               }
             })
             .catch((error) => {
@@ -212,15 +236,13 @@ const LoginForm = () => {
             <Box mt={1}>
               <Grid container spacing={2}>
                 <Grid item xs={12}>
-                  {(formikProps.isSubmitting ) && <LinearProgress />}
+                  {formikProps.isSubmitting && <LinearProgress />}
                 </Grid>
                 <Grid item xs={12}>
                   <Box width="100%">
                     <Button
                       color="primary"
-                      disabled={
-                        formikProps.isSubmitting || status !== ''
-                      }
+                      disabled={formikProps.isSubmitting || status !== ''}
                       fullWidth
                       type="submit"
                       variant="contained"
