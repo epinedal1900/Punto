@@ -12,8 +12,8 @@ export const USUARIO = gql`
   }
 `;
 export const PUNTO_ID_ACTIVO = gql`
-  query PuntoIdActivo($nombre: String!) {
-    puntoIdActivo(nombre: $nombre)
+  query PuntoIdActivo {
+    puntoIdActivo
   }
 `;
 export const NOTIFICACIONES_PUNTO = gql`

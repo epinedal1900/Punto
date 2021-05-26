@@ -17,7 +17,7 @@ import { Provider as StoreProvider } from 'react-redux';
 import { configure } from 'react-hotkeys';
 import { Role } from './types/types';
 import { Usuario } from './types/graphql';
-import { logout, login } from './actions';
+import { logout, login, desactivarPunto } from './actions';
 
 import { USUARIO, PUNTO_ID_ACTIVO, MOVIMIENTOS } from './utils/queries';
 
@@ -99,30 +99,29 @@ auth.onAuthStateChanged(async (user) => {
           }
         });
       await client
-        .query({ query: PUNTO_ID_ACTIVO, variables: { nombre } })
+        .query({ query: PUNTO_ID_ACTIVO })
         .then(async (data: { data: { puntoIdActivo: string } }) => {
-          if (data.data.puntoIdActivo) {
-            localStorage.setItem('loggedIn', 'true');
-            localStorage.setItem('roles', JSON.stringify(roles));
-            localStorage.setItem('nombre', nombre);
-            localStorage.setItem('infoPunto', infoPunto);
-            localStorage.setItem('sinAlmacen', sinAlmacen ? 'true' : 'false');
-            await store.dispatch(
-              login({
-                uid: _id,
-                nombre,
-                roles: JSON.stringify(roles),
-                puntoIdActivo: data.data.puntoIdActivo,
-                infoPunto,
-                sinAlmacen,
-              })
-            );
-            history.push('/');
-            if (data.data.puntoIdActivo == null) {
-              alert('No hay ninguna plaza activa');
-            } else {
-              localStorage.setItem('puntoIdActivo', data.data.puntoIdActivo);
-            }
+          localStorage.setItem('loggedIn', 'true');
+          localStorage.setItem('roles', JSON.stringify(roles));
+          localStorage.setItem('nombre', nombre);
+          localStorage.setItem('infoPunto', infoPunto);
+          localStorage.setItem('sinAlmacen', sinAlmacen ? 'true' : 'false');
+          await store.dispatch(
+            login({
+              uid: _id,
+              nombre,
+              roles: JSON.stringify(roles),
+              puntoIdActivo: data.data.puntoIdActivo,
+              infoPunto,
+              sinAlmacen,
+            })
+          );
+          history.push('/');
+          if (!data.data.puntoIdActivo) {
+            store.dispatch(desactivarPunto());
+            alert('No hay ninguna plaza activa');
+          } else {
+            localStorage.setItem('puntoIdActivo', data.data.puntoIdActivo);
           }
         })
         .catch((err) => {
