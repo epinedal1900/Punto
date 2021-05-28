@@ -16,7 +16,7 @@ import Radio from '@material-ui/core/Radio';
 import { useSelector, useDispatch } from 'react-redux';
 import Tooltip from '@material-ui/core/Tooltip';
 import ObjectId from 'bson-objectid';
-import { assign } from 'lodash';
+import { assign, groupBy } from 'lodash';
 import { HotKeys } from 'react-hotkeys';
 import { ArticuloDB, PrincipalValues, Session } from '../../../types/types';
 import { RootState } from '../../../types/store';
@@ -50,6 +50,7 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
   } = useFormikContext<PrincipalValues>();
   const [submitting, setSubmitting] = useState(false);
   const [cambio, setCambio] = useState('$0.00');
+  const [noImp, setNoImp] = useState(false);
   const total = values.articulos.reduce((acc, cur) => {
     return acc + cur.precio * cur.cantidad;
   }, 0);
@@ -96,7 +97,7 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
   });
 
   const finalizarVenta = (articulos: ArticuloDB[]) => {
-    if (values.tipoDeImpresion === 'imprimir') {
+    if (values.tipoDeImpresion === 'imprimir' && !noImp) {
       const data = crearTicketData(
         session.infoPunto,
         articulos,
@@ -143,6 +144,16 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
       };
     });
     if (!submitting && articulos.length > 0) {
+      const prendasAgrupadasObj = groupBy(articulos, 'articulo');
+      const prendasAgrupadas = Object.keys(prendasAgrupadasObj).map((key) => {
+        return {
+          articulo: key,
+          cantidad: prendasAgrupadasObj[key].reduce((acc, cur) => {
+            return acc + cur.cantidad;
+          }, 0),
+          precio: prendasAgrupadasObj[key][0].precio,
+        };
+      });
       setSubmitting(true);
       const puntoId = session.puntoIdActivo;
       const { nombre } = session;
@@ -154,14 +165,14 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
         Monto: total,
         Pago: null,
         Prendas: NoDeArticulos,
-        articulos,
+        articulos: prendasAgrupadas,
         comentarios: values.comentarios,
       };
       if (values.cliente) {
         const objVenta = {
           cliente: values.cliente._id,
           tipo: `entrega en ${session.nombre}`,
-          articulos,
+          articulos: prendasAgrupadas,
         };
         if (values.comentarios !== '') {
           assign(objVenta, { comentarios: values.comentarios });
@@ -180,7 +191,7 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
               variables: ventaVariables,
             }).then((res) => {
               if (res.data && res.data.nuevaVenta.success === true) {
-                finalizarVenta(articulos);
+                finalizarVenta(prendasAgrupadas);
               }
             });
           } else {
@@ -211,7 +222,7 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
                   variables: ventaVariables,
                 }).then((res) => {
                   if (res.data && res.data.nuevaVenta.success === true) {
-                    finalizarVenta(articulos);
+                    finalizarVenta(prendasAgrupadas);
                   }
                 });
               }
@@ -246,7 +257,7 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
         const objVenta = {
           _id,
           tipo: 'venta',
-          articulos,
+          articulos: prendasAgrupadas,
         };
         if (values.comentarios !== '') {
           assign(objVenta, { comentarios: values.comentarios });
@@ -261,19 +272,23 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
             variables,
           }).then((res) => {
             if (res.data && res.data.nuevaVenta.success === true) {
-              finalizarVenta(articulos);
+              finalizarVenta(prendasAgrupadas);
             }
           });
         } else {
           assign(variables, {
             _idOffline: objOffline._id,
-            objVenta: { _id: _id.toString(), tipo: 'venta', articulos },
+            objVenta: {
+              _id: _id.toString(),
+              tipo: 'venta',
+              articulos: prendasAgrupadas,
+            },
           });
           ipcRenderer.send('VENTAS', variables);
         }
       }
       if (!session.online) {
-        finalizarVenta(articulos);
+        finalizarVenta(prendasAgrupadas);
         await ipcRenderer.send('MOVIMIENTOS_OFFLINE', objOffline);
         if (objPagoOffline) {
           ipcRenderer.send('MOVIMIENTOS_OFFLINE', objPagoOffline);
@@ -293,10 +308,17 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
   };
   const keyMap = {
     COBRAR_CLICK: 'ctrl+enter',
+    COBRAR_CLICKI: 'f1',
+    COBRAR_CLICKN: 'f2',
   };
 
   const handlers = {
     COBRAR_CLICK: handleCobrar,
+    COBRAR_CLICKI: handleCobrar,
+    COBRAR_CLICKN: () => {
+      setNoImp(true);
+      handleCobrar();
+    },
   };
 
   return (
@@ -411,18 +433,22 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
               </Grid>
               <Grid item xs={12}>
                 <Field component={RadioGroup} name="tipoDeImpresion">
-                  <FormControlLabel
-                    control={<Radio disabled={submitting} />}
-                    disabled={submitting}
-                    label="Cobrar e imprimir"
-                    value="imprimir"
-                  />
-                  <FormControlLabel
-                    control={<Radio disabled={submitting} />}
-                    disabled={submitting}
-                    label="Cobrar solo registrando la venta"
-                    value="noImprimir"
-                  />
+                  <Tooltip title={<h3>F1</h3>}>
+                    <FormControlLabel
+                      control={<Radio disabled={submitting} />}
+                      disabled={submitting}
+                      label="Cobrar e imprimir"
+                      value="imprimir"
+                    />
+                  </Tooltip>
+                  <Tooltip title={<h3>F2</h3>}>
+                    <FormControlLabel
+                      control={<Radio disabled={submitting} />}
+                      disabled={submitting}
+                      label="Cobrar solo registrando la venta"
+                      value="noImprimir"
+                    />
+                  </Tooltip>
                 </Field>
                 {submitting && (
                   <Box>

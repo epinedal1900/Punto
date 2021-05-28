@@ -12,6 +12,7 @@ import Box from '@material-ui/core/Box';
 import Divider from '@material-ui/core/Divider';
 import { useSelector, useDispatch } from 'react-redux';
 import { FormikProps } from 'formik';
+import { Typography } from '@material-ui/core';
 import { RootState } from '../../../types/store';
 import {
   ArticuloOption,
@@ -143,6 +144,11 @@ const Tickets = (props: TicketsProps): JSX.Element => {
         </AppBar>
         <Box height={height * 0.54} maxHeight={425} overflow="auto" p={3}>
           <form onSubmit={formikProps.handleSubmit}>
+            {typeof formikProps.errors.articulos === 'string' && (
+              <Typography color="error" variant="h6">
+                {formikProps.errors.articulos}
+              </Typography>
+            )}
             <Articulos
               addButton={false}
               agregarOpen={agregarOpen}

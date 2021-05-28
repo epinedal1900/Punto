@@ -110,15 +110,18 @@ const UpperButtons = (props: UpperButtonsProps): JSX.Element => {
     ASIGNAR_CLICK: 'alt+c',
     ASIGNAR_CLICKM: 'alt+C',
     COBRAR_CLICK: 'shift+c',
+    COBRAR_CLICKF: 'f12',
     COBRAR_CLICKM: 'shift+C',
   };
 
   const handlers = {
     ELIMINAR_TICKET: handleEliminarClick,
     ASIGNAR_CLICK: handleAsignarClick,
+    ASIGNAR_CLICKF: handleAsignarClick,
     ASIGNAR_CLICKM: handleAsignarClick,
     COBRAR_CLICK: handleCobrarClick,
     COBRAR_CLICKM: handleCobrarClick,
+    COBRAR_CLICKF: handleCobrarClick,
   };
 
   return (
@@ -197,7 +200,14 @@ const UpperButtons = (props: UpperButtonsProps): JSX.Element => {
           </Tooltip>
         </Box>
         <Box p={1}>
-          <Tooltip title={<h3>SHIFT+C</h3>}>
+          <Tooltip
+            title={
+              <>
+                <h3>F12</h3>
+                <h3>SHIFT+C</h3>
+              </>
+            }
+          >
             <Button
               color="primary"
               disabled={

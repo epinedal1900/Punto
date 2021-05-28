@@ -9,6 +9,7 @@ import { useQuery } from '@apollo/client';
 import { Prompt } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import * as yup from 'yup';
+import { groupBy } from 'lodash';
 import { RootState } from '../../types/store';
 import {
   Session,
@@ -86,6 +87,27 @@ const validationSchema = yup.object({
       'selected',
       'Ingrese al menos 1 artículo',
       (values: any) => values.length > 0
+    )
+    .test(
+      'selected',
+      'No deben haber 2 productos iguales o más con diferentes precios',
+      (values: any) => {
+        const articulos = values.map((val: any) => {
+          return {
+            articulo: val.articulo.nombre,
+            cantidad: val.cantidad,
+            precio: val.precio,
+          };
+        });
+        const prendasAgrupadasObj = groupBy(articulos, 'articulo');
+        const noValido = Object.keys(prendasAgrupadasObj).some((producto) => {
+          const { precio } = prendasAgrupadasObj[producto][0];
+          return prendasAgrupadasObj[producto].some((fila) => {
+            return precio !== fila.precio;
+          });
+        });
+        return !noValido;
+      }
     ),
   cantidadPagada: yup.number(),
 });

@@ -34,7 +34,7 @@ const Articulos = (props: ArticulosProps): JSX.Element => {
     allowNegative,
     descripcion,
   } = props;
-  const { values, errors, setFieldValue } = useFormikContext<any>();
+  const { values, setFieldValue } = useFormikContext<any>();
   const classes = useStyles();
   const matches = useMediaQuery('(min-width:600px)');
 
@@ -153,11 +153,6 @@ const Articulos = (props: ArticulosProps): JSX.Element => {
                 {!matches && <Divider classes={{ root: classes.divider }} />}
               </Box>
             ))}
-            {errors.articulos === 'Ingrese al menos 1 artículo' && (
-              <Typography color="error" variant="h6">
-                {errors.articulos}
-              </Typography>
-            )}
             {/* <h2>{JSON.stringify(values.articulos)}</h2>
             <h2>{JSON.stringify(session.articulos)}</h2> */}
           </div>
