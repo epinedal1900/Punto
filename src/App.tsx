@@ -3,6 +3,9 @@
 /* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable no-alert */
 /* eslint-disable react/no-multi-comp */
+
+// git commit -m "Agregado: notas A5 y lista de articulos, Arreglado: teclas F1 y F2 no funcionaban" --no-verify
+
 import React from 'react';
 import { Router, Switch, Route } from 'react-router-dom';
 import {

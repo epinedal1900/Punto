@@ -8,13 +8,19 @@ import dayjs from 'dayjs';
 import groupBy from 'lodash/groupBy';
 import { useHistory } from 'react-router-dom';
 import { Formik, FormikHelpers } from 'formik';
+import { pdf } from '@react-pdf/renderer';
 
-import { RootState } from 'types/store';
-import { ArticuloDB, ArticuloForm, ArticuloOption, Session } from 'types/types';
+import { RootState } from '../../types/store';
+import {
+  ArticuloDB,
+  ArticuloForm,
+  ArticuloOption,
+  Session,
+} from '../../types/types';
 import {
   NuevoRegistroInventarioUtils,
   NuevoRegistroInventarioUtilsVariables,
-} from 'types/apollo';
+} from '../../types/apollo';
 import { AuthGuard, Header } from '../../components';
 import Articulos from '../../formPartials/Articulos';
 import { NUEVO_REGISTRO_INVENTARIO_UTILS } from '../../utils/queries';
@@ -23,6 +29,11 @@ import { guardarInventario } from '../../actions/sessionActions';
 import validationSchema from './components/validationSchema';
 import Resumen from './components/Resumen';
 import StepperForm from './components/StepperForm';
+import ListaImpresa from './components/ListaImpresa';
+
+const electron = window.require('electron');
+const { remote } = electron;
+const { BrowserWindow } = remote;
 
 const NuevaSalidaMercancia = () => {
   const session: Session = useSelector((state: RootState) => state.session);
@@ -41,6 +52,7 @@ const NuevaSalidaMercancia = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [success, setSuccess] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [imprimirDisabled, setImprimirDisabled] = useState(false);
 
   useQuery<NuevoRegistroInventarioUtils, NuevoRegistroInventarioUtilsVariables>(
     NUEVO_REGISTRO_INVENTARIO_UTILS,
@@ -77,24 +89,6 @@ const NuevaSalidaMercancia = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.online]);
-
-  // const steps = {
-  //   '0': (
-  //     <Articulos
-  //       articuloFreeSolo={false}
-  //       incluirPrecio={false}
-  //       maxRows={50}
-  //       opcionesArticulos={articulos}
-  //     />
-  //   ),
-  //   '1': (
-  //     <Resumen
-  //       discrepancias={discrepancias}
-  //       inventario={inventario}
-  //       setDiscrepancias={setDiscrepancias}
-  //     />
-  //   ),
-  // };
 
   const [
     registrarDiscrepancias,
@@ -163,13 +157,28 @@ const NuevaSalidaMercancia = () => {
     setSuccess(false);
     setMessage(null);
   };
+  const handleImprimir = async () => {
+    setImprimirDisabled(true);
+    const doc = <ListaImpresa articulos={articulos} />;
+    const blob = await pdf(doc).toBlob();
+    const Url = window.URL.createObjectURL(blob);
+    const win = new BrowserWindow({ width: 600, height: 800 });
+    win.loadURL(Url);
+    setImprimirDisabled(false);
+  };
 
   return (
     <AuthGuard denyReadOnly roles={['ADMIN', 'PUNTO']}>
-      <Header titulo="Registro de inventario" />
+      <Header
+        buttonIcon="imprimir"
+        buttonText="Imprimir lista"
+        disabled={imprimirDisabled || loading}
+        handleOpen={handleImprimir}
+        titulo="Registro de inventario"
+      />
       <Box display="flex" justifyContent="center" m={0}>
         <Formik
-          // @ts-expect-error: error
+          // @ts-expect-error: err
           initialValues={initialValues}
           onSubmit={onSubmit}
           validateOnBlur={false}

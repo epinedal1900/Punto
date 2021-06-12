@@ -68,7 +68,7 @@ export interface PrincipalValues {
   cantidad: number;
   precio: number;
   tipoDePago: 'efectivo' | 'pendiente';
-  tipoDeImpresion: 'imprimir' | 'noImprimir';
+  tipoDeImpresion: 'imprimir' | 'noImprimir' | 'imprimirA5';
   comentarios: string;
   cantidadPagada: number;
 }

@@ -8,7 +8,9 @@ import dayjs from 'dayjs';
 import { useSelector } from 'react-redux';
 import groupBy from 'lodash/groupBy';
 import { RouteComponentProps, useHistory } from 'react-router-dom';
+import { pdf } from '@react-pdf/renderer';
 
+import ObjectID from 'bson-objectid';
 import {
   Header,
   DetailsTable,
@@ -38,12 +40,14 @@ import {
 } from '../../utils/mutations';
 import crearTicketData from '../../utils/crearTicketData';
 import crearTicketSinPrecioData from '../../utils/crearTicketSinPrecioData';
+import Notas from '../Principal/components/Notas';
 import EditForm from './components/EditForm';
 
 const onCompleted = (
   productos: ArticuloOption[],
   movimientosOnline: Movimientos_movimientos_movimientos[],
   setTipoDeMovimiento: (a: string) => void,
+  setConCliente: (a: boolean) => void,
   setTipo: (a: string) => void,
   setCancelButton: (a: boolean) => void,
   setInfoRaw: (a: any) => void,
@@ -69,6 +73,9 @@ const onCompleted = (
     });
   }
   setTipoDeMovimiento(obj.Tipo.charAt(0).toUpperCase() + obj.Tipo.slice(1));
+  setConCliente(
+    obj.Tipo.indexOf('venta:') !== -1 && obj.Tipo.indexOf('(') === -1
+  );
   if (obj.Monto !== 0) {
     assign(obj, {
       Monto: Intl.NumberFormat('en-US', {
@@ -172,6 +179,7 @@ const Detallesmovimiento = (
   const [messageMutation, setMessageMutation] = useState<string | null>(null);
   const [fecha, setFecha] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [conCliente, setConCliente] = useState(false);
   const [opcionesArticulos, setOpcionesArticulos] = useState<ArticuloOption[]>(
     []
   );
@@ -184,6 +192,9 @@ const Detallesmovimiento = (
   const history = useHistory();
 
   const { ipcRenderer } = window.require('electron');
+  const electron = window.require('electron');
+  const { remote } = electron;
+  const { BrowserWindow } = remote;
 
   useQuery<DetallesMovimientosUtils, DetallesMovimientosUtilsVariables>(
     DETALLES_MOVIMIENTOS_UTILS,
@@ -205,6 +216,7 @@ const Detallesmovimiento = (
             productosArr,
             data.movimientos.movimientos,
             setTipoDeMovimiento,
+            setConCliente,
             setTipo,
             setCancelButton,
             setInfoRaw,
@@ -229,6 +241,7 @@ const Detallesmovimiento = (
         store.productos,
         store.plaza.movimientos,
         setTipoDeMovimiento,
+        setConCliente,
         setTipo,
         setCancelButton,
         setInfoRaw,
@@ -450,10 +463,28 @@ const Detallesmovimiento = (
       },
     });
   };
+  const handleReimprimirA5 = async () => {
+    setReimprimirDisabled(true);
+    const doc = (
+      <Notas
+        // @ts-expect-error: err
+        articulos={detalles || []}
+        fecha={dayjs(new ObjectID(id).getTimestamp())}
+        nombre={tipo.substring(tipo.lastIndexOf('venta:') + 'venta:'.length)}
+      />
+    );
+    const blob = await pdf(doc).toBlob();
+    const Url = window.URL.createObjectURL(blob);
+    const win = new BrowserWindow({ width: 600, height: 800 });
+    win.loadURL(Url);
+    setReimprimirDisabled(false);
+  };
   return (
     <AuthGuard roles={['ADMIN', 'PUNTO']}>
       <Header
         buttonIcon="imprimir"
+        buttonSecondaryIcon="imprimir"
+        buttonSecondaryText="Imprimir nota A5"
         buttonText={
           tipoDeMovimiento.indexOf('salida') === -1
             ? 'Reimprimir ticket'
@@ -462,6 +493,7 @@ const Detallesmovimiento = (
         categoria="Movimientos"
         disabled={loading || reimprimirDisabled}
         handleOpen={reimprimirButton ? handleReimprimir : undefined}
+        handleSecondaryOpen={conCliente ? handleReimprimirA5 : undefined}
         titulo={tipoDeMovimiento}
       />
       <SuccessErrorMessage

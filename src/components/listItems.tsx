@@ -13,8 +13,8 @@ import CreateIcon from '@material-ui/icons/Create';
 import MonetizationOnOutlinedIcon from '@material-ui/icons/MonetizationOnOutlined';
 import { Link as RouterLink } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Session } from 'types/types';
-import { RootState } from 'types/store';
+import { Session } from '../types/types';
+import { RootState } from '../types/store';
 
 export const ListItems = () => {
   const session: Session = useSelector((state: RootState) => state.session);

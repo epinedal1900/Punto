@@ -18,6 +18,9 @@ import Tooltip from '@material-ui/core/Tooltip';
 import ObjectId from 'bson-objectid';
 import { assign, groupBy } from 'lodash';
 import { HotKeys } from 'react-hotkeys';
+import dayjs from 'dayjs';
+import { pdf } from '@react-pdf/renderer';
+import Notas from './Notas';
 import { ArticuloDB, PrincipalValues, Session } from '../../../types/types';
 import { RootState } from '../../../types/store';
 import { NuevaVenta, NuevaVentaVariables } from '../../../types/apollo';
@@ -29,6 +32,9 @@ import crearTicketData from '../../../utils/crearTicketData';
 import { modificarUltimoTicket } from '../../../actions/sessionActions';
 
 const { ipcRenderer } = window.require('electron');
+const electron = window.require('electron');
+const { remote } = electron;
+const { BrowserWindow } = remote;
 
 interface CobrarFormProps {
   open: boolean;
@@ -50,7 +56,6 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
   } = useFormikContext<PrincipalValues>();
   const [submitting, setSubmitting] = useState(false);
   const [cambio, setCambio] = useState('$0.00');
-  const [noImp, setNoImp] = useState(false);
   const total = values.articulos.reduce((acc, cur) => {
     return acc + cur.precio * cur.cantidad;
   }, 0);
@@ -96,8 +101,14 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
     ],
   });
 
-  const finalizarVenta = (articulos: ArticuloDB[]) => {
-    if (values.tipoDeImpresion === 'imprimir' && !noImp) {
+  const finalizarVenta = async (
+    articulos: ArticuloDB[],
+    noImprimir: boolean | null
+  ) => {
+    if (
+      values.tipoDeImpresion === 'imprimir' &&
+      (noImprimir == null || !noImprimir)
+    ) {
       const data = crearTicketData(
         session.infoPunto,
         articulos,
@@ -117,6 +128,20 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
         alert('seleccione una impresora y un ancho');
       }
     }
+    if (values.tipoDeImpresion === 'imprimirA5') {
+      const doc = (
+        <Notas
+          articulos={articulos}
+          fecha={dayjs()}
+          // @ts-expect-error: error
+          nombre={values.cliente.nombre}
+        />
+      );
+      const blob = await pdf(doc).toBlob();
+      const Url = window.URL.createObjectURL(blob);
+      const win = new BrowserWindow({ width: 600, height: 800 });
+      win.loadURL(Url);
+    }
     const ultimoTicket = {
       infoPunto: session.infoPunto,
       articulos,
@@ -135,7 +160,7 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
     setDialogOpen(false);
   };
 
-  const handleCobrar = async () => {
+  const handleCobrar = async (noImprimir: boolean | null = null) => {
     const articulos: ArticuloDB[] = values.articulos.map((val) => {
       return {
         articulo: val.articulo.nombre,
@@ -191,7 +216,7 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
               variables: ventaVariables,
             }).then((res) => {
               if (res.data && res.data.nuevaVenta.success === true) {
-                finalizarVenta(prendasAgrupadas);
+                finalizarVenta(prendasAgrupadas, noImprimir);
               }
             });
           } else {
@@ -222,7 +247,7 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
                   variables: ventaVariables,
                 }).then((res) => {
                   if (res.data && res.data.nuevaVenta.success === true) {
-                    finalizarVenta(prendasAgrupadas);
+                    finalizarVenta(prendasAgrupadas, noImprimir);
                   }
                 });
               }
@@ -272,7 +297,7 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
             variables,
           }).then((res) => {
             if (res.data && res.data.nuevaVenta.success === true) {
-              finalizarVenta(prendasAgrupadas);
+              finalizarVenta(prendasAgrupadas, noImprimir);
             }
           });
         } else {
@@ -288,7 +313,7 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
         }
       }
       if (!session.online) {
-        finalizarVenta(prendasAgrupadas);
+        finalizarVenta(prendasAgrupadas, noImprimir);
         await ipcRenderer.send('MOVIMIENTOS_OFFLINE', objOffline);
         if (objPagoOffline) {
           ipcRenderer.send('MOVIMIENTOS_OFFLINE', objPagoOffline);
@@ -313,11 +338,14 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
   };
 
   const handlers = {
-    COBRAR_CLICK: handleCobrar,
-    COBRAR_CLICKI: handleCobrar,
-    COBRAR_CLICKN: () => {
-      setNoImp(true);
+    COBRAR_CLICK: () => {
       handleCobrar();
+    },
+    COBRAR_CLICKI: () => {
+      handleCobrar();
+    },
+    COBRAR_CLICKN: () => {
+      handleCobrar(true);
     },
   };
 
@@ -449,6 +477,14 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
                       value="noImprimir"
                     />
                   </Tooltip>
+                  {values.cliente !== '' && (
+                    <FormControlLabel
+                      control={<Radio disabled={submitting} />}
+                      disabled={submitting}
+                      label="Imprimir nota A5"
+                      value="imprimirA5"
+                    />
+                  )}
                 </Field>
                 {submitting && (
                   <Box>
@@ -471,7 +507,7 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
                   submitting ||
                   (values.cliente === '' && values.cantidadPagada < total)
                 }
-                onClick={handleCobrar}
+                onClick={() => handleCobrar()}
                 size="small"
                 type="submit"
                 variant="outlined"

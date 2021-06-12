@@ -11,16 +11,21 @@ import { Link as RouterLink } from 'react-router-dom';
 import { AppRole, Role, Session } from '../types/types';
 import { RootState } from '../types/store';
 
+type IconOptions = 'añadir' | 'editar' | 'flecha' | 'imprimir';
+
 interface HeaderProps {
   categoria?: string;
   titulo: string;
   addPath?: string;
   handleOpen?: () => Promise<void> | void;
   buttonText?: string;
-  buttonIcon?: 'añadir' | 'editar' | 'flecha' | 'imprimir';
+  buttonIcon?: IconOptions;
   loading?: boolean;
   disabled?: boolean;
   readOnlyRoles?: AppRole[];
+  handleSecondaryOpen?: () => void;
+  buttonSecondaryIcon?: IconOptions;
+  buttonSecondaryText?: string;
 }
 const Header = (props: HeaderProps): JSX.Element => {
   const {
@@ -32,6 +37,9 @@ const Header = (props: HeaderProps): JSX.Element => {
     buttonIcon,
     loading,
     disabled,
+    handleSecondaryOpen,
+    buttonSecondaryIcon,
+    buttonSecondaryText,
     readOnlyRoles = [],
   } = props;
   const icon = {
@@ -91,6 +99,19 @@ const Header = (props: HeaderProps): JSX.Element => {
                 variant="contained"
               >
                 {buttonText}
+              </Button>
+            </Grid>
+          )}
+          {handleSecondaryOpen && (
+            <Grid item>
+              <Button
+                color="primary"
+                disabled={disabled}
+                onClick={handleSecondaryOpen}
+                startIcon={buttonSecondaryIcon && icon[buttonSecondaryIcon]}
+                variant="contained"
+              >
+                {buttonSecondaryText}
               </Button>
             </Grid>
           )}
