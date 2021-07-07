@@ -163,7 +163,10 @@ const UpperButtons = (props: UpperButtonsProps): JSX.Element => {
             >
               <IconButton
                 color="default"
-                onClick={() => formikProps.setFieldValue('cliente', '', false)}
+                onClick={() => {
+                  formikProps.setFieldValue('cliente', '', false);
+                  formikProps.setFieldValue('tipoDePago', 'efectivo', false);
+                }}
               >
                 <ClearIcon />
               </IconButton>

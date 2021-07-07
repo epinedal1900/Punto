@@ -9,13 +9,23 @@ import { history } from './history';
 import { auth } from '../firebase';
 import store from './store';
 import { modificarOnline } from '../actions/sessionActions';
+import client from './client';
+import { REPORTAR_ERROR } from './mutations';
 
 require('dotenv').config();
-
 export const errorLink = onError(
-  ({ graphQLErrors, networkError, operation }) => {
+  // @ts-expect-error: error
+  async ({ graphQLErrors, networkError, operation }) => {
     if (graphQLErrors) {
       alert(JSON.stringify(graphQLErrors, null, 2));
+      await client.mutate({
+        mutation: REPORTAR_ERROR,
+        variables: {
+          operation: `${JSON.stringify(
+            operation.operationName
+          )} ${JSON.stringify(operation.variables)}`,
+        },
+      });
       graphQLErrors.map(({ message }) => {
         if (message === 'UNAUTHENTICATED') {
           alert(JSON.stringify(message));
@@ -63,7 +73,7 @@ export const httpLink = new HttpLink({
 });
 
 export const authLink = setContext(async (_, { headers }) => {
-  const token = [];
+  const token: any = [];
   await auth.onAuthStateChanged(async (user) => {
     if (user) {
       await user.getIdToken().then((res) => {

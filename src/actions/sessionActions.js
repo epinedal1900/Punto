@@ -6,6 +6,7 @@ export const MODIFICAR_ULTIMO_TICKET = 'MODIFICAR_ULTIMO_TICKET';
 export const DESACTIVAR_PUNTO = 'DESACTIVAR_PUNTO';
 export const GUARDAR_INVENTARIO = 'GUARDAR_INVENTARIO';
 export const MODIFICAR_ONLINE = 'MODIFICAR_ONLINE';
+export const ASIGNAR_PUNTO = 'ASIGNAR_PUNTO';
 
 export const login = (args) => (dispatch) =>
   dispatch({
@@ -23,6 +24,11 @@ export const logout = () => (dispatch) =>
 export const modificarTickets = (args) => (dispatch) =>
   dispatch({
     type: MODIFICAR_TICKETS,
+    payload: args,
+  });
+export const asignarPunto = (args) => (dispatch) =>
+  dispatch({
+    type: ASIGNAR_PUNTO,
     payload: args,
   });
 export const modificarOnline = (args) => (dispatch) =>

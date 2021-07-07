@@ -47,6 +47,12 @@ const sessionReducer = (state = initialState, action: any) => {
         puntoIdActivo: null,
       };
     }
+    case actionTypes.ASIGNAR_PUNTO: {
+      return {
+        ...state,
+        puntoIdActivo: action.payload.asignarPunto,
+      };
+    }
     case actionTypes.MODIFICAR_TICKETS: {
       return {
         ...state,

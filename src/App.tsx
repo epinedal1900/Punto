@@ -1,3 +1,4 @@
+/* eslint-disable promise/catch-or-return */
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable func-names */
 /* eslint-disable react/jsx-props-no-spreading */
@@ -5,27 +6,20 @@
 /* eslint-disable react/no-multi-comp */
 
 // git commit -m "Agregado: notas A5 y lista de articulos, Arreglado: teclas F1 y F2 no funcionaban" --no-verify
-
 import React from 'react';
 import { Router, Switch, Route } from 'react-router-dom';
-import {
-  ApolloClient,
-  ApolloProvider,
-  InMemoryCache,
-  from,
-} from '@apollo/client';
-
+import { ApolloProvider } from '@apollo/client';
 import { Provider as StoreProvider } from 'react-redux';
-
+import { ErrorBoundary } from 'react-error-boundary';
 import { configure } from 'react-hotkeys';
 import { Role } from './types/types';
 import { Usuario } from './types/graphql';
 import { logout, login, desactivarPunto } from './actions';
+import client from './utils/client';
 
 import { USUARIO, PUNTO_ID_ACTIVO, MOVIMIENTOS } from './utils/queries';
 
 import { auth } from './firebase';
-import { errorLink, retryLink, authLink, httpLink } from './utils/apolloClient';
 import { history } from './utils/history';
 import Principal from './views/Principal';
 import Movimientos from './views/Movimientos';
@@ -42,33 +36,12 @@ import Dashboard from './layouts/Dashboard';
 import Auth from './layouts/Auth';
 import Error from './layouts/Error';
 import store from './utils/store';
+import { REPORTAR_ERROR } from './utils/mutations';
 
 configure({
   ignoreTags: ['select', 'textarea'],
 });
 
-const client = new ApolloClient({
-  link: from([errorLink, authLink, retryLink, httpLink]),
-  cache: new InMemoryCache({
-    addTypename: false,
-  }),
-});
-// window.addEventListener('online', () => {
-//   if (window.navigator.onLine) {
-//     alert('Became online');
-//   }
-// });
-// window.addEventListener('offline', () => {
-//   if (!window.navigator.onLine) {
-//     alert('Became offline');
-//   }
-// });
-// if (!store.getState().session.online) {
-//   alert('Modo sin conexión activado');
-// }
-// if (window.navigator.onLine) {
-//   alert('Modo sin conexión activado');
-// }
 auth.onAuthStateChanged(async (user) => {
   if (user && client) {
     if (
@@ -162,67 +135,81 @@ export default function App() {
     <ApolloProvider client={client}>
       <StoreProvider store={store}>
         <Router history={history}>
-          <Switch>
-            <RouteWrapper
-              component={Principal}
-              exact
-              layout={Dashboard}
-              path="/"
-            />
-            <RouteWrapper
-              component={Movimientos}
-              exact
-              layout={Dashboard}
-              path="/movimientos"
-            />
-            <RouteWrapper
-              component={DetallesMovimiento}
-              exact
-              layout={Dashboard}
-              path="/movimientos/:id"
-            />
-            <RouteWrapper
-              component={Gastos}
-              exact
-              layout={Dashboard}
-              path="/gastos"
-            />
-            <RouteWrapper
-              component={Articulos}
-              exact
-              layout={Dashboard}
-              path="/articulos"
-            />
-            <RouteWrapper
-              component={Impresoras}
-              exact
-              layout={Dashboard}
-              path="/impresoras"
-            />
-            <RouteWrapper
-              component={RegistroInventario}
-              exact
-              layout={Dashboard}
-              path="/registroinventario"
-            />
-            <RouteWrapper
-              component={Ingreso}
-              exact
-              layout={Auth}
-              path="/ingreso"
-            />
-            <RouteWrapper
-              component={Error405}
-              layout={Error}
-              path="/error/405"
-            />
-            <RouteWrapper
-              component={Error401}
-              layout={Error}
-              path="/error/401"
-            />
-            <RouteWrapper component={Error404} layout={Error} path="*" />
-          </Switch>
+          <ErrorBoundary
+            FallbackComponent={Error405}
+            onError={async (error) => {
+              await client.mutate({
+                mutation: REPORTAR_ERROR,
+                variables: {
+                  operation: `${JSON.stringify(error.message)} ${
+                    history.location.pathname
+                  }`,
+                },
+              });
+            }}
+          >
+            <Switch>
+              <RouteWrapper
+                component={Principal}
+                exact
+                layout={Dashboard}
+                path="/"
+              />
+              <RouteWrapper
+                component={Movimientos}
+                exact
+                layout={Dashboard}
+                path="/movimientos"
+              />
+              <RouteWrapper
+                component={DetallesMovimiento}
+                exact
+                layout={Dashboard}
+                path="/movimientos/:id"
+              />
+              <RouteWrapper
+                component={Gastos}
+                exact
+                layout={Dashboard}
+                path="/gastos"
+              />
+              <RouteWrapper
+                component={Articulos}
+                exact
+                layout={Dashboard}
+                path="/articulos"
+              />
+              <RouteWrapper
+                component={Impresoras}
+                exact
+                layout={Dashboard}
+                path="/impresoras"
+              />
+              <RouteWrapper
+                component={RegistroInventario}
+                exact
+                layout={Dashboard}
+                path="/registroinventario"
+              />
+              <RouteWrapper
+                component={Ingreso}
+                exact
+                layout={Auth}
+                path="/ingreso"
+              />
+              <RouteWrapper
+                component={Error405}
+                layout={Error}
+                path="/error/405"
+              />
+              <RouteWrapper
+                component={Error401}
+                layout={Error}
+                path="/error/401"
+              />
+              <RouteWrapper component={Error404} layout={Error} path="*" />
+            </Switch>
+          </ErrorBoundary>
         </Router>
       </StoreProvider>
     </ApolloProvider>

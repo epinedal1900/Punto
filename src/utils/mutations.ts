@@ -164,6 +164,11 @@ export const NUEVO_REGRESO = gql`
     }
   }
 `;
+export const REPORTAR_ERROR = gql`
+  mutation reportarError($operation: String) {
+    reportarError(operation: $operation)
+  }
+`;
 export const REGISTRAR_DISCREPANCIAS = gql`
   mutation RegistrarDiscrepancias(
     $articulos: [JSON!]!

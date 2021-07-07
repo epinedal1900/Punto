@@ -31,7 +31,7 @@ import { ListItems } from '../components/listItems';
 import NotificacionesPopover from '../components/NotificacionesPopover';
 import CancelDialog from '../components/CancelDialog';
 import SuccessErrorMessage from '../components/SuccessErrorMessage';
-import { modificarOnline } from '../actions/sessionActions';
+import { asignarPunto, modificarOnline } from '../actions/sessionActions';
 import { RootState } from '../types/store';
 import { Session } from '../types/types';
 import {
@@ -47,6 +47,7 @@ import {
   NuevoPagoVariables,
   NuevoRegreso,
   NuevoRegresoVariables,
+  PuntoIdActivo,
 } from '../types/apollo';
 import {
   MARCAR_LEIDOS_PUNTO,
@@ -56,7 +57,11 @@ import {
   NUEVO_REGRESO,
   NUEVO_INTERCAMBIO,
 } from '../utils/mutations';
-import { NOTIFICACIONES_PUNTO, MOVIMIENTOS } from '../utils/queries';
+import {
+  NOTIFICACIONES_PUNTO,
+  MOVIMIENTOS,
+  PUNTO_ID_ACTIVO,
+} from '../utils/queries';
 import { auth } from '../firebase';
 
 const { ipcRenderer } = window.require('electron');
@@ -161,6 +166,13 @@ export default function Dashboard(props: {
   const handleDrawerOpen = () => {
     setOpen(true);
   };
+  const { refetch: obtenerPuntoActual } = useQuery<PuntoIdActivo>(
+    PUNTO_ID_ACTIVO,
+    {
+      skip: true,
+    }
+  );
+
   const [nuevaVenta] = useMutation<NuevaVenta, NuevaVentaVariables>(
     NUEVA_VENTA
   );
@@ -194,6 +206,10 @@ export default function Dashboard(props: {
     setLoading(true);
     const store = ipcRenderer.sendSync('STORE');
     let hayErrores = false;
+    let puntoIdActual: string | null = null;
+    await obtenerPuntoActual().then((data) => {
+      puntoIdActual = data.data.puntoIdActivo;
+    });
     if (store.ventas && store.ventas.length) {
       await Promise.all(
         store.ventas.map(async (obj: any) => {
@@ -203,7 +219,11 @@ export default function Dashboard(props: {
             await nuevaVenta({
               variables: {
                 objVenta: o,
-                puntoId: obj.puntoId,
+                /**
+                 * ?Si no hay plaza activa al momento de subir
+                 * ?usa el puntoId original, si no usa el más reciente
+                 */
+                puntoId: puntoIdActual || obj.puntoId,
                 nombre: obj.nombre,
                 enviarMensaje: false,
               },
@@ -235,6 +255,9 @@ export default function Dashboard(props: {
         store.ventasClientes.map(async (obj: any) => {
           if (obj.objVenta.tipo.indexOf('(') === -1) {
             const o = omit(obj, '_idOffline');
+            assign(o, {
+              puntoId: puntoIdActual || o.puntoId,
+            });
             await nuevaVenta({
               // @ts-expect-error: error
               variables: o,
@@ -266,6 +289,9 @@ export default function Dashboard(props: {
         store.pagosClientes.map(async (obj: any) => {
           if (obj.objPago.tipo.indexOf('(') === -1) {
             const o = omit(obj, '_idOffline');
+            assign(o, {
+              puntoId: puntoIdActual || o.puntoId,
+            });
             await nuevoPago({
               // @ts-expect-error: error
               variables: o,
@@ -297,6 +323,9 @@ export default function Dashboard(props: {
         store.regresos.map(async (obj: any) => {
           if (obj.obj.tipo.indexOf('(') === -1) {
             const o = omit(obj, '_idOffline');
+            assign(o, {
+              puntoId: puntoIdActual || o.puntoId,
+            });
             await nuevoRegreso({
               // @ts-expect-error: error
               variables: o,
@@ -359,7 +388,10 @@ export default function Dashboard(props: {
       await Promise.all(
         store.gastos.map(async (obj: any) => {
           const o = omit(obj, '_idOffline');
-          assign(o, { enviarMensaje: false });
+          assign(o, {
+            enviarMensaje: false,
+            puntoId: puntoIdActual || o.puntoId,
+          });
           await nuevoGasto({
             // @ts-expect-error: error
             variables: o,
@@ -380,23 +412,28 @@ export default function Dashboard(props: {
         })
       );
     }
-    // @ts-expect-error: error
-    await getMovimientos({ variables: { _id: session.puntoIdActivo } }).then(
-      (data) => {
+    if (puntoIdActual) {
+      dispatch(asignarPunto({ asignarPunto: puntoIdActual }));
+      await getMovimientos({
+        // @ts-expect-error: error
+        variables: { _id: puntoIdActual },
+      }).then((data) => {
         ipcRenderer.send('PLAZA', data.data.movimientos);
+      });
+      if (!hayErrores) {
+        dispatch(modificarOnline({ online: true }));
+        localStorage.setItem('online', 'true');
+        setSuccess(true);
+        setMessage('Cambios subidos');
+      } else {
+        // eslint-disable-next-line no-alert
+        setMessage('No se pudieron subir todos los cambios, intente de nuevo');
       }
-    );
-    if (!hayErrores) {
-      dispatch(modificarOnline({ online: true }));
-      localStorage.setItem('online', 'true');
-      setSuccess(true);
-      setMessage('Cambios subidos');
+      setLoading(false);
+      setSubirConfirmationOpen(false);
     } else {
-      // eslint-disable-next-line no-alert
-      setMessage('No se pudieron subir todos los cambios, intente de nuevo');
+      window.location.reload();
     }
-    setLoading(false);
-    setSubirConfirmationOpen(false);
   };
   const handleDrawerClose = () => {
     setOpen(false);

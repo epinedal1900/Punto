@@ -9,7 +9,7 @@ import Grid from '@material-ui/core/Grid';
 import TextField from '@material-ui/core/TextField';
 import { useFormikContext } from 'formik';
 import Tooltip from '@material-ui/core/Tooltip';
-import { ClienteForm, PrincipalValues } from 'types/types';
+import { ClienteForm, PrincipalValues } from '../../../types/types';
 
 interface AsignarFormProps {
   open: boolean;
@@ -27,11 +27,13 @@ const AsignarForm = (props: AsignarFormProps): JSX.Element => {
     setDialogOpen(false);
     setAsignarOpen(false);
     setFieldValue('cliente', '', false);
+    setFieldValue('tipoDePago', 'efectivo', false);
   };
 
   const handleAsignar = () => {
     setDialogOpen(false);
     setAsignarOpen(false);
+    setFieldValue('tipoDePago', 'pendiente', false);
   };
 
   return (
@@ -69,7 +71,7 @@ const AsignarForm = (props: AsignarFormProps): JSX.Element => {
                     variant="outlined"
                   />
                 )}
-                // @ts-expect-error: error
+                // @ts-expect-error: err
                 value={values.cliente}
               />
             </Grid>
