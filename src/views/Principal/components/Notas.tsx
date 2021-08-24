@@ -1,9 +1,8 @@
 import React from 'react';
 import { Page, Document, StyleSheet, Font, Text } from '@react-pdf/renderer';
 import { Dayjs } from 'dayjs';
+import { DatosTablaPrendas } from '../../../types/types';
 // import { colors } from '@material-ui/core';
-
-import { ArticuloDB } from '../../../types/types';
 
 Font.register({
   family: 'Lato',
@@ -18,7 +17,7 @@ Font.register({
 interface NotasProps {
   nombre: string;
   fecha: Dayjs;
-  articulos: ArticuloDB[];
+  articulos: DatosTablaPrendas[];
 }
 const Notas = (props: NotasProps): JSX.Element => {
   const { nombre, fecha, articulos } = props;
@@ -29,7 +28,8 @@ const Notas = (props: NotasProps): JSX.Element => {
     return `${py}px`;
   };
   const total = articulos.reduce((acc, cur) => {
-    return acc + cur.precio * cur.cantidad;
+    const precio = cur.Precio || 0;
+    return acc + precio * cur.Cantidad;
   }, 0);
 
   const stylesObj: any = {
@@ -131,22 +131,26 @@ const Notas = (props: NotasProps): JSX.Element => {
         </Text>
         {articulos.map((articulo, i) => (
           <>
-            <Text style={styles[`cantidad${i}`]}>
-              {Intl.NumberFormat('en-US', {}).format(articulo.cantidad)}
-            </Text>
-            <Text style={styles[`descripcion${i}`]}>{articulo.articulo}</Text>
-            <Text style={styles[`precio${i}`]}>
-              {Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD',
-              }).format(articulo.precio)}
-            </Text>
-            <Text style={styles[`importe${i}`]}>
-              {Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD',
-              }).format(articulo.precio * articulo.cantidad)}
-            </Text>
+            {articulo.Precio && (
+              <>
+                <Text style={styles[`cantidad${i}`]}>
+                  {Intl.NumberFormat('en-US', {}).format(articulo.Cantidad)}
+                </Text>
+                <Text style={styles[`descripcion${i}`]}>{articulo.Nombre}</Text>
+                <Text style={styles[`precio${i}`]}>
+                  {Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                  }).format(articulo.Precio)}
+                </Text>
+                <Text style={styles[`importe${i}`]}>
+                  {Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                  }).format(articulo.Precio * articulo.Cantidad)}
+                </Text>
+              </>
+            )}
           </>
         ))}
       </Page>

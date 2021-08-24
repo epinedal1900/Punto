@@ -1,3 +1,4 @@
+/* eslint-disable radix */
 import React from 'react';
 
 import Skeleton from '@material-ui/lab/Skeleton';
@@ -36,7 +37,7 @@ const LoadingTable = ({
         <TableBody>
           {arr.map((_e: any, i) => (
             <TableRow key={i}>
-              {cols.map((_e: any, j) => (
+              {cols.map((_er: any, j) => (
                 <TableCell key={parseInt(i.toString() + j.toString())}>
                   <Skeleton key={1} />
                 </TableCell>

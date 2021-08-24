@@ -1,3 +1,5 @@
+/* eslint-disable react/jsx-no-duplicate-props */
+/* eslint-disable @typescript-eslint/naming-convention */
 import React from 'react';
 import Button from '@material-ui/core/Button';
 import Grid from '@material-ui/core/Grid';
@@ -8,8 +10,8 @@ import { Formik, FormikHelpers } from 'formik';
 import * as yup from 'yup';
 import { useMutation } from '@apollo/client';
 import { useSelector } from 'react-redux';
-import { assign } from 'lodash';
 import ObjectId from 'bson-objectid';
+import { RxDocument } from 'rxdb';
 
 import TextField from '@material-ui/core/TextField';
 import LinearProgress from '@material-ui/core/LinearProgress';
@@ -17,13 +19,17 @@ import Typography from '@material-ui/core/Typography';
 import { AutocompleteField } from '../../../components';
 import { RootState } from '../../../types/store';
 import { MoneyFormat } from '../../../utils/TextFieldFormats';
-
+import * as Database from '../../../Database';
 import { NUEVO_PAGO } from '../../../utils/mutations';
-import { MOVIMIENTOS } from '../../../utils/queries';
-import { ClienteForm, PagoValues, Session } from '../../../types/types';
-import { NuevoPago, NuevoPagoVariables } from '../../../types/apollo';
-
-const { ipcRenderer } = window.require('electron');
+import { PagoValues, SetState } from '../../../types/types';
+import {
+  nuevoPago,
+  NuevoPagoUtils_clientes,
+  nuevoPagoVariables,
+  TipoDePago,
+} from '../../../types/apollo';
+import { PLAZA } from '../../../utils/queries';
+import { fechaPorId } from '../../../utils/functions';
 
 const validationSchema = yup.object({
   cliente: yup.object().required('requerido'),
@@ -31,12 +37,14 @@ const validationSchema = yup.object({
   comentarios: yup.string(),
 });
 interface NuevoPagoProps {
-  clientes: ClienteForm[];
-  setMessage: (a: string | null) => void;
-  setSuccess: (a: boolean) => void;
-  setDialogOpen: (a: boolean) => void;
-  setPagoOpen: (a: boolean) => void;
+  clientes: NuevoPagoUtils_clientes[];
+  setMessage: SetState<string | null>;
+  setSuccess: SetState<boolean>;
+  setDialogOpen: SetState<boolean>;
+  setPagoOpen: SetState<boolean>;
   open: boolean;
+  plazaDoc: RxDocument<Database.plazaDB>;
+  mutationVariablesDoc: RxDocument<Database.mutation_variables>;
 }
 
 const NuevoPagoComponent = (props: NuevoPagoProps): JSX.Element => {
@@ -47,81 +55,86 @@ const NuevoPagoComponent = (props: NuevoPagoProps): JSX.Element => {
     setDialogOpen,
     setPagoOpen,
     open,
+    mutationVariablesDoc,
+    plazaDoc,
   } = props;
-  const initialValues = {
-    cliente: '',
-    monto: 0,
-    comentarios: '',
-  };
-  const session: Session = useSelector((state: RootState) => state.session);
+  const plazaState = useSelector((state: RootState) => state.plaza);
 
-  const [nuevoPago] = useMutation<NuevoPago, NuevoPagoVariables>(NUEVO_PAGO, {
-    onCompleted: (data) => {
-      if (data.nuevoPago.success === true) {
-        setMessage(data.nuevoPago.message);
-        setSuccess(true);
-        setDialogOpen(false);
-        setPagoOpen(false);
-      } else {
-        setMessage(data.nuevoPago.message);
-      }
-    },
-    onError: (error) => {
-      setMessage(JSON.stringify(error, null, 4));
-    },
-    refetchQueries: [
-      {
-        query: MOVIMIENTOS,
-        variables: { _id: session.puntoIdActivo },
+  const [nuevoPagoFunction] = useMutation<nuevoPago, nuevoPagoVariables>(
+    NUEVO_PAGO,
+    {
+      onCompleted: (data) => {
+        if (data.nuevoPago.success === true) {
+          setMessage(data.nuevoPago.message);
+          setSuccess(true);
+          setDialogOpen(false);
+          setPagoOpen(false);
+        } else {
+          setMessage(data.nuevoPago.message);
+        }
       },
-    ],
-  });
+      onError: (error) => {
+        setMessage(JSON.stringify(error, null, 4));
+      },
+      refetchQueries: [
+        {
+          query: PLAZA,
+          variables: { _id: plazaState._idPunto },
+        },
+      ],
+    }
+  );
 
   const handleAgregar = async (
     values: PagoValues,
     actions: FormikHelpers<PagoValues>
   ) => {
-    const cliente = values.cliente.nombre;
-    const objPago = {
-      cliente: values.cliente._id,
-      tipo: 'efectivo',
-      monto: values.monto,
-      comentarios: values.comentarios,
-    };
-    const variables = {
-      cliente,
-      objPago,
-      puntoId: session.puntoIdActivo,
-    };
-    if (session.online) {
-      await nuevoPago({
-        variables,
-      }).then((res) => {
-        if (res.data && res.data.nuevoPago.success === true) {
-          actions.resetForm();
-        }
-      });
-    } else {
-      const objOffline = {
-        _id: new ObjectId().toString(),
-        Fecha: new Date().toISOString(),
-        Tipo: `Sin conexión: pago: ${values.cliente.nombre}`,
-        Monto: values.monto,
-        Pago: null,
-        Prendas: 0,
-        articulos: null,
-        comentarios: values.comentarios,
+    const { cliente } = values;
+    if (cliente !== '' && plazaState._idPunto) {
+      const _id = new ObjectId();
+      const variables: nuevoPagoVariables = {
+        _id: _id.toString(),
+        nombre: cliente.nombre,
+        obj: {
+          cl: cliente._id,
+          ti: TipoDePago.efectivo,
+          mo: values.monto,
+          co: values.comentarios,
+        },
+        puntoId: plazaState._idPunto,
       };
-      assign(variables, {
-        _idOffline: objOffline._id,
-      });
-      ipcRenderer.send('PAGOS_CLIENTES', variables);
-      ipcRenderer.send('MOVIMIENTOS_OFFLINE', objOffline);
-      actions.resetForm();
-      setMessage('Pago añadido');
-      setSuccess(true);
-      setDialogOpen(false);
-      setPagoOpen(false);
+      if (plazaState.online) {
+        await nuevoPagoFunction({
+          variables,
+        }).then((res) => {
+          if (res.data && res.data.nuevoPago.success === true) {
+            actions.resetForm();
+          }
+        });
+      } else {
+        await mutationVariablesDoc.atomicUpdate((oldData) => {
+          oldData.pago.push(variables);
+          return oldData;
+        });
+        await plazaDoc.atomicUpdate((oldData) => {
+          oldData.pagos?.unshift({
+            _id: _id.toString(),
+            cliente: cliente._id,
+            Fecha: fechaPorId(_id),
+            Nombre: `sin conexión: ${cliente.nombre}`,
+            Tipo: 'efectivo',
+            Monto: values.monto,
+            Comentarios: values.comentarios,
+            ca: false,
+          });
+          return oldData;
+        });
+        actions.resetForm();
+        setMessage('Pago añadido');
+        setSuccess(true);
+        setDialogOpen(false);
+        setPagoOpen(false);
+      }
     }
   };
 
@@ -133,8 +146,11 @@ const NuevoPagoComponent = (props: NuevoPagoProps): JSX.Element => {
   return (
     <Dialog onClose={handleClose} open={open}>
       <Formik<PagoValues>
-        // @ts-expect-error: error
-        initialValues={initialValues}
+        initialValues={{
+          cliente: '',
+          monto: 0,
+          comentarios: '',
+        }}
         onSubmit={handleAgregar}
         validateOnBlur={false}
         validateOnChange={false}

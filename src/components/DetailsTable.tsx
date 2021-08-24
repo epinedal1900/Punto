@@ -27,14 +27,15 @@ import CloudUploadOutlinedIcon from '@material-ui/icons/CloudUploadOutlined';
 import { useTable } from 'react-table';
 import { useSelector } from 'react-redux';
 import { assign } from 'lodash';
-import useRouter from '../utils/useRouter';
 
-import makeColumns from '../utils/makeColumns';
-import { AppRole, Role, Session } from '../types/types';
+import useRouter from '../utils/useRouter';
+import { makeColumns } from '../utils/functions';
+import { AppRole } from '../types/types';
 import { RootState } from '../types/store';
 import LoadingTable from './LoadingTable';
+import { Theme } from '../theme';
 
-const useStyles = makeStyles((theme: any) => ({
+const useStyles = makeStyles((theme: Theme) => ({
   root: {},
   content: {
     padding: 0,
@@ -109,7 +110,7 @@ function EnhancedTable(props: EnhancedTableProps) {
 
   const classes = useStyles();
   const { history } = useRouter();
-  const session: Session = useSelector((state: RootState) => state.session);
+  const session = useSelector((state: RootState) => state.session);
 
   const { getTableProps, headerGroups, rows, prepareRow } = useTable({
     columns,
@@ -122,8 +123,8 @@ function EnhancedTable(props: EnhancedTableProps) {
     }
   };
   return (
-    <Card className={classes.root}>
-      <CardHeader title={title} />
+    <Card className={classes.root} elevation={4}>
+      <CardHeader title={<Typography variant="h6">{title}</Typography>} />
       <Divider />
       <CardContent className={classes.content}>
         <div className={classes.inner}>
@@ -169,8 +170,8 @@ function EnhancedTable(props: EnhancedTableProps) {
         </div>
       </CardContent>
       <CardActions className={classes.actions} disableSpacing>
-        {JSON.parse(session.roles).some((role: Role) => {
-          return readOnlyRoles.includes(role.role) && role.readOnly === 'false';
+        {session.roles?.some((role) => {
+          return readOnlyRoles.includes(role.role) && !role.readOnly;
         }) && (
           <>
             {handleEditClick && (
@@ -329,8 +330,10 @@ const DetailsTable = (props: DetailsTableProps): JSX.Element => {
               title={title}
             />
           ) : (
-            <Card>
-              <CardHeader title={title} />
+            <Card elevation={4}>
+              <CardHeader
+                title={<Typography variant="h6">{title}</Typography>}
+              />
               <Divider />
               <CardContent className={classes.content}>
                 <Box display="flex" justifyContent="center" m={0}>
@@ -345,8 +348,8 @@ const DetailsTable = (props: DetailsTableProps): JSX.Element => {
           )}
         </>
       ) : (
-        <Card>
-          <CardHeader title={title} />
+        <Card elevation={4}>
+          <CardHeader title={<Typography variant="h6">{title}</Typography>} />
           <Divider />
           <CardContent className={classes.content}>
             <div className={classes.inner}>

@@ -1,4 +1,8 @@
-import React, { useState } from 'react';
+/* eslint-disable react/jsx-no-duplicate-props */
+/* eslint-disable @typescript-eslint/naming-convention */
+/* eslint-disable prefer-destructuring */
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, { useState, useEffect } from 'react';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogActions from '@material-ui/core/DialogActions';
@@ -9,6 +13,7 @@ import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
 import TextField from '@material-ui/core/TextField';
 import { useFormikContext, Field } from 'formik';
+import { Divider } from '@material-ui/core';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import { useMutation } from '@apollo/client';
 import { RadioGroup } from 'formik-material-ui';
@@ -16,20 +21,48 @@ import Radio from '@material-ui/core/Radio';
 import { useSelector, useDispatch } from 'react-redux';
 import Tooltip from '@material-ui/core/Tooltip';
 import ObjectId from 'bson-objectid';
-import { assign, groupBy } from 'lodash';
 import { HotKeys } from 'react-hotkeys';
 import dayjs from 'dayjs';
 import { pdf } from '@react-pdf/renderer';
-import Notas from './Notas';
-import { ArticuloDB, PrincipalValues, Session } from '../../../types/types';
-import { RootState } from '../../../types/store';
-import { NuevaVenta, NuevaVentaVariables } from '../../../types/apollo';
-import { MoneyFormat } from '../../../utils/TextFieldFormats';
+import { RxDocument } from 'rxdb';
 
-import { NUEVA_VENTA, NUEVO_PAGO } from '../../../utils/mutations';
-import { MOVIMIENTOS } from '../../../utils/queries';
-import crearTicketData from '../../../utils/crearTicketData';
-import { modificarUltimoTicket } from '../../../actions/sessionActions';
+import Notas from './Notas';
+import {
+  DatosTablaPrendas,
+  ImpresionDeTicketsArgs,
+  PrendasRevision,
+  PrincipalValues,
+  SetState,
+} from '../../../types/types';
+import { RootState } from '../../../types/store';
+import { MoneyFormat } from '../../../utils/TextFieldFormats';
+import { PLAZA } from '../../../utils/queries';
+import {
+  agruparArticulosParaVenta,
+  crearTicketData,
+  datosParaTablaDePrendas,
+  fechaPorId,
+  montoPrendasNuevaVenta,
+  restablecerTicket,
+} from '../../../utils/functions';
+import {
+  NUEVA_VENTA_CLIENTE,
+  NUEVA_VENTA_PUNTO_DE_VENTA,
+  NUEVO_PAGO,
+} from '../../../utils/mutations';
+import {
+  nuevaVentaCliente,
+  nuevaVentaClienteVariables,
+  nuevaVentaPuntoDeVenta,
+  nuevaVentaPuntoDeVentaVariables,
+  nuevoPagoVariables,
+  plaza_plaza_ventas,
+  PrendasNuevaVenta,
+  TipoDePago,
+} from '../../../types/apollo';
+import { modificarUltimoTicket } from '../../../actions';
+import RevisionDeArticulos from '../../../components/RevisionDeArticulos';
+import * as Database from '../../../Database';
 
 const { ipcRenderer } = window.require('electron');
 const electron = window.require('electron');
@@ -38,102 +71,132 @@ const { BrowserWindow } = remote;
 
 interface CobrarFormProps {
   open: boolean;
-  setCobrarOpen: (a: boolean) => void;
-  setDialogOpen: (a: boolean) => void;
-  setMessage: (a: string | null) => void;
-  setSuccess: (a: boolean) => void;
+  setCobrarOpen: SetState<boolean>;
+  setDialogOpen: SetState<boolean>;
+  setMessage: SetState<string | null>;
+  setSuccess: SetState<boolean>;
+  plazaDoc: RxDocument<Database.plazaDB>;
+  docTicket: RxDocument<Database.TicketDb> | null;
+  mutationVariablesDoc: RxDocument<Database.mutation_variables>;
 }
 const CobrarForm = (props: CobrarFormProps): JSX.Element => {
-  const { open, setCobrarOpen, setDialogOpen, setMessage, setSuccess } = props;
+  const {
+    open,
+    setCobrarOpen,
+    docTicket,
+    setDialogOpen,
+    setMessage,
+    setSuccess,
+    plazaDoc,
+    mutationVariablesDoc,
+  } = props;
   const {
     values,
     errors,
     touched,
     setFieldValue,
-    handleBlur,
-    handleChange,
     resetForm,
   } = useFormikContext<PrincipalValues>();
   const [submitting, setSubmitting] = useState(false);
   const [cambio, setCambio] = useState('$0.00');
-  const total = values.articulos.reduce((acc, cur) => {
-    return acc + cur.precio * cur.cantidad;
-  }, 0);
-  const NoDeArticulos = values.articulos.reduce((acc, cur) => {
-    return acc + cur.cantidad;
-  }, 0);
 
-  const session: Session = useSelector((state: RootState) => state.session);
+  const plazaState = useSelector((state: RootState) => state.plaza);
+  const session = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch();
-
-  const [nuevaVenta] = useMutation<NuevaVenta, NuevaVentaVariables>(
-    NUEVA_VENTA,
-    {
-      onCompleted: (data) => {
-        if (data.nuevaVenta.success === true) {
-          setMessage(`${data.nuevaVenta.message}. Cambio: ${cambio}`);
-          setSuccess(true);
-        } else {
-          setMessage(data.nuevaVenta.message);
-        }
-      },
-      onError: (error) => {
-        setMessage(JSON.stringify(error, null, 4));
-      },
-      refetchQueries: [
-        {
-          query: MOVIMIENTOS,
-          variables: { _id: session.puntoIdActivo },
-        },
-      ],
+  const [pRevision, setPRevision] = useState<PrendasRevision[] | null>(null);
+  const [pPrendas, setPPrendas] = useState<PrendasNuevaVenta[] | null>(null);
+  const [total, setTotal] = useState<number>(0);
+  useEffect(() => {
+    if (open) {
+      const { prendas, revision } = agruparArticulosParaVenta(values);
+      setPRevision(revision);
+      setPPrendas(prendas);
+      setTotal(montoPrendasNuevaVenta(prendas));
     }
-  );
-  // solo para clientes
-  const [nuevoPago] = useMutation(NUEVO_PAGO, {
-    onError: (error) => {
-      setMessage(JSON.stringify(error, null, 4));
+  }, [open]);
+
+  const [nuevaVentaClienteFunction] = useMutation<
+    nuevaVentaCliente,
+    nuevaVentaClienteVariables
+  >(NUEVA_VENTA_CLIENTE, {
+    onCompleted: (data) => {
+      if (data.nuevaVentaCliente.success === true) {
+        setMessage(`${data.nuevaVentaCliente.message}. Cambio: ${cambio}`);
+        setSuccess(true);
+      } else {
+        setMessage(data.nuevaVentaCliente.message);
+      }
     },
     refetchQueries: [
       {
-        query: MOVIMIENTOS,
-        variables: { _id: session.puntoIdActivo },
+        query: PLAZA,
+        variables: { _id: plazaState._idPunto },
+      },
+    ],
+  });
+
+  const [nuevaVentaPuntoDeVentaFunction] = useMutation<
+    nuevaVentaPuntoDeVenta,
+    nuevaVentaPuntoDeVentaVariables
+  >(NUEVA_VENTA_PUNTO_DE_VENTA, {
+    onCompleted: (data) => {
+      if (data.nuevaVentaPuntoDeVenta.success === true) {
+        setMessage(data.nuevaVentaPuntoDeVenta.message);
+        setSuccess(true);
+      } else {
+        setMessage(data.nuevaVentaPuntoDeVenta.message);
+      }
+    },
+    refetchQueries: [
+      {
+        query: PLAZA,
+        variables: { _id: plazaState._idPunto },
+      },
+    ],
+  });
+
+  const [nuevoPago] = useMutation(NUEVO_PAGO, {
+    refetchQueries: [
+      {
+        query: PLAZA,
+        variables: { _id: plazaState._idPunto },
       },
     ],
   });
 
   const finalizarVenta = async (
-    articulos: ArticuloDB[],
+    articulos: DatosTablaPrendas[],
     noImprimir: boolean | null
   ) => {
+    const ticketArgs: Required<ImpresionDeTicketsArgs> = {
+      infoPunto: plazaState.infoPunto || 'GIRL STATE <br><br>',
+      articulos,
+      cliente: values.cliente ? values.cliente.nombre : null,
+      cantidadPagada: values.cantidadPagada,
+      cambio: typeof cambio === 'number' ? cambio : null,
+      fecha: dayjs().toISOString(),
+    };
     if (
       values.tipoDeImpresion === 'imprimir' &&
       (noImprimir == null || !noImprimir)
     ) {
-      const data = crearTicketData(
-        session.infoPunto,
-        articulos,
-        // @ts-expect-error: error
-        values.cliente.nombre,
-        values.cantidadPagada,
-        cambio
-      );
-      if (session.ancho && session.impresora) {
+      const data = crearTicketData(ticketArgs);
+      if (plazaState.ancho && plazaState.impresora) {
         ipcRenderer.send('PRINT', {
           data,
-          impresora: session.impresora,
-          ancho: session.ancho,
+          impresora: plazaState.impresora,
+          ancho: plazaState.ancho,
         });
       } else {
         // eslint-disable-next-line no-alert
         alert('seleccione una impresora y un ancho');
       }
     }
-    if (values.tipoDeImpresion === 'imprimirA5') {
+    if (values.tipoDeImpresion === 'imprimirA5' && values.cliente !== '') {
       const doc = (
         <Notas
           articulos={articulos}
           fecha={dayjs()}
-          // @ts-expect-error: error
           nombre={values.cliente.nombre}
         />
       );
@@ -142,182 +205,138 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
       const win = new BrowserWindow({ width: 600, height: 800 });
       win.loadURL(Url);
     }
-    const ultimoTicket = {
-      infoPunto: session.infoPunto,
-      articulos,
-      // @ts-expect-error: error
-      cliente: values.cliente.nombre,
-      cantidadPagada: values.cantidadPagada,
-      cambio,
-    };
-    dispatch(
-      modificarUltimoTicket({
-        ultimoTicket,
-      })
-    );
+    if (docTicket) restablecerTicket(docTicket);
+    dispatch(modificarUltimoTicket(ticketArgs));
     resetForm();
     setCobrarOpen(false);
     setDialogOpen(false);
   };
 
   const handleCobrar = async (noImprimir: boolean | null = null) => {
-    const articulos: ArticuloDB[] = values.articulos.map((val) => {
-      return {
-        articulo: val.articulo.nombre,
-        cantidad: val.cantidad,
-        precio: val.precio,
-      };
-    });
-    if (!submitting && articulos.length > 0) {
-      const prendasAgrupadasObj = groupBy(articulos, 'articulo');
-      const prendasAgrupadas = Object.keys(prendasAgrupadasObj).map((key) => {
-        return {
-          articulo: key,
-          cantidad: prendasAgrupadasObj[key].reduce((acc, cur) => {
-            return acc + cur.cantidad;
-          }, 0),
-          precio: prendasAgrupadasObj[key][0].precio,
-        };
-      });
+    if (
+      !submitting &&
+      pPrendas &&
+      pPrendas.length > 0 &&
+      total &&
+      plazaState._idPunto &&
+      plazaState.idInventario &&
+      session.nombre
+    ) {
+      const _id = new ObjectId();
+      const prendasTicket = await datosParaTablaDePrendas(pPrendas);
       setSubmitting(true);
-      const puntoId = session.puntoIdActivo;
       const { nombre } = session;
-      let objPagoOffline;
-      const objOffline = {
-        _id: new ObjectId().toString(),
-        Fecha: new Date().toISOString(),
-        Tipo: 'Sin conexión: venta',
+      const ventaOffline: plaza_plaza_ventas = {
+        _id: _id.toString(),
+        Fecha: fechaPorId(_id),
+        Nombre: `sin conexión: venta ${
+          values.cliente !== '' ? values.cliente.nombre : 'público en general'
+        }`,
         Monto: total,
-        Pago: null,
-        Prendas: NoDeArticulos,
-        articulos: prendasAgrupadas,
-        comentarios: values.comentarios,
+        // @ts-expect-error:err
+        ar: pPrendas,
+        ca: false,
+        Comentarios: values.comentarios,
       };
-      if (values.cliente) {
-        const objVenta = {
-          cliente: values.cliente._id,
-          tipo: `entrega en ${session.nombre}`,
-          articulos: prendasAgrupadas,
-        };
-        if (values.comentarios !== '') {
-          assign(objVenta, { comentarios: values.comentarios });
-        }
-        const cliente = values.cliente.nombre;
-        const ventaVariables = {
-          objVenta,
-          monto: total,
-          cliente,
-          nombre,
-          puntoId,
-        };
-        if (values.tipoDePago === 'pendiente') {
-          if (session.online) {
-            await nuevaVenta({
-              variables: ventaVariables,
-            }).then((res) => {
-              if (res.data && res.data.nuevaVenta.success === true) {
-                finalizarVenta(prendasAgrupadas, noImprimir);
-              }
-            });
-          } else {
-            assign(ventaVariables, { _idOffline: objOffline._id });
-            ipcRenderer.send('VENTAS_CLIENTES', ventaVariables);
-            assign(objOffline, {
-              Tipo: `Sin conexión: venta: ${cliente}`,
-              Pago: 0,
-            });
-          }
-        } else if (values.tipoDePago === 'efectivo') {
-          const objPago = {
-            cliente: values.cliente._id,
-            tipo: 'efectivo',
-            monto: values.cantidadPagada,
+      if (values.cliente !== '') {
+        const cliente = values.cliente;
+        if (values.tipoDePago === 'efectivo') {
+          const pagoVariables: nuevoPagoVariables = {
+            _id: new ObjectId().toString(),
+            nombre,
+            obj: {
+              cl: cliente._id,
+              ti: TipoDePago.efectivo,
+              mo: values.cantidadPagada,
+              co: values.comentarios,
+            },
+            puntoId: plazaState._idPunto,
           };
-          const pagoVariables = {
-            cliente,
-            objPago,
-          };
-          if (session.online) {
+          if (plazaState.online) {
             await nuevoPago({
               variables: pagoVariables,
-            }).then(async (pagoRes) => {
-              if (pagoRes.data.nuevoPago.success === true) {
-                assign(ventaVariables, { idPago: pagoRes.data.nuevoPago._id });
-                await nuevaVenta({
-                  variables: ventaVariables,
-                }).then((res) => {
-                  if (res.data && res.data.nuevaVenta.success === true) {
-                    finalizarVenta(prendasAgrupadas, noImprimir);
-                  }
-                });
-              }
             });
           } else {
-            assign(ventaVariables, { _idOffline: objOffline._id });
-            ipcRenderer.send('VENTAS_CLIENTES', ventaVariables);
-            assign(objOffline, {
-              Tipo: `Sin conexión: venta: ${cliente}`,
-              Pago: 0,
+            await mutationVariablesDoc.atomicUpdate((oldData) => {
+              oldData.pago.push(pagoVariables);
+              return oldData;
             });
-            objPagoOffline = {
-              _id: new ObjectId().toString(),
-              Fecha: new Date().toISOString(),
-              Tipo: `Sin conexión: pago: ${cliente}`,
-              Monto: values.cantidadPagada,
-              Pago: null,
-              Prendas: 0,
-              articulos: null,
-              comentarios: values.comentarios,
-            };
-            assign(pagoVariables, {
-              _idOffline: objPagoOffline._id,
-              puntoId: session.puntoIdActivo,
+            await plazaDoc.atomicUpdate((oldData) => {
+              oldData.pagos?.unshift({
+                _id: _id.toString(),
+                cliente: cliente._id,
+                Fecha: fechaPorId(_id),
+                Nombre: `sin conexión: ${cliente.nombre}`,
+                Tipo: 'efectivo',
+                Monto: values.cantidadPagada,
+                Comentarios: values.comentarios,
+                ca: false,
+              });
+              return oldData;
             });
-            ipcRenderer.send('PAGOS_CLIENTES', pagoVariables);
           }
         }
-      } else {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        const _id = new ObjectId();
-        const objVenta = {
-          _id,
-          tipo: 'venta',
-          articulos: prendasAgrupadas,
-        };
-        if (values.comentarios !== '') {
-          assign(objVenta, { comentarios: values.comentarios });
-        }
-        const variables = {
-          objVenta,
-          puntoId,
+        const ventaClienteVariables: nuevaVentaClienteVariables = {
+          _id: _id.toString(),
+          args: {
+            in: plazaState.idInventario,
+            cl: cliente._id,
+            prendas: pPrendas,
+            di: undefined,
+            co: values.comentarios !== '' ? values.comentarios : undefined,
+          },
           nombre,
+          puntoId: plazaState._idPunto,
         };
-        if (session.online) {
-          await nuevaVenta({
-            variables,
+        if (plazaState.online) {
+          await nuevaVentaClienteFunction({
+            variables: ventaClienteVariables,
           }).then((res) => {
-            if (res.data && res.data.nuevaVenta.success === true) {
-              finalizarVenta(prendasAgrupadas, noImprimir);
+            if (res.data && res.data.nuevaVentaCliente.success === true) {
+              finalizarVenta(prendasTicket, noImprimir);
             }
           });
         } else {
-          assign(variables, {
-            _idOffline: objOffline._id,
-            objVenta: {
-              _id: _id.toString(),
-              tipo: 'venta',
-              articulos: prendasAgrupadas,
-            },
+          await mutationVariablesDoc.atomicUpdate((oldData) => {
+            oldData.venta_cliente.push(ventaClienteVariables);
+            return oldData;
           });
-          ipcRenderer.send('VENTAS', variables);
+          await plazaDoc.atomicUpdate((oldData) => {
+            oldData.ventas?.unshift(ventaOffline);
+            return oldData;
+          });
+        }
+      } else {
+        const ventaPuntoDeVentaVariables: nuevaVentaPuntoDeVentaVariables = {
+          args: {
+            in: plazaState.idInventario,
+            prendas: pPrendas,
+            co: values.comentarios,
+          },
+          puntoId: plazaState._idPunto,
+          _id: _id.toString(),
+        };
+        if (plazaState.online) {
+          await nuevaVentaPuntoDeVentaFunction({
+            variables: ventaPuntoDeVentaVariables,
+          }).then((res) => {
+            if (res.data && res.data.nuevaVentaPuntoDeVenta.success === true) {
+              finalizarVenta(prendasTicket, noImprimir);
+            }
+          });
+        } else {
+          await mutationVariablesDoc.atomicUpdate((oldData) => {
+            oldData.venta_punto.push(ventaPuntoDeVentaVariables);
+            return oldData;
+          });
+          await plazaDoc.atomicUpdate((oldData) => {
+            oldData.ventas?.unshift(ventaOffline);
+            return oldData;
+          });
         }
       }
-      if (!session.online) {
-        finalizarVenta(prendasAgrupadas, noImprimir);
-        await ipcRenderer.send('MOVIMIENTOS_OFFLINE', objOffline);
-        if (objPagoOffline) {
-          ipcRenderer.send('MOVIMIENTOS_OFFLINE', objPagoOffline);
-        }
+      if (!plazaState.online) {
+        finalizarVenta(prendasTicket, noImprimir);
         setMessage(`Venta añadida. Cambio: ${cambio}`);
         setSuccess(true);
       }
@@ -351,27 +370,23 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
 
   return (
     <HotKeys allowChanges handlers={handlers} keyMap={keyMap}>
-      <Dialog onClose={handleClose} open={open}>
-        <Box width={400}>
+      <Dialog fullWidth maxWidth="sm" onClose={handleClose} open={open}>
+        <Box height="auto">
           <DialogContent>
-            <Grid container spacing={2}>
+            <Grid container spacing={1}>
               <Grid item xs={12}>
                 {values.cliente !== '' && (
                   <Typography variant="subtitle1">
                     {`Cliente: ${values.cliente.nombre}`}
                   </Typography>
                 )}
-                <Typography variant="subtitle1">
-                  {`Total: ${Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: 'USD',
-                  }).format(total)}`}
-                </Typography>
-                <Typography variant="subtitle1">
-                  {`Número de artículos  : ${NoDeArticulos}`}
-                </Typography>
+                {pRevision && (
+                  <RevisionDeArticulos articulos={pRevision} conPrecio />
+                )}
                 {values.tipoDePago === 'efectivo' && (
-                  <Typography variant="subtitle1">{`Cambio: ${cambio}`}</Typography>
+                  <Box mt={1}>
+                    <Typography variant="subtitle1">{`Cambio: ${cambio}`}</Typography>
+                  </Box>
                 )}
               </Grid>
               <Grid item xs={12}>
@@ -400,7 +415,6 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
                         Boolean(errors.cantidadPagada)) ||
                       (values.cliente === '' && values.cantidadPagada < total)
                     }
-                    focused
                     fullWidth
                     helperText={touched.cantidadPagada && errors.cantidadPagada}
                     id="cantidadPagada"
@@ -408,10 +422,8 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
                       inputComponent: MoneyFormat,
                     }}
                     inputProps={{ maxLength: 11 }}
-                    inputRef={(input) =>
-                      input && input.focus() && input.select()
-                    }
                     label="Cantidad pagada"
+                    margin="dense"
                     name="cantidadPagada"
                     onChange={(e) => {
                       const { value } = e.target;
@@ -429,12 +441,6 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
                       setCambio(nuevoCambio);
                       setFieldValue('cantidadPagada', nuevoValue, false);
                     }}
-                    onFocus={(event) => {
-                      event.preventDefault();
-                      const { target } = event;
-                      target.focus();
-                      target.select();
-                    }}
                     value={
                       values.cantidadPagada === 0
                         ? total
@@ -444,38 +450,45 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
                   />
                 </Grid>
               )}
-              <Grid item xs={12}>
+              {/* <Grid item xs={12}>
                 <TextField
                   error={touched.comentarios && Boolean(errors.comentarios)}
                   fullWidth
                   helperText={touched.comentarios && errors.comentarios}
                   id="comentarios"
+                  inputProps={{ maxLength: 75 }}
                   label="Comentarios"
-                  multiline
+                  margin="dense"
                   name="comentarios"
-                  onBlur={handleBlur}
-                  onChange={handleChange}
+                  onBlur={(handleChange)}
                   value={values.comentarios}
                   variant="outlined"
                 />
-              </Grid>
+              </Grid> */}
               <Grid item xs={12}>
+                <Divider />
+                <Divider />
+                <Divider />
                 <Field component={RadioGroup} name="tipoDeImpresion">
                   <Tooltip title={<h3>F1</h3>}>
-                    <FormControlLabel
-                      control={<Radio disabled={submitting} />}
-                      disabled={submitting}
-                      label="Cobrar e imprimir"
-                      value="imprimir"
-                    />
+                    <span>
+                      <FormControlLabel
+                        control={<Radio disabled={submitting} />}
+                        disabled={submitting}
+                        label="Cobrar e imprimir"
+                        value="imprimir"
+                      />
+                    </span>
                   </Tooltip>
                   <Tooltip title={<h3>F2</h3>}>
-                    <FormControlLabel
-                      control={<Radio disabled={submitting} />}
-                      disabled={submitting}
-                      label="Cobrar solo registrando la venta"
-                      value="noImprimir"
-                    />
+                    <span>
+                      <FormControlLabel
+                        control={<Radio disabled={submitting} />}
+                        disabled={submitting}
+                        label="Cobrar solo registrando la venta"
+                        value="noImprimir"
+                      />
+                    </span>
                   </Tooltip>
                   {values.cliente !== '' && (
                     <FormControlLabel
@@ -501,19 +514,21 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
               </Button>
             </Tooltip>
             <Tooltip title="CTRL+ENTER">
-              <Button
-                color="primary"
-                disabled={
-                  submitting ||
-                  (values.cliente === '' && values.cantidadPagada < total)
-                }
-                onClick={() => handleCobrar()}
-                size="small"
-                type="submit"
-                variant="outlined"
-              >
-                Cobrar
-              </Button>
+              <span>
+                <Button
+                  color="primary"
+                  disabled={
+                    submitting ||
+                    (values.cliente === '' && values.cantidadPagada < total)
+                  }
+                  onClick={() => handleCobrar()}
+                  size="small"
+                  type="submit"
+                  variant="outlined"
+                >
+                  Cobrar
+                </Button>
+              </span>
             </Tooltip>
           </DialogActions>
         </Box>

@@ -7,23 +7,25 @@ import { RetryLink } from '@apollo/client/link/retry';
 import { setContext } from '@apollo/client/link/context';
 import { history } from './history';
 import { auth } from '../firebase';
-import store from './store';
-import { modificarOnline } from '../actions/sessionActions';
+import { store } from '../store';
 import client from './client';
 import { REPORTAR_ERROR } from './mutations';
 
 require('dotenv').config();
+
 export const errorLink = onError(
   // @ts-expect-error: error
   async ({ graphQLErrors, networkError, operation }) => {
     if (graphQLErrors) {
       alert(JSON.stringify(graphQLErrors, null, 2));
-      await client.mutate({
+      client.mutate({
         mutation: REPORTAR_ERROR,
         variables: {
           operation: `${JSON.stringify(
             operation.operationName
-          )} ${JSON.stringify(operation.variables)}`,
+          )} ${JSON.stringify(operation.variables)} ${
+            graphQLErrors[0].message
+          }`,
         },
       });
       graphQLErrors.map(({ message }) => {
@@ -40,12 +42,7 @@ export const errorLink = onError(
     }
     if (networkError) {
       alert('Modo sin conexión activado');
-      // operation.query.definitions[0].selectionSet.selections.forEach((val) => {
-      //   console.log('val.name.value', val.name.value);
-      // });
-      store.dispatch(modificarOnline({ online: false }));
-      localStorage.setItem('online', 'false');
-      // history.push('/error/405');
+      store.dispatch({ type: 'MODIFICAR_ONLINE', modificarOnline: false });
     }
   }
 );
@@ -63,7 +60,7 @@ export const retryLink = new RetryLink({
 });
 let uri;
 if (process.env.NODE_ENV === 'development') {
-  uri = 'http://localhost:4000/graphql'; // dev Main
+  uri = 'http://192.168.100.149:4000/graphql'; // dev Main
 } else {
   uri = 'https://server-dot-dark-garden-296622.ue.r.appspot.com/8081/graphql'; // Main
 }

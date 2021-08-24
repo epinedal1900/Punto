@@ -4,6 +4,7 @@ import React from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import ObjectId from 'bson-objectid';
 import { makeStyles } from '@material-ui/core/styles';
+import { useSelector } from 'react-redux';
 
 import {
   Popover,
@@ -15,6 +16,7 @@ import {
   Typography,
 } from '@material-ui/core';
 import ArrowForwardIcon from '@material-ui/icons/ArrowForward';
+import { RootState } from '../types/store';
 
 const dayjs = require('dayjs');
 
@@ -49,7 +51,7 @@ const NotificacionesPopover = (
   const { notificaciones, anchorEl, onClose, open } = props;
 
   const classes = useStyles();
-
+  const plazaState = useSelector((state: RootState) => state.plaza);
   return (
     <Popover
       anchorEl={anchorEl}
@@ -70,7 +72,7 @@ const NotificacionesPopover = (
                 className={classes.listItem}
                 component={RouterLink}
                 divider={i < notificaciones.length - 1}
-                to={`/movimientos/${notificacion._id}`}
+                to={`/plazas/intercambios/${plazaState._idPunto}//${notificacion._id}`}
               >
                 <ListItemText
                   primary={notificacion.nombre}

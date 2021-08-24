@@ -1,3 +1,4 @@
+import { RxDocument } from 'rxdb';
 import React from 'react';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
@@ -9,30 +10,42 @@ import Grid from '@material-ui/core/Grid';
 import TextField from '@material-ui/core/TextField';
 import { useFormikContext } from 'formik';
 import Tooltip from '@material-ui/core/Tooltip';
-import { ClienteForm, PrincipalValues } from '../../../types/types';
+import { PrincipalValues, SetState } from '../../../types/types';
+import { NuevaVentaUtils_clientes } from '../../../types/apollo';
+import { TicketDb } from '../../../Database';
 
 interface AsignarFormProps {
   open: boolean;
-  setAsignarOpen: (a: any) => void;
-  clientes: ClienteForm[];
-  setDialogOpen: (a: any) => void;
+  setAsignarOpen: SetState<boolean>;
+  clientes: NuevaVentaUtils_clientes[];
+  setDialogOpen: SetState<boolean>;
+  docTicket: RxDocument<TicketDb> | null;
 }
 const AsignarForm = (props: AsignarFormProps): JSX.Element => {
-  const { open, setAsignarOpen, clientes, setDialogOpen } = props;
+  const { open, setAsignarOpen, clientes, setDialogOpen, docTicket } = props;
   const { values, errors, touched, setFieldValue } = useFormikContext<
     PrincipalValues
   >();
 
-  const handleClose = () => {
+  const handleClose = async () => {
     setDialogOpen(false);
     setAsignarOpen(false);
+    await docTicket?.atomicUpdate((o) => {
+      o.cliente = '';
+      o.tipoDePago = 'efectivo';
+      return o;
+    });
     setFieldValue('cliente', '', false);
     setFieldValue('tipoDePago', 'efectivo', false);
   };
 
-  const handleAsignar = () => {
+  const handleAsignar = async () => {
     setDialogOpen(false);
     setAsignarOpen(false);
+    await docTicket?.atomicUpdate((o) => {
+      o.tipoDePago = 'pendiente';
+      return o;
+    });
     setFieldValue('tipoDePago', 'pendiente', false);
   };
 
@@ -52,8 +65,13 @@ const AsignarForm = (props: AsignarFormProps): JSX.Element => {
                   return '';
                 }}
                 id="cliente"
-                onChange={(_e, value) => {
-                  setFieldValue('cliente', value !== null ? value : '', false);
+                onChange={async (_e, value) => {
+                  const cliente = value !== null ? value : '';
+                  setFieldValue('cliente', cliente, false);
+                  await docTicket?.atomicUpdate((oldData) => {
+                    oldData.cliente = cliente;
+                    return oldData;
+                  });
                 }}
                 options={clientes}
                 renderInput={(params) => (
@@ -71,7 +89,7 @@ const AsignarForm = (props: AsignarFormProps): JSX.Element => {
                     variant="outlined"
                   />
                 )}
-                // @ts-expect-error: err
+                // @ts-expect-error:autocomplete
                 value={values.cliente}
               />
             </Grid>

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/naming-convention */
+/* eslint-disable react/jsx-no-duplicate-props */
 /* eslint-disable import/no-cycle */
 import React from 'react';
 import Dialog from '@material-ui/core/Dialog';
@@ -16,16 +18,16 @@ import { RadioGroup } from 'formik-material-ui';
 import Radio from '@material-ui/core/Radio';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import ObjectId from 'bson-objectid';
+import { RxDocument } from 'rxdb';
 
-import { assign } from 'lodash';
 import { MoneyFormat } from '../../../utils/TextFieldFormats';
 import { NUEVO_GASTO } from '../../../utils/mutations';
-import { MOVIMIENTOS } from '../../../utils/queries';
+import { PLAZA } from '../../../utils/queries';
 import { RootState } from '../../../types/store';
-import { GastoValues, Session } from '../../../types/types';
+import { GastoValues, SetState } from '../../../types/types';
 import { NuevoGasto, NuevoGastoVariables } from '../../../types/apollo';
-
-const { ipcRenderer } = window.require('electron');
+import * as Database from '../../../Database';
+import { fechaPorId } from '../../../utils/functions';
 
 const validationSchema = yup.object({
   tipoDeGasto: yup.string(),
@@ -38,14 +40,24 @@ const validationSchema = yup.object({
 
 interface NuevoGastoProps {
   open: boolean;
-  setDialogOpen: (a: boolean) => void;
-  setGastoOpen: (a: boolean) => void;
-  setMessage: (a: string | null) => void;
-  setSuccess: (a: boolean) => void;
+  setDialogOpen: SetState<boolean>;
+  setGastoOpen: SetState<boolean>;
+  setMessage: SetState<string | null>;
+  setSuccess: SetState<boolean>;
+  mutationVariablesDoc: RxDocument<Database.mutation_variables>;
+  plazaDoc: RxDocument<Database.plazaDB>;
 }
 const GastoForm = (props: NuevoGastoProps): JSX.Element => {
-  const { open, setDialogOpen, setGastoOpen, setMessage, setSuccess } = props;
-  const session: Session = useSelector((state: RootState) => state.session);
+  const {
+    open,
+    setDialogOpen,
+    setGastoOpen,
+    setMessage,
+    setSuccess,
+    mutationVariablesDoc,
+    plazaDoc,
+  } = props;
+  const plazaState = useSelector((state: RootState) => state.plaza);
 
   const [nuevoGasto, { loading }] = useMutation<
     NuevoGasto,
@@ -64,8 +76,8 @@ const GastoForm = (props: NuevoGastoProps): JSX.Element => {
     },
     refetchQueries: [
       {
-        query: MOVIMIENTOS,
-        variables: { _id: session.puntoIdActivo },
+        query: PLAZA,
+        variables: { _id: plazaState._idPunto },
       },
     ],
   });
@@ -79,46 +91,52 @@ const GastoForm = (props: NuevoGastoProps): JSX.Element => {
     values: GastoValues,
     actions: FormikHelpers<GastoValues>
   ) => {
-    let descripcion = values.tipoDeGasto;
-    if (values.tipoDeGasto === 'otro') {
-      descripcion = values.especificar;
-    } else if (values.tipoDeGasto === 'ingreso') {
-      descripcion = 'ingreso de efectivo';
-    }
-    const obj = {
-      descripcion,
-      monto: values.monto,
-    };
-    const variables = {
-      obj,
-      puntoId: session.puntoIdActivo,
-    };
-    if (session.online) {
-      await nuevoGasto({
-        variables,
-      }).then((res) => {
-        if (res.data && res.data.nuevoGasto.success === true) {
-          actions.resetForm();
-          setDialogOpen(false);
-          setGastoOpen(false);
-        }
-      });
-    } else {
-      const objOffline = {
-        _id: new ObjectId().toString(),
-        Fecha: new Date().toISOString(),
-        Descripcion: `Sin conexión: ${descripcion}`,
-        Monto: values.monto,
+    if (plazaState._idPunto) {
+      let descripcion = values.tipoDeGasto;
+      if (values.tipoDeGasto === 'otro') {
+        descripcion = values.especificar;
+      } else if (values.tipoDeGasto === 'ingreso') {
+        descripcion = 'ingreso de efectivo';
+      }
+      const _id = new ObjectId();
+      const variables: NuevoGastoVariables = {
+        _id: _id.toString(),
+        gasto: {
+          de: descripcion,
+          mo: values.monto,
+        },
+        puntoId: plazaState._idPunto,
       };
-      // eslint-disable-next-line no-underscore-dangle
-      assign(variables, { _idOffline: objOffline._id });
-      ipcRenderer.send('GASTOS', variables);
-      ipcRenderer.send('GASTOS_OFFLINE', objOffline);
-      actions.resetForm();
-      setDialogOpen(false);
-      setGastoOpen(false);
-      setMessage('Gasto añadido');
-      setSuccess(true);
+      if (plazaState.online) {
+        await nuevoGasto({
+          variables,
+        }).then((res) => {
+          if (res.data && res.data.nuevoGasto.success === true) {
+            actions.resetForm();
+            setDialogOpen(false);
+            setGastoOpen(false);
+          }
+        });
+      } else {
+        await mutationVariablesDoc.atomicUpdate((oldData) => {
+          oldData.gasto?.push(variables);
+          return oldData;
+        });
+        await plazaDoc.atomicUpdate((oldData) => {
+          oldData.gastos?.unshift({
+            _id: _id.toString(),
+            Fecha: fechaPorId(_id),
+            Descripcion: `sin conexión: ${descripcion}`,
+            Monto: values.monto,
+          });
+          return oldData;
+        });
+        actions.resetForm();
+        setDialogOpen(false);
+        setGastoOpen(false);
+        setMessage('Gasto añadido');
+        setSuccess(true);
+      }
     }
   };
 

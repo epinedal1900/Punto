@@ -2,6 +2,7 @@ import React from 'react';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import TextField from '@material-ui/core/TextField';
 import { useFormikContext } from 'formik';
+import { get } from 'lodash';
 
 interface AutocompleteFieldProps {
   valueName: string;
@@ -28,15 +29,17 @@ const AutocompleteField = (props: AutocompleteFieldProps): JSX.Element => {
       onChange={(_e, value) => {
         setFieldValue(
           valueName,
-          value !== null ? value : initialValues[valueName]
+          value !== null ? value : get(initialValues, valueName)
         );
       }}
       options={options}
       renderInput={(params) => (
         <TextField
           {...params}
-          error={Boolean(touched[valueName]) && Boolean(errors[valueName])}
-          helperText={touched[valueName] && errors[valueName]}
+          error={
+            Boolean(get(touched, valueName)) && Boolean(get(errors, valueName))
+          }
+          helperText={get(touched, valueName) && get(errors, valueName)}
           label={label}
           name={valueName}
           size="small"

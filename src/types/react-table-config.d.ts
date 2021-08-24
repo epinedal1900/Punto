@@ -1,3 +1,5 @@
+/* tslint:disable */
+/* eslint-disable */
 import {
   UseColumnOrderInstanceProps,
   UseColumnOrderState,
@@ -45,12 +47,13 @@ import {
   UseSortByHooks,
   UseSortByInstanceProps,
   UseSortByOptions,
-  UseSortByState
+  UseSortByState,
 } from 'react-table';
 
+/* tslint:disable */
+/* eslint-disable */
 declare module 'react-table' {
   // take this file as-is, or comment out the sections that don't apply to your plugin configuration
-
   export interface TableOptions<D extends Record<string, unknown>>
     extends UseExpandedOptions<D>,
       UseFiltersOptions<D>,

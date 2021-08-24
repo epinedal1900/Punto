@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-duplicate-props */
 import React from 'react';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
@@ -7,55 +8,80 @@ import { GlobalHotKeys } from 'react-hotkeys';
 import Box from '@material-ui/core/Box';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import Grid from '@material-ui/core/Grid';
+import { RxDocument } from 'rxdb';
 import TextField from '@material-ui/core/TextField';
-import { ArrayHelpers, useFormikContext } from 'formik';
-import { useSelector } from 'react-redux';
-import Tooltip from '@material-ui/core/Tooltip';
-import { RootState } from '../../../types/store';
-import { ArticuloOption, Session, PrincipalValues } from '../../../types/types';
-import { MoneyFormat, IntegerFormat } from '../../../utils/TextFieldFormats';
+import { useFormikContext } from 'formik';
 
-interface AgregarFormProps {
-  open: boolean;
-  handleAddClose: () => void;
-  setAgregarOpen: (a: boolean) => void;
-  opcionesArticulos: ArticuloOption[];
-  arrayHelpers: ArrayHelpers;
-  setDialogOpen: (a: boolean) => void;
-  selectedTicket: number;
+import Tooltip from '@material-ui/core/Tooltip';
+import { PrendaSuelta, PrincipalValues, SetState } from '../../../types/types';
+import { IntegerFormat } from '../../../utils/TextFieldFormats';
+import { Productos_productos_productos } from '../../../types/apollo';
+import { TicketDb } from '../../../Database';
+import { handleAgregarPrecio } from '../../../formPartials/ArticulosEscaner/ArticulosEscaner';
+
+export interface AgregarFormProps {
+  productos: Productos_productos_productos[];
+  handleAgregarClose: () => void;
+  agregarOpen: boolean;
+  setAgregarOpen: SetState<boolean>;
+  docTicket: RxDocument<TicketDb> | null;
+  setDialogOpen: SetState<boolean>;
 }
 const AgregarForm = (props: AgregarFormProps): JSX.Element => {
   const {
-    open,
-    handleAddClose,
+    agregarOpen: open,
+    handleAgregarClose,
     setAgregarOpen,
-    opcionesArticulos,
-    arrayHelpers,
+    productos,
     setDialogOpen,
-    selectedTicket,
+    docTicket,
   } = props;
-  const { values, errors, touched, setFieldValue } = useFormikContext<
-    PrincipalValues
-  >();
-  const session: Session = useSelector((state: RootState) => state.session);
+  const {
+    values,
+    errors,
+    touched,
+    setFieldValue,
+    setFieldTouched,
+  } = useFormikContext<PrincipalValues>();
 
   const handleClose = () => {
     setAgregarOpen(false);
     setDialogOpen(false);
   };
 
-  const handleAgregar = () => {
-    if (values.articulos.length < 20 && open === true) {
-      arrayHelpers.insert(0, {
-        articulo: values.articulo,
-        cantidad: values.cantidad,
-        precio: values.precio,
-      });
-      setFieldValue('articulo', '', false);
-      setFieldValue('cantidad', 0, false);
-      setFieldValue('precio', 0, false);
+  const handleAgregar = async () => {
+    setFieldTouched('articulo', true, false);
+    if (
+      values.prendasSueltas.length < 20 &&
+      open === true &&
+      values.articulo !== '' &&
+      docTicket
+    ) {
       setAgregarOpen(false);
       setDialogOpen(false);
+      const nuevasPrendasSueltas: PrendaSuelta[] = JSON.parse(
+        JSON.stringify(values.prendasSueltas)
+      );
+      nuevasPrendasSueltas.push({
+        articulo: values.articulo,
+        cantidad: values.cantidad,
+      });
+      setFieldValue('prendasSueltas', nuevasPrendasSueltas, false);
+      await docTicket.atomicUpdate((o) => {
+        o.prendasSueltas = nuevasPrendasSueltas;
+        return o;
+      });
+      handleAgregarPrecio(
+        values.articulo.nombre,
+        values.articulo._id,
+        values.articulo.precio,
+        values,
+        setFieldValue,
+        docTicket
+      );
+
+      setFieldValue('articulo', '', false);
+      setFieldValue('cantidad', 0, false);
     }
   };
   const keyMap = {
@@ -68,7 +94,7 @@ const AgregarForm = (props: AgregarFormProps): JSX.Element => {
 
   return (
     <GlobalHotKeys allowChanges handlers={handlers} keyMap={keyMap}>
-      <Dialog onClose={handleAddClose} open={open}>
+      <Dialog onClose={handleAgregarClose} open={open}>
         <Box maxWidth={400}>
           <DialogContent>
             <Grid container spacing={2}>
@@ -114,22 +140,22 @@ const AgregarForm = (props: AgregarFormProps): JSX.Element => {
                     );
                     if (typeof value === 'object' && value !== null) {
                       let { precio } = value;
-                      if (session.tickets[selectedTicket].esMenudeo) {
+                      if (values.esMenudeo) {
                         precio += 15;
                       }
                       setFieldValue('precio', precio, false);
                     }
                   }}
-                  options={opcionesArticulos}
+                  options={productos}
                   renderInput={(params) => (
                     <TextField
                       {...params}
                       error={
-                        Boolean(errors.articulo) && Boolean(touched.articulo)
+                        values.articulo === '' && Boolean(touched.articulo)
                       }
                       helperText={
-                        errors.articulo && touched.articulo
-                          ? errors.articulo
+                        values.articulo === '' && touched.articulo
+                          ? 'requerido'
                           : ''
                       }
                       label="Artículo"
@@ -139,31 +165,8 @@ const AgregarForm = (props: AgregarFormProps): JSX.Element => {
                       variant="outlined"
                     />
                   )}
-                  // @ts-expect-error: error
+                  // @ts-expect-error:autocomplete
                   value={values.articulo}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  // defaultValue={value > 0 ? value : ''}
-                  error={Boolean(errors.precio) && touched.precio}
-                  helperText={
-                    errors.precio && touched.precio ? errors.precio : ''
-                  }
-                  id="precio"
-                  InputProps={{ inputComponent: MoneyFormat }}
-                  inputProps={{ maxLength: 7 }}
-                  label="Precio"
-                  margin="dense"
-                  name="precio"
-                  onChange={(e) => {
-                    const val =
-                      parseFloat(e.target.value.replace(/[,$]+/g, '')) || 0;
-                    setFieldValue('precio', val, false);
-                  }}
-                  size="small"
-                  value={values.precio > 0 ? values.precio : ''}
-                  variant="outlined"
                 />
               </Grid>
             </Grid>
@@ -176,15 +179,17 @@ const AgregarForm = (props: AgregarFormProps): JSX.Element => {
             </Tooltip>
 
             <Tooltip title="CTRL+ENTER">
-              <Button
-                color="primary"
-                disabled={values.articulos.length > 15}
-                onClick={handleAgregar}
-                size="small"
-                variant="outlined"
-              >
-                Agregar
-              </Button>
+              <span>
+                <Button
+                  color="primary"
+                  disabled={values.prendasSueltas.length > 15}
+                  onClick={handleAgregar}
+                  size="small"
+                  variant="outlined"
+                >
+                  Agregar
+                </Button>
+              </span>
             </Tooltip>
           </DialogActions>
         </Box>

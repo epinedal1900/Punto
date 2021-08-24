@@ -13,7 +13,7 @@ export default {
   primary: {
     contrastText: white,
     dark: dev ? black : colors.indigo[900],
-    main: dev ? black : colors.indigo[500],
+    main: dev ? black : colors.indigo[600],
     light: dev ? black : colors.indigo[100],
   },
   secondary: {

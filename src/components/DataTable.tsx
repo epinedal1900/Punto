@@ -27,9 +27,10 @@ import useRouter from '../utils/useRouter';
 import GlobalFilter from './GlobalFilter';
 import TablePaginationActions from './TablePaginationActions';
 import LoadingTable from './LoadingTable';
-import makeColumns from '../utils/makeColumns';
+import { makeColumns } from '../utils/functions';
+import { Theme } from '../theme';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles((theme: Theme) => ({
   root: {},
   content: {
     padding: 0,
@@ -73,6 +74,7 @@ interface DataTableProps extends CommonProps {
   firstRowId?: boolean;
   loading: boolean;
   noDataText?: string;
+  loadingRows?: number;
 }
 const EnhancedTable = (props: EnhancedTableProps): JSX.Element => {
   const {
@@ -147,7 +149,7 @@ const EnhancedTable = (props: EnhancedTableProps): JSX.Element => {
   };
 
   return (
-    <Card className={classes.root}>
+    <Card className={classes.root} elevation={4}>
       <Toolbar className={classes.toolbar}>
         <Typography className={classes.title} id="tableTitle" variant="h6">
           {title}
@@ -237,6 +239,7 @@ const DataTable = (props: DataTableProps): JSX.Element => {
     noDataText = 'Sin registros',
     movimiento,
     pSize = 10,
+    loadingRows = 10,
   } = props;
   const classes = useStyles();
 
@@ -336,7 +339,7 @@ const DataTable = (props: DataTableProps): JSX.Element => {
               title={title}
             />
           ) : (
-            <Card className={classes.root}>
+            <Card className={classes.root} elevation={4}>
               <Toolbar className={classes.toolbar}>
                 <Typography
                   className={classes.title}
@@ -352,7 +355,7 @@ const DataTable = (props: DataTableProps): JSX.Element => {
                     <Typography
                       className={classes.title}
                       id="tableTitle"
-                      variant="h4"
+                      variant="h5"
                     >
                       {noDataText}
                     </Typography>
@@ -363,7 +366,7 @@ const DataTable = (props: DataTableProps): JSX.Element => {
           )}
         </>
       ) : (
-        <Card className={classes.root}>
+        <Card className={classes.root} elevation={4}>
           <Toolbar className={classes.toolbar}>
             <Typography className={classes.title} id="tableTitle" variant="h6">
               {title}
@@ -371,7 +374,7 @@ const DataTable = (props: DataTableProps): JSX.Element => {
           </Toolbar>
           <CardContent className={classes.content}>
             <div className={classes.inner}>
-              <LoadingTable columns={5} rows={10} />
+              <LoadingTable columns={5} rows={loadingRows} />
             </div>
           </CardContent>
         </Card>

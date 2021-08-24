@@ -1,11 +1,14 @@
-import React, { Suspense, useState, useRef } from 'react';
+/* eslint-disable @typescript-eslint/naming-convention */
+/* eslint-disable no-console */
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, { Suspense, useState, useRef, useEffect } from 'react';
 import clsx from 'clsx';
-import { makeStyles, Theme } from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import Drawer from '@material-ui/core/Drawer';
 
 import Tooltip from '@material-ui/core/Tooltip';
-// @ts-expect-error: error
+// @ts-expect-error:errr
 import { Offline, Online } from 'react-detect-offline';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
@@ -21,54 +24,36 @@ import WifiOffIcon from '@material-ui/icons/WifiOff';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import NotificationsIcon from '@material-ui/icons/NotificationsOutlined';
 import PowerOffIcon from '@material-ui/icons/PowerOff';
-import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
 import InputIcon from '@material-ui/icons/Input';
-import ObjectId from 'bson-objectid';
+import { keys, omit } from 'lodash';
+import { RxDatabase, RxDocument } from 'rxdb';
+
 import { LinearProgress } from '@material-ui/core';
 import { useSelector, useDispatch } from 'react-redux';
-import { assign, omit } from 'lodash';
 import { ListItems } from '../components/listItems';
 import NotificacionesPopover from '../components/NotificacionesPopover';
 import CancelDialog from '../components/CancelDialog';
 import SuccessErrorMessage from '../components/SuccessErrorMessage';
-import { asignarPunto, modificarOnline } from '../actions/sessionActions';
 import { RootState } from '../types/store';
-import { Session } from '../types/types';
-import {
-  Movimientos,
-  MovimientosVariables,
-  NuevaVenta,
-  NuevaVentaVariables,
-  NuevoGasto,
-  NuevoGastoVariables,
-  NuevoIntercambio,
-  NuevoIntercambioVariables,
-  NuevoPago,
-  NuevoPagoVariables,
-  NuevoRegreso,
-  NuevoRegresoVariables,
-  PuntoIdActivo,
-} from '../types/apollo';
-import {
-  MARCAR_LEIDOS_PUNTO,
-  NUEVA_VENTA,
-  NUEVO_PAGO,
-  NUEVO_GASTO,
-  NUEVO_REGRESO,
-  NUEVO_INTERCAMBIO,
-} from '../utils/mutations';
-import {
-  NOTIFICACIONES_PUNTO,
-  MOVIMIENTOS,
-  PUNTO_ID_ACTIVO,
-} from '../utils/queries';
 import { auth } from '../firebase';
+import * as Database from '../Database';
+import {
+  MarcarLeidos,
+  NotificacionesPunto,
+  NotificacionesPunto_notificacionesPunto_notificaciones_notificaciones,
+  plaza,
+  plazaVariables,
+  subirDatos,
+  subirDatosVariables,
+} from '../types/apollo';
+import { MARCAR_LEIDOS_PUNTO, SUBIR_DATOS } from '../utils/mutations';
+import { NOTIFICACIONES_PUNTO, PLAZA } from '../utils/queries';
+import { obtenerDB, obtenerDocsPrincipal } from '../utils/functions';
+import { asignarPunto, modificarOnline } from '../actions';
 
-const { ipcRenderer } = window.require('electron');
+const drawerWidth = 250;
 
-const drawerWidth = 240;
-
-const useStyles = makeStyles((theme: Theme) => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     display: 'flex',
   },
@@ -122,8 +107,7 @@ const useStyles = makeStyles((theme: Theme) => ({
       duration: theme.transitions.duration.leavingScreen,
     }),
     width: theme.spacing(7),
-    // eslint-disable-next-line no-dupe-keys
-    // @ts-expect-error: error
+    // @ts-expect-error:err
     width: theme.spacing(9),
   },
   appBarSpacer: theme.mixins.toolbar,
@@ -133,8 +117,8 @@ const useStyles = makeStyles((theme: Theme) => ({
     overflow: 'auto',
   },
   container: {
-    paddingTop: theme.spacing(3),
-    paddingBottom: theme.spacing(3),
+    paddingTop: theme.spacing(1),
+    paddingBottom: theme.spacing(1),
   },
   paper: {
     padding: theme.spacing(2),
@@ -152,13 +136,19 @@ export default function Dashboard(props: {
 }): JSX.Element {
   const classes = useStyles();
   const { children } = props;
-  const session: Session = useSelector((state: RootState) => state.session);
+  const session = useSelector((state: RootState) => state.session);
+  const plazaState = useSelector((state: RootState) => state.plaza);
+  const plazaRefetch = useSelector((state: RootState) => state.plaza);
   const dispatch = useDispatch();
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [noLeidos, setNoLeidos] = useState(0);
-  const [notificaciones, setNotificaciones] = useState([]);
+  const [notificaciones, setNotificaciones] = useState<
+    NotificacionesPunto_notificacionesPunto_notificaciones_notificaciones[]
+  >([]);
   const [loading, setLoading] = useState(false);
   const notificacionesRef = useRef(null);
+  const [salirOpen, setSalirOpen] = useState(false);
+  const [salirLoading, setSalirLoading] = useState(false);
   const [openNotificaciones, setOpenNotificaciones] = useState(false);
   const [success, setSuccess] = useState(false);
   const [subirConfirmationOpen, setSubirConfirmationOpen] = useState(false);
@@ -166,34 +156,76 @@ export default function Dashboard(props: {
   const handleDrawerOpen = () => {
     setOpen(true);
   };
-  const { refetch: obtenerPuntoActual } = useQuery<PuntoIdActivo>(
-    PUNTO_ID_ACTIVO,
-    {
-      skip: true,
-    }
-  );
+  const [db, setDb] = useState<RxDatabase<Database.db> | null>(null);
+  const [mutationVariablesDoc, setMutationVariablesDoc] = useState<RxDocument<
+    Database.mutation_variables
+  > | null>(null);
 
-  const [nuevaVenta] = useMutation<NuevaVenta, NuevaVentaVariables>(
-    NUEVA_VENTA
-  );
-  const [nuevoPago] = useMutation<NuevoPago, NuevoPagoVariables>(NUEVO_PAGO);
-  const [nuevoRegreso] = useMutation<NuevoRegreso, NuevoRegresoVariables>(
-    NUEVO_REGRESO
-  );
-  const [nuevoGasto] = useMutation<NuevoGasto, NuevoGastoVariables>(
-    NUEVO_GASTO
-  );
-  const [nuevoIntercambio] = useMutation<
-    NuevoIntercambio,
-    NuevoIntercambioVariables
-  >(NUEVO_INTERCAMBIO);
-  const { refetch: getMovimientos } = useQuery<
-    Movimientos,
-    MovimientosVariables
-  >(MOVIMIENTOS, {
-    variables: { _id: session.puntoIdActivo },
+  const { refetch: getPlaza } = useQuery<plaza, plazaVariables>(PLAZA, {
+    variables: { _id: plazaRefetch._idPunto || '' },
     skip: true,
   });
+
+  const [subirDatosFunction, { loading: subirDatosLoading }] = useMutation<
+    subirDatos,
+    subirDatosVariables
+  >(SUBIR_DATOS, {
+    onCompleted: async (subirData) => {
+      const {
+        erroresIds,
+        message: subirMessage,
+        success: subirSuccess,
+        usuario,
+      } = subirData.subirDatos;
+      setLoading(true);
+      if (usuario && usuario.idInventario && usuario._idPunto) {
+        dispatch(
+          asignarPunto({
+            idInventario: usuario.idInventario,
+            _idPunto: usuario._idPunto,
+            _idPuntoPrincipal: usuario._idPuntoPrincipal,
+            infoPunto: usuario.infoPunto,
+            sinAlmacen: usuario.sinAlmacen,
+          })
+        );
+        await getPlaza({ _id: usuario._idPunto }).then(async (data) => {
+          if (data.data.plaza && db && usuario?._idPunto) {
+            console.log('data.data.plaza', data.data.plaza);
+            await db.collections.plaza.upsert({
+              _id: usuario._idPunto,
+              ...data.data.plaza,
+            });
+          }
+        });
+        if (subirSuccess) {
+          dispatch(modificarOnline(true));
+          setSuccess(true);
+        }
+        const variables = omit(mutationVariablesDoc?.toJSON(), '_id');
+        console.log('variables', variables);
+        keys(variables).forEach((key) => {
+          // @ts-expect-error:err
+          variables[key] = variables[key].filter((v) => {
+            // @ts-expect-error:err
+            return erroresIds[key].includes(v._id);
+          });
+        });
+        console.log('variables', variables);
+        const m = await db?.collections.mutation_variables.upsert({
+          _id: 'mutationVariables',
+          ...variables,
+        });
+        if (m) setMutationVariablesDoc(m);
+
+        setMessage(subirMessage);
+        setLoading(false);
+        setSubirConfirmationOpen(false);
+      } else {
+        window.location.reload();
+      }
+    },
+  });
+
   const handleSubirClick = () => {
     setSubirConfirmationOpen(true);
   };
@@ -202,268 +234,69 @@ export default function Dashboard(props: {
       setSubirConfirmationOpen(false);
     }
   };
+  useEffect(() => {
+    obtenerDB(db, setDb);
+  }, []);
+
+  useEffect(() => {
+    obtenerDocsPrincipal(db, session, plazaState, setMutationVariablesDoc);
+  }, [db]);
+
   const handleSubir = async () => {
-    setLoading(true);
-    const store = ipcRenderer.sendSync('STORE');
-    let hayErrores = false;
-    let puntoIdActual: string | null = null;
-    await obtenerPuntoActual().then((data) => {
-      puntoIdActual = data.data.puntoIdActivo;
-    });
-    if (store.ventas && store.ventas.length) {
-      await Promise.all(
-        store.ventas.map(async (obj: any) => {
-          if (obj.objVenta.tipo.indexOf('(') === -1) {
-            const o = JSON.parse(JSON.stringify(obj.objVenta));
-            assign(o, { _id: new ObjectId(o._id) });
-            await nuevaVenta({
-              variables: {
-                objVenta: o,
-                /**
-                 * ?Si no hay plaza activa al momento de subir
-                 * ?usa el puntoId original, si no usa el más reciente
-                 */
-                puntoId: puntoIdActual || obj.puntoId,
-                nombre: obj.nombre,
-                enviarMensaje: false,
-              },
-            })
-              .then((res) => {
-                if (res.data && res.data.nuevaVenta.success === true) {
-                  ipcRenderer.send('ELIMINAR_MOVIMIENTO', {
-                    _idOffline: obj._idOffline,
-                    tipo: 'ventas',
-                  });
-                } else {
-                  hayErrores = true;
-                }
-              })
-              .catch(() => {
-                hayErrores = true;
-              });
-          } else {
-            ipcRenderer.send('ELIMINAR_MOVIMIENTO', {
-              _idOffline: obj._idOffline,
-              tipo: 'ventas',
-            });
-          }
-        })
-      );
-    }
-    if (store.ventasClientes && store.ventasClientes.length) {
-      await Promise.all(
-        store.ventasClientes.map(async (obj: any) => {
-          if (obj.objVenta.tipo.indexOf('(') === -1) {
-            const o = omit(obj, '_idOffline');
-            assign(o, {
-              puntoId: puntoIdActual || o.puntoId,
-            });
-            await nuevaVenta({
-              // @ts-expect-error: error
-              variables: o,
-            })
-              .then((res) => {
-                if (res.data && res.data.nuevaVenta.success === true) {
-                  ipcRenderer.send('ELIMINAR_MOVIMIENTO', {
-                    _idOffline: obj._idOffline,
-                    tipo: 'ventasClientes',
-                  });
-                } else {
-                  hayErrores = true;
-                }
-              })
-              .catch(() => {
-                hayErrores = true;
-              });
-          } else {
-            ipcRenderer.send('ELIMINAR_MOVIMIENTO', {
-              _idOffline: obj._idOffline,
-              tipo: 'ventasClientes',
-            });
-          }
-        })
-      );
-    }
-    if (store.pagosClientes && store.pagosClientes.length) {
-      await Promise.all(
-        store.pagosClientes.map(async (obj: any) => {
-          if (obj.objPago.tipo.indexOf('(') === -1) {
-            const o = omit(obj, '_idOffline');
-            assign(o, {
-              puntoId: puntoIdActual || o.puntoId,
-            });
-            await nuevoPago({
-              // @ts-expect-error: error
-              variables: o,
-            })
-              .then((res) => {
-                if (res.data && res.data.nuevoPago.success === true) {
-                  ipcRenderer.send('ELIMINAR_MOVIMIENTO', {
-                    _idOffline: obj._idOffline,
-                    tipo: 'pagosClientes',
-                  });
-                } else {
-                  hayErrores = true;
-                }
-              })
-              .catch(() => {
-                hayErrores = true;
-              });
-          } else {
-            ipcRenderer.send('ELIMINAR_MOVIMIENTO', {
-              _idOffline: obj._idOffline,
-              tipo: 'pagosClientes',
-            });
-          }
-        })
-      );
-    }
-    if (store.regresos && store.regresos.length) {
-      await Promise.all(
-        store.regresos.map(async (obj: any) => {
-          if (obj.obj.tipo.indexOf('(') === -1) {
-            const o = omit(obj, '_idOffline');
-            assign(o, {
-              puntoId: puntoIdActual || o.puntoId,
-            });
-            await nuevoRegreso({
-              // @ts-expect-error: error
-              variables: o,
-            })
-              .then((res) => {
-                if (res.data && res.data.nuevoRegreso.success === true) {
-                  ipcRenderer.send('ELIMINAR_MOVIMIENTO', {
-                    _idOffline: obj._idOffline,
-                    tipo: 'regresos',
-                  });
-                } else {
-                  hayErrores = true;
-                }
-              })
-              .catch(() => {
-                hayErrores = true;
-              });
-          } else {
-            ipcRenderer.send('ELIMINAR_MOVIMIENTO', {
-              _idOffline: obj._idOffline,
-              tipo: 'regresos',
-            });
-          }
-        })
-      );
-    }
-    if (store.intercambios && store.intercambios.length) {
-      await Promise.all(
-        store.intercambios.map(async (obj: any) => {
-          if (obj.obj.tipo.indexOf('(') === -1) {
-            const o = omit(obj, '_idOffline');
-            assign(o, { enviarMensaje: false });
-            await nuevoIntercambio({
-              // @ts-expect-error: error
-              variables: o,
-            })
-              .then((res) => {
-                if (res.data && res.data.nuevoIntercambio.success === true) {
-                  ipcRenderer.send('ELIMINAR_MOVIMIENTO', {
-                    _idOffline: obj._idOffline,
-                    tipo: 'intercambios',
-                  });
-                } else {
-                  hayErrores = true;
-                }
-              })
-              .catch(() => {
-                hayErrores = true;
-              });
-          } else {
-            ipcRenderer.send('ELIMINAR_MOVIMIENTO', {
-              _idOffline: obj._idOffline,
-              tipo: 'intercambios',
-            });
-          }
-        })
-      );
-    }
-    if (store.gastos && store.gastos.length) {
-      await Promise.all(
-        store.gastos.map(async (obj: any) => {
-          const o = omit(obj, '_idOffline');
-          assign(o, {
-            enviarMensaje: false,
-            puntoId: puntoIdActual || o.puntoId,
-          });
-          await nuevoGasto({
-            // @ts-expect-error: error
-            variables: o,
-          })
-            .then((res) => {
-              if (res.data && res.data.nuevoGasto.success === true) {
-                ipcRenderer.send('ELIMINAR_MOVIMIENTO', {
-                  _idOffline: obj._idOffline,
-                  tipo: 'gastos',
-                });
-              } else {
-                hayErrores = true;
-              }
-            })
-            .catch(() => {
-              hayErrores = true;
-            });
-        })
-      );
-    }
-    if (puntoIdActual) {
-      dispatch(asignarPunto({ asignarPunto: puntoIdActual }));
-      await getMovimientos({
-        // @ts-expect-error: error
-        variables: { _id: puntoIdActual },
-      }).then((data) => {
-        ipcRenderer.send('PLAZA', data.data.movimientos);
-      });
-      if (!hayErrores) {
-        dispatch(modificarOnline({ online: true }));
-        localStorage.setItem('online', 'true');
+    if (mutationVariablesDoc) {
+      const {
+        gasto,
+        intercambio,
+        pago,
+        venta_cliente,
+        venta_punto,
+      } = mutationVariablesDoc.toJSON();
+      console.log('pago', pago);
+      if (
+        gasto.length === 0 &&
+        intercambio.length === 0 &&
+        pago.length === 0 &&
+        venta_cliente.length === 0 &&
+        venta_punto.length === 0
+      ) {
         setSuccess(true);
-        setMessage('Cambios subidos');
+        setMessage('Cambios subidos (0 cambios)');
+        setSubirConfirmationOpen(false);
+        dispatch(modificarOnline(true));
       } else {
-        // eslint-disable-next-line no-alert
-        setMessage('No se pudieron subir todos los cambios, intente de nuevo');
+        subirDatosFunction({
+          variables: { gasto, intercambio, pago, venta_cliente, venta_punto },
+        });
       }
-      setLoading(false);
-      setSubirConfirmationOpen(false);
-    } else {
-      window.location.reload();
     }
   };
   const handleDrawerClose = () => {
     setOpen(false);
   };
-  const handleLogout = () => {
-    setOpenNotificaciones(false);
-    auth.signOut();
-  };
-  useQuery(NOTIFICACIONES_PUNTO, {
+  useQuery<NotificacionesPunto>(NOTIFICACIONES_PUNTO, {
     onCompleted: (data) => {
       if (session.nombre === 'Pasillo 2' || session.nombre === 'Pasillo 6') {
-        const notificacionesArr = data.notificacionesPunto.find((val: any) => {
-          return val.nombre === session.nombre;
-        }).notificaciones;
-        setNotificaciones(notificacionesArr);
-        const i = notificacionesArr.reduce((acc: any, cur: any) => {
+        const notificacionesArr = data.notificacionesPunto?.notificaciones?.find(
+          (val) => {
+            return val.nombre === session.nombre;
+          }
+        )?.notificaciones;
+        setNotificaciones(notificacionesArr || []);
+        const i = notificacionesArr?.reduce((acc, cur) => {
           if (cur.leido) {
             return acc;
           }
           return acc + 1;
         }, 0);
-        setNoLeidos(i);
+        setNoLeidos(i || 0);
       }
     },
-    skip: !session.online,
+    skip: !plazaState.online,
     errorPolicy: 'all',
     pollInterval: 5000,
   });
 
-  const [marcarLeidos] = useMutation(MARCAR_LEIDOS_PUNTO, {
+  const [marcarLeidos] = useMutation<MarcarLeidos>(MARCAR_LEIDOS_PUNTO, {
     onCompleted: (data) => {
       if (data.marcarLeidos.success === true) {
         setNoLeidos(0);
@@ -483,30 +316,50 @@ export default function Dashboard(props: {
   };
 
   const handleActivarOffline = () => {
-    dispatch(modificarOnline({ online: false }));
+    dispatch(modificarOnline(false));
     localStorage.setItem('online', 'false');
-    // eslint-disable-next-line no-alert
-    alert('Modo sin conexión activado');
+    setSuccess(true);
+    setMessage('Modo sin conexión activado');
   };
   const handlenotificacionesClose = () => {
     setOpenNotificaciones(false);
+  };
+  const handleLogout = async () => {
+    setSalirLoading(true);
+    setOpenNotificaciones(false);
+    await auth.signOut();
+    setSalirLoading(false);
+  };
+
+  const handleCancelarSalir = () => {
+    setSalirOpen(false);
+  };
+  const handleSalirClick = () => {
+    setSalirOpen(true);
   };
 
   return (
     <div className={classes.root}>
       <CssBaseline />
+      <CancelDialog
+        handleCancel={handleLogout}
+        handleClose={handleCancelarSalir}
+        loading={salirLoading}
+        message="¿Desea salir de esta cuenta?"
+        open={salirOpen}
+      />
       <AppBar
         className={clsx(classes.appBar, open && classes.appBarShift)}
         color={
           process.env.NODE_ENV === 'development'
             ? 'secondary'
-            : session.online
+            : plazaState.online
             ? 'primary'
             : 'default'
         }
         position="absolute"
       >
-        <Toolbar className={classes.toolbar}>
+        <Toolbar className={classes.toolbar} variant="dense">
           <IconButton
             aria-label="open drawer"
             className={clsx(
@@ -528,7 +381,7 @@ export default function Dashboard(props: {
           >
             {session.nombre}
           </Typography>
-          {!session.online && (
+          {!plazaState.online && (
             <>
               <Online>
                 <Tooltip title={<h2>Subir cambios</h2>}>
@@ -542,58 +395,54 @@ export default function Dashboard(props: {
               </Offline>
             </>
           )}
-          {false && (
-            <IconButton
-              color="inherit"
-              onClick={() => {
-                ipcRenderer.send('RESET_MOVIMIENTOS');
-              }}
-            >
-              <DeleteForeverIcon />
-            </IconButton>
-          )}
-          {session.online && (
+          {plazaState.online && (
             <Tooltip title={<h2>Activar modo sin conexión</h2>}>
-              <IconButton
-                color="inherit"
-                disabled={!session.puntoIdActivo}
-                onClick={handleActivarOffline}
-              >
-                <PowerOffIcon />
-              </IconButton>
+              <span>
+                <IconButton
+                  color="inherit"
+                  disabled={!plazaState._idPunto}
+                  onClick={handleActivarOffline}
+                >
+                  <PowerOffIcon />
+                </IconButton>
+              </span>
             </Tooltip>
           )}
           {(session.nombre === 'Pasillo 2' ||
             session.nombre === 'Pasillo 6') && (
             <Tooltip title={<h2>Notificaciones</h2>}>
-              <IconButton
-                ref={notificacionesRef}
-                color="inherit"
-                disabled={!session.online}
-                onClick={handlenotificacionesOpen}
-              >
-                <Badge
-                  badgeContent={session.puntoIdActivo ? noLeidos : 0}
-                  color="secondary"
+              <span>
+                <IconButton
+                  ref={notificacionesRef}
+                  color="inherit"
+                  disabled={!plazaState.online}
+                  onClick={handlenotificacionesOpen}
                 >
-                  <NotificationsIcon />
-                </Badge>
-              </IconButton>
+                  <Badge
+                    badgeContent={plazaState._idPunto ? noLeidos : 0}
+                    color="secondary"
+                  >
+                    <NotificationsIcon />
+                  </Badge>
+                </IconButton>
+              </span>
             </Tooltip>
           )}
           <Tooltip title={<h2>Cerrar sesión</h2>}>
-            <IconButton
-              color="inherit"
-              disabled={!session.online || openNotificaciones}
-              onClick={handleLogout}
-            >
-              <InputIcon />
-            </IconButton>
+            <span>
+              <IconButton
+                color="inherit"
+                disabled={!plazaState.online || openNotificaciones}
+                onClick={handleSalirClick}
+              >
+                <InputIcon />
+              </IconButton>
+            </span>
           </Tooltip>
         </Toolbar>
         <NotificacionesPopover
           anchorEl={notificacionesRef.current}
-          notificaciones={session.puntoIdActivo ? notificaciones : []}
+          notificaciones={plazaState._idPunto ? notificaciones : []}
           onClose={handlenotificacionesClose}
           open={openNotificaciones}
         />
@@ -616,7 +465,7 @@ export default function Dashboard(props: {
       <CancelDialog
         handleCancel={handleSubir}
         handleClose={handleSubirClose}
-        loading={loading}
+        loading={loading || subirDatosLoading}
         message="¿Está seguro de que desea subir los cambios?"
         open={subirConfirmationOpen}
       />
@@ -628,7 +477,7 @@ export default function Dashboard(props: {
       />
       <main className={classes.content}>
         <div className={classes.appBarSpacer} />
-        <Container className={classes.container}>
+        <Container className={classes.container} maxWidth="xl">
           <Suspense fallback={<LinearProgress />}>{children}</Suspense>
         </Container>
       </main>

@@ -1,4 +1,4 @@
-/* eslint-disable react/jsx-props-no-spreading */
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 /* eslint-disable react/no-multi-comp */
 import React from 'react';
 import NumberFormat from 'react-number-format';
@@ -25,6 +25,7 @@ export const MoneyFormat = (props: any) => {
     />
   );
 };
+
 export const IntegerFormat = (props: any) => {
   const { inputRef, onChange, ...other } = props;
 
@@ -47,14 +48,14 @@ export const IntegerFormat = (props: any) => {
     />
   );
 };
-export const NegativeIntegerFormat = (props: any) => {
+
+export const DecimalFormat = (props: any) => {
   const { inputRef, onChange, ...other } = props;
 
   return (
     <NumberFormat
       {...other}
-      allowNegative
-      decimalSeparator={null}
+      allowNegative={false}
       getInputRef={inputRef}
       isNumericString
       onValueChange={(values) => {
@@ -65,17 +66,16 @@ export const NegativeIntegerFormat = (props: any) => {
           },
         });
       }}
-      thousandSeparator
     />
   );
 };
-
 export const DigitsFormat = (props: any) => {
   const { inputRef, onChange, ...other } = props;
 
   return (
     <NumberFormat
       {...other}
+      allowLeadingZeros
       allowNegative={false}
       decimalSeparator={null}
       getInputRef={inputRef}

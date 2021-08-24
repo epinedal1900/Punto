@@ -1,6 +1,4 @@
 /* eslint-disable react/jsx-key */
-/* eslint-disable import/no-cycle */
-
 import React, { useState, useEffect } from 'react';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
@@ -10,6 +8,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import ObjectId from 'bson-objectid';
 import { useMutation, useLazyQuery } from '@apollo/client';
+import dayjs from 'dayjs';
 
 import groupBy from 'lodash/groupBy';
 import {
@@ -21,40 +20,39 @@ import {
   View,
 } from '@react-pdf/renderer';
 import Button from '@material-ui/core/Button';
-import { MOVIMIENTOS, INVENTARIO } from '../../../utils/queries';
-import {
-  ENVIAR_REPORTE_URL,
-  MODIFICAR_PUNTOS_ACTIVOS,
-  NUEVO_REGRESO,
-} from '../../../utils/mutations';
-import { desactivarPunto } from '../../../actions';
+import { SetState } from '../../../types/types';
 import { RootState } from '../../../types/store';
-import { ArticuloDB, Session } from '../../../types/types';
 import {
+  Chat,
+  desactivarPlazaConInventario,
+  desactivarPlazaConInventarioVariables,
+  enviarReporteUrl,
+  enviarReporteUrlVariables,
   Inventario,
   InventarioVariables,
-  ModificarPuntosActivos,
-  ModificarPuntosActivosVariables,
-  Movimientos,
-  MovimientosVariables,
-  NuevoRegreso,
-  NuevoRegresoVariables,
+  Inventario_inventario_inv,
+  nuevoIntercambio,
+  nuevoIntercambioVariables,
+  plaza,
+  plazaVariables,
 } from '../../../types/apollo';
+import { desactivarPunto } from '../../../actions';
+import {
+  DESACTIVAR_PLAZA_CON_INVENTARIO,
+  ENVIAR_REPORTE_URL,
+  NUEVO_INTERCAMBIO,
+} from '../../../utils/mutations';
+import { INVENTARIO, PLAZA } from '../../../utils/queries';
 import { storage } from '../../../firebase';
-
-const dayjs = require('dayjs');
-
-const electron = window.require('electron');
-const { remote } = electron;
-const { BrowserWindow } = remote;
+import { aFormatoDeDinero, cantidadEnPrenda } from '../../../utils/functions';
 
 interface CrearReporteProps {
   open: boolean;
   handleClose: () => void;
-  setMessage: (a: string | null) => void;
-  setSuccess: (a: boolean) => void;
-  setDialogOpen: (a: boolean) => void;
-  setGenerarReporteConfirmation: (a: boolean) => void;
+  setMessage: SetState<string | null>;
+  setSuccess: SetState<boolean>;
+  setGenerarReporteConfirmation: SetState<boolean>;
+  setDialogOpen: SetState<boolean>;
 }
 const CrearReporte = (props: CrearReporteProps): JSX.Element => {
   const {
@@ -62,165 +60,130 @@ const CrearReporte = (props: CrearReporteProps): JSX.Element => {
     handleClose,
     setMessage,
     setSuccess,
-    setDialogOpen,
     setGenerarReporteConfirmation,
+    setDialogOpen,
   } = props;
   const [reporteLoading, setReporteLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
   const [data, setData] = useState<any>(null);
-  const session: Session = useSelector((state: RootState) => state.session);
+  const plazaState = useSelector((state: RootState) => state.plaza);
+  const session = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch();
   const [inventario, setInventario] = useState<
-    Omit<ArticuloDB, 'precio'>[] | null
+    Inventario_inventario_inv[] | null
   >(null);
 
-  const [modificarPuntosActivos] = useMutation<
-    ModificarPuntosActivos,
-    ModificarPuntosActivosVariables
-  >(MODIFICAR_PUNTOS_ACTIVOS, {
+  const quitarPlaza = () => {
+    dispatch(desactivarPunto());
+  };
+  const [desactivarPlazaConInventarioFunction] = useMutation<
+    desactivarPlazaConInventario,
+    desactivarPlazaConInventarioVariables
+  >(DESACTIVAR_PLAZA_CON_INVENTARIO, {
     onCompleted: (res) => {
-      if (res.modificarPuntosActivos.success === true) {
-        dispatch(desactivarPunto());
-        localStorage.removeItem('puntoIdActivo');
+      if (res.desactivarPlazaConInventario.success === true) {
+        quitarPlaza();
       }
     },
   });
 
-  const [regresoSinAlmacen] = useMutation<NuevoRegreso, NuevoRegresoVariables>(
-    NUEVO_REGRESO
-  );
+  const [nuevoIntercambioFunction] = useMutation<
+    nuevoIntercambio,
+    nuevoIntercambioVariables
+  >(NUEVO_INTERCAMBIO);
 
   const [getInventario] = useLazyQuery<Inventario, InventarioVariables>(
     INVENTARIO,
     {
       onCompleted(invRes) {
-        if (invRes.inventario) {
-          const invObj = invRes.inventario.inventario
-            .filter((val) => {
-              return val.cantidad > 0;
+        if (invRes.inventario?.inv) {
+          setInventario(
+            invRes.inventario.inv.filter((val) => {
+              return cantidadEnPrenda(val) > 0;
             })
-            .map((val) => {
-              return {
-                articulo: val.articulo,
-                cantidad: val.cantidad,
-              };
-            });
-          setInventario(invObj);
+          );
         }
       },
     }
   );
 
-  const [getMovimientos] = useLazyQuery<Movimientos, MovimientosVariables>(
-    MOVIMIENTOS,
-    {
-      onCompleted(res) {
-        if (res.movimientos) {
-          const { movimientos } = res.movimientos;
-          const { gastos } = res.movimientos;
-          let ventasPublico = 0;
-          let ventasAClientes = 0;
-          let pagosClientes = 0;
-          let totalGastos = 0;
-          let gastosArr;
-          let dineroInicial = 0;
-          if (gastos.length > 0) {
-            const gastosFiltered = gastos.filter((val) => {
-              return val.Descripcion !== 'ingreso de efectivo';
-            });
-            gastos.forEach((val) => {
-              if (val.Descripcion === 'ingreso de efectivo') {
-                dineroInicial += val.Monto;
-              }
-            });
-            const objGastos = groupBy(gastosFiltered, 'Descripcion');
-            if (gastosFiltered.length > 0) {
-              gastosArr = Object.keys(objGastos).map((key) => {
-                return {
-                  descripción: key,
-                  monto: Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: 'USD',
-                  }).format(
-                    objGastos[key].reduce((acc, cur) => {
-                      return acc + cur.Monto;
-                    }, 0)
-                  ),
-                };
-              });
-              totalGastos = gastosFiltered.reduce((acc, cur) => {
-                return acc + cur.Monto;
-              }, 0);
-            }
-          }
-          movimientos.forEach((movimiento) => {
-            if (movimiento.Tipo === 'venta') {
-              ventasPublico += movimiento.Monto;
-            } else if (
-              movimiento.Tipo.split(':').length === 2 &&
-              movimiento.Tipo.split(':')[0] === 'venta'
-            ) {
-              // es de cliente y no esta cancelada
-              if (movimiento.Tipo.split('(').length === 1) {
-                ventasAClientes += movimiento.Monto;
-              }
-              if (movimiento.Pago) {
-                pagosClientes += movimiento.Pago;
-              }
-            } else if (
-              movimiento.Tipo.split(':').length === 2 &&
-              movimiento.Tipo.split(':')[0] === 'pago' &&
-              movimiento.Tipo.split('(').length === 1
-            ) {
-              pagosClientes += movimiento.Monto;
+  const [obtenerPlaza] = useLazyQuery<plaza, plazaVariables>(PLAZA, {
+    onCompleted(res) {
+      if (res.plaza) {
+        const { ventas, pagos, gastos } = res.plaza;
+        let ventasPublico = 0;
+        let ventasAClientes = 0;
+        let pagosClientes = 0;
+        let totalGastos = 0;
+        let gastosArr;
+        let dineroInicial = 0;
+        if (gastos.length > 0) {
+          const gastosFiltered = gastos.filter((val) => {
+            return val.Descripcion !== 'ingreso de efectivo';
+          });
+          gastos.forEach((val) => {
+            if (val.Descripcion === 'ingreso de efectivo') {
+              dineroInicial += val.Monto;
             }
           });
-          const dineroEsperado =
-            dineroInicial + ventasPublico + pagosClientes - totalGastos;
-          const dataObj = {
-            nombre: session.nombre,
-            fecha: dayjs(
-              new ObjectId(session.puntoIdActivo).getTimestamp()
-            ).format('DD-MM-YYYY'),
-            dineroInicial: Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-            }).format(dineroInicial),
-            ventasPublico: Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-            }).format(ventasPublico),
-            ventasAClientes: Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-            }).format(ventasAClientes),
-            pagosClientes: Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-            }).format(pagosClientes),
-            totalGastos: Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-            }).format(totalGastos),
-            gastosArr,
-            dineroEsperado: Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-            }).format(dineroEsperado),
-          };
-          setData(dataObj);
+          const objGastos = groupBy(gastosFiltered, 'de');
+          if (gastosFiltered.length > 0) {
+            gastosArr = Object.keys(objGastos).map((key) => {
+              return {
+                descripción: key,
+                monto: aFormatoDeDinero(
+                  objGastos[key].reduce((acc, cur) => {
+                    return acc + cur.Monto;
+                  }, 0)
+                ),
+              };
+            });
+            totalGastos = gastosFiltered.reduce((acc, cur) => {
+              return acc + cur.Monto;
+            }, 0);
+          }
         }
-        setDataLoading(false);
-      },
-      fetchPolicy: 'network-only',
-    }
-  );
+        ventas?.forEach((venta) => {
+          if (venta.Nombre && !venta.ca) {
+            ventasAClientes += venta.Monto;
+          } else if (!venta.ca) {
+            ventasPublico += venta.Monto;
+          }
+        });
+        pagos.forEach((pago) => {
+          if (!pago.ca) {
+            pagosClientes += pago.Monto;
+          }
+        });
+        const dineroEsperado =
+          dineroInicial + ventasPublico + pagosClientes - totalGastos;
+        const dataObj = {
+          nombre: session.nombre,
+          fecha: dayjs(
+            new ObjectId(plazaState._idPunto || '').getTimestamp()
+          ).format('DD-MM-YYYY'),
+          dineroInicial: aFormatoDeDinero(dineroInicial),
+          ventasPublico: aFormatoDeDinero(ventasPublico),
+          ventasAClientes: aFormatoDeDinero(ventasAClientes),
+          pagosClientes: aFormatoDeDinero(pagosClientes),
+          totalGastos: aFormatoDeDinero(totalGastos),
+          gastosArr,
+          dineroEsperado: aFormatoDeDinero(dineroEsperado),
+        };
+        setData(dataObj);
+      }
+      setDataLoading(false);
+    },
+    fetchPolicy: 'network-only',
+  });
 
   useEffect(() => {
-    if (open) {
-      getMovimientos({ variables: { _id: session.puntoIdActivo } });
-      if (session.sinAlmacen) {
-        getInventario({ variables: { nombre: session.nombre } });
+    if (open && plazaState._idPunto) {
+      obtenerPlaza({
+        variables: { _id: plazaState._idPunto },
+      });
+      if (plazaState.sinAlmacen && plazaState.idInventario) {
+        getInventario({ variables: { _id: plazaState.idInventario } });
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -335,11 +298,16 @@ const CrearReporte = (props: CrearReporteProps): JSX.Element => {
     },
   });
 
-  const [enviarReporteUrl] = useMutation(ENVIAR_REPORTE_URL, {
+  const [enviarReporteUrlFunction] = useMutation<
+    enviarReporteUrl,
+    enviarReporteUrlVariables
+  >(ENVIAR_REPORTE_URL, {
     onCompleted: (res) => {
-      if (res.enviarReporteUrl.success === true) {
-        modificarPuntosActivos({
-          variables: { nombre: session.nombre, propiedad: 'id' },
+      if (res.enviarReporteUrl.success === true && plazaState.idInventario) {
+        desactivarPlazaConInventarioFunction({
+          variables: {
+            in: plazaState.idInventario,
+          },
         });
         setMessage(res.enviarReporteUrl.message);
         setSuccess(true);
@@ -391,7 +359,7 @@ const CrearReporte = (props: CrearReporteProps): JSX.Element => {
               </View>
               {data.gastosArr.map((obj: any) => (
                 <View style={styles.tableRow}>
-                  {['descripción', 'monto'].map((header) => (
+                  {['Descripción', 'Monto'].map((header) => (
                     <View style={styles.tableColTwo}>
                       <Text style={styles.tableCell}>{obj[header]}</Text>
                     </View>
@@ -417,38 +385,43 @@ const CrearReporte = (props: CrearReporteProps): JSX.Element => {
     const blob = await pdf(doc).toBlob();
     const pathRef = storage.ref(`/${session.nombre}: ${data.fecha}.pdf`);
     await pathRef.put(blob, { contentType: 'application/pdf' });
-    let url;
-    await pathRef.getDownloadURL().then((fileUrl) => {
-      url = fileUrl;
-    });
-    if (inventario && inventario.length > 0) {
-      await regresoSinAlmacen({
+    const url = await pathRef.getDownloadURL();
+    if (
+      inventario &&
+      inventario.length > 0 &&
+      session.nombre &&
+      plazaState._idPuntoPrincipal &&
+      plazaState._idPunto
+    ) {
+      await nuevoIntercambioFunction({
         variables: {
-          obj: {
-            tipo: 'regreso',
-            articulos: inventario,
-          },
-          puntoId: session.puntoIdActivo,
-          nombre: session.nombre,
+          prendas: inventario.map((v) => {
+            const pqs = v.pqs.map((p) => {
+              return { p: p.p, c: p.c };
+            });
+            return { a: v.a, c: v.c, pqs };
+          }),
+          puntoIdEmisor: plazaState._idPunto,
+          puntoIdReceptor: plazaState._idPuntoPrincipal,
         },
       });
     }
-    await enviarReporteUrl({
-      variables: { url, nombre: `${session.nombre}: ${data.fecha}` },
+    await enviarReporteUrlFunction({
+      variables: { url, chat: Chat.ventas },
     });
     setReporteLoading(false);
-    setDialogOpen(false);
     setGenerarReporteConfirmation(false);
-    // eslint-disable-next-line no-new
-    const win = new BrowserWindow({ width: 600, height: 800 });
-    win.loadURL(url);
+    setDialogOpen(false);
+
+    window.open(url);
   };
+
   const [espera, setEspera] = useState(true);
 
   useEffect(() => {
     const bloquearSubmit = async () => {
       setEspera(true);
-      await new Promise((resolve) => setTimeout(resolve, 10000));
+      await new Promise((resolve) => setTimeout(resolve, 4000));
       setEspera(false);
     };
     bloquearSubmit();
@@ -466,7 +439,7 @@ const CrearReporte = (props: CrearReporteProps): JSX.Element => {
             después de esta acción.
           </>
         </Typography>
-        {reporteLoading && <LinearProgress />}
+        {(reporteLoading || dataLoading) && <LinearProgress />}
       </DialogContent>
       <DialogActions>
         <Button

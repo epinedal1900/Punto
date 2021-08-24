@@ -1,51 +1,49 @@
-import { Articulos } from './graphql';
+/* eslint-disable @typescript-eslint/naming-convention */
+import { FormikErrors } from 'formik';
+import {
+  NuevaVentaUtils_clientes,
+  NuevaVentaUtils_puntosActivos_plazasConInventarios,
+  Productos_productos_productos,
+} from './apollo';
 
-export interface ClienteForm {
-  _id: string;
-  nombre: string;
+export interface DatosTablaPrendas {
+  Nombre: string;
+  Cantidad: number;
+  Precio?: number;
 }
-export interface ArticuloOption {
-  codigo: string;
-  nombre: string;
-  precio: number;
-}
-export interface ArticuloForm {
-  articulo: ArticuloOption;
-  cantidad: number;
-  precio: number;
-}
-export interface ArticuloDB {
-  articulo: string;
-  cantidad: number;
-  precio: number;
-}
-export interface Ticket {
-  cliente: ClienteForm | '';
-  articulos: ArticuloForm[];
-  esMenudeo?: boolean;
-  nombre: string;
-}
-export interface UltimoTicket {
+
+export interface ImpresionDeTicketsArgs {
   infoPunto: string;
-  articulos: ArticuloDB;
-  cliente: string;
-  cantidadPagada: number;
-  cambio: number;
+  articulos: DatosTablaPrendas[];
+  cliente: string | null;
+  cantidadPagada: number | null;
+  cambio: number | null;
+  fecha?: string;
 }
-export interface Session {
-  loggedIn: string;
+export interface ImpresionDeTicketsSinPreciosArgs {
+  infoPunto: string;
+  articulos: PrendasRevision[];
+  fecha?: string;
+}
+
+export interface SessionState {
+  loggedIn: boolean;
+  nombre: string | null;
+  roles: Role[] | null;
+  uid: string | null;
+}
+export interface PlazaState {
+  idInventario: string | null;
+  _idPunto: string | null;
+  _idPuntoPrincipal: string | null;
+  sinAlmacen: boolean;
+  infoPunto: string | null;
   online: boolean;
-  nombre: string;
-  roles: string;
-  puntoIdActivo: string;
-  infoPunto: string;
-  tickets: Ticket[];
-  ultimoTicket: UltimoTicket;
-  impresora: string;
-  ancho: string;
-  inventario: Articulos[];
-  sinAlmacen: 'true' | 'false';
+  ultimoTicket: Required<ImpresionDeTicketsArgs> | null;
+  impresora: string | null;
+  ancho: string | null;
 }
+
 export type AppRole =
   | 'ADMIN'
   | 'VENTAS'
@@ -58,36 +56,107 @@ export type AppRole =
 
 export interface Role {
   role: AppRole;
-  readOnly: 'true' | 'false';
+  readOnly: boolean;
+}
+export interface PqsRevision {
+  c: number;
+  pqAPrendaSuelta?: number;
+  id: string;
+  p: string;
 }
 
-export interface PrincipalValues {
-  articulos: ArticuloForm[];
-  cliente: ClienteForm | '';
-  articulo: ArticuloOption | '';
-  cantidad: number;
+export interface PrendasRevision {
+  a: string;
+  c: number;
+  nombre: string;
+  pqs: PqsRevision[];
+  p?: number;
+}
+
+export interface PrendasInventario {
+  [x: string]: any;
+  pqs: { [x: string]: any; c: number; p: string }[];
+  c: number;
+  a: string;
+}
+export interface Precios {
+  nombre: string;
+  _id: string;
   precio: number;
+}
+export interface Qr {
+  qr: string;
+  id: string;
+  tallas: string;
+  piezas: number;
+  cantidad: number;
+  nombre: string;
+}
+export interface PrendaSuelta {
+  articulo: Productos_productos_productos;
+  cantidad: number;
+}
+export interface ArticulosValues {
+  escaneos: Qr[];
+  prendasSueltas: PrendaSuelta[];
+  paquetesAbiertos: Qr[];
+  precios: Precios[];
+}
+
+export interface Ticket extends ArticulosValues {
+  _id: string;
+  esMenudeo: boolean;
+  cliente: NuevaVentaUtils_clientes | '';
+  articulo: Productos_productos_productos | '';
+  cantidad: number;
   tipoDePago: 'efectivo' | 'pendiente';
   tipoDeImpresion: 'imprimir' | 'noImprimir' | 'imprimirA5';
   comentarios: string;
   cantidadPagada: number;
 }
+export interface PrincipalValues extends Ticket {
+  intercambioValues: IntercambioValues;
+}
+
 export interface GastoValues {
   tipoDeGasto: string;
   especificar: string;
   monto: number;
 }
-export interface IntercambioValues {
-  articulos: ArticuloForm[];
+export interface IntercambioValues extends ArticulosValues {
   tipoDeImpresion: 'imprimir' | 'noImprimir';
-  comentarios: string;
+  plazaReceptora: NuevaVentaUtils_puntosActivos_plazasConInventarios | '';
 }
 export interface PagoValues {
-  cliente: ClienteForm;
+  cliente: NuevaVentaUtils_clientes | '';
   monto: number;
   comentarios: string;
 }
 export interface ImpresoraValues {
   impresora: string;
   ancho: string;
+}
+
+export interface NombreTickets {
+  _id: string;
+  nombre: string | null;
+}
+export type FormikSetFieldValue = (
+  field: string,
+  value: any,
+  shouldValidate?: boolean
+) => void;
+
+export type FormikSetValues<Values> = (
+  values: React.SetStateAction<Values>,
+  shouldValidate?: boolean
+) => void;
+export type FormikSetErrors<Values> = (errors: FormikErrors<Values>) => void;
+export type SetState<T> = React.Dispatch<React.SetStateAction<T>>;
+export interface Info {
+  key: string;
+  value: any;
+}
+export interface InfoRaw {
+  [x: string]: any;
 }

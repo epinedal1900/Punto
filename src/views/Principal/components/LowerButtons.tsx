@@ -1,35 +1,39 @@
-import React, { useState } from 'react';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
-import { GlobalHotKeys } from 'react-hotkeys';
-import Typography from '@material-ui/core/Typography';
-import PersonIcon from '@material-ui/icons/Person';
-import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
 import IconButton from '@material-ui/core/IconButton';
-import ClearIcon from '@material-ui/icons/Clear';
-import AttachMoneyIcon from '@material-ui/icons/AttachMoney';
-import AccountBalanceWalletIcon from '@material-ui/icons/AccountBalanceWallet';
 import Tooltip from '@material-ui/core/Tooltip';
+import Typography from '@material-ui/core/Typography';
+import AccountBalanceWalletIcon from '@material-ui/icons/AccountBalanceWallet';
+import AttachMoneyIcon from '@material-ui/icons/AttachMoney';
+import ClearIcon from '@material-ui/icons/Clear';
+import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
+import PersonIcon from '@material-ui/icons/Person';
 import ReceiptIcon from '@material-ui/icons/Receipt';
-import { useSelector } from 'react-redux';
-import isEmpty from 'lodash/isEmpty';
-
 import { FormikProps } from 'formik';
-import crearTicketData from '../../../utils/crearTicketData';
-import { PrincipalValues, Session } from '../../../types/types';
+import isEmpty from 'lodash/isEmpty';
+import React, { useState } from 'react';
+import { GlobalHotKeys } from 'react-hotkeys';
+import { useSelector } from 'react-redux';
+import { useHistory } from 'react-router';
+import { RxDocument } from 'rxdb';
+import { TicketDb } from '../../../Database';
 import { RootState } from '../../../types/store';
+import { NombreTickets, PrincipalValues, SetState } from '../../../types/types';
+import { crearTicketData } from '../../../utils/functions';
 
 const { ipcRenderer } = window.require('electron');
 
 interface UpperButtonsProps {
   total: number;
-  setEliminarTicketConfirmation: (a: boolean) => void;
-  setAsignarOpen: (a: boolean) => void;
-  setCobrarOpen: (a: boolean) => void;
+  setEliminarTicketConfirmation: SetState<boolean>;
+  setAsignarOpen: SetState<boolean>;
+  setCobrarOpen: SetState<boolean>;
+  nombresTickets: NombreTickets[];
   formikProps: FormikProps<PrincipalValues>;
   dialogOpen: boolean;
-  setDialogOpen: (a: boolean) => void;
-  setPagoOpen: (a: boolean) => void;
+  setDialogOpen: SetState<boolean>;
+  setPagoOpen: SetState<boolean>;
+  docTicket: RxDocument<TicketDb> | null;
 }
 const UpperButtons = (props: UpperButtonsProps): JSX.Element => {
   const {
@@ -41,63 +45,67 @@ const UpperButtons = (props: UpperButtonsProps): JSX.Element => {
     dialogOpen,
     setDialogOpen,
     setPagoOpen,
+    docTicket,
+    nombresTickets,
   } = props;
-
-  const session: Session = useSelector((state: RootState) => state.session);
+  const history = useHistory();
+  const plazaState = useSelector((state: RootState) => state.plaza);
   const [reimprimirDisabled, setReimprimirDisabled] = useState(false);
-
   const handleReimprimirClick = async () => {
-    setReimprimirDisabled(true);
-    const data = crearTicketData(
-      session.ultimoTicket.infoPunto,
-      session.ultimoTicket.articulos,
-      session.ultimoTicket.cliente,
-      session.ultimoTicket.cantidadPagada,
-      session.ultimoTicket.cambio
-    );
-    if (session.ancho && session.impresora) {
-      ipcRenderer.send('PRINT', {
-        data,
-        impresora: session.impresora,
-        ancho: session.ancho,
-      });
-    } else {
-      // eslint-disable-next-line no-alert
-      alert('seleccione una impresora y un ancho');
+    if (plazaState.ultimoTicket) {
+      setReimprimirDisabled(true);
+      const data = crearTicketData(plazaState.ultimoTicket);
+      if (plazaState.ancho && plazaState.impresora) {
+        ipcRenderer.send('PRINT', {
+          data,
+          impresora: plazaState.impresora,
+          ancho: plazaState.ancho,
+        });
+      } else {
+        // eslint-disable-next-line no-alert
+        alert('seleccione una impresora y un ancho');
+      }
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      setReimprimirDisabled(false);
     }
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    setReimprimirDisabled(false);
   };
   const handleEliminarClick = () => {
-    if (!dialogOpen && session.tickets.length !== 1) {
+    if (!dialogOpen && nombresTickets.length !== 1) {
       setEliminarTicketConfirmation(true);
       setDialogOpen(true);
     }
   };
 
   const handleAsignarClick = () => {
-    if (!dialogOpen && session.puntoIdActivo) {
+    if (!dialogOpen && plazaState._idPunto) {
       setAsignarOpen(true);
       setDialogOpen(true);
     }
   };
   const handlePagoClick = () => {
-    if (!dialogOpen && session.puntoIdActivo) {
+    if (!dialogOpen && plazaState._idPunto) {
       setDialogOpen(true);
       setPagoOpen(true);
     }
   };
 
   const handleCobrarClick = async () => {
-    if (formikProps.values.articulos.length !== 0) {
+    if (
+      formikProps.values.precios.length !== 0 &&
+      history.location.search !== ''
+    ) {
       await formikProps.validateForm().then(async (validation) => {
-        // @ts-expect-error: error
+        // @ts-expect-error:investigar
         await formikProps.setTouched(validation);
         if (
-          validation.articulos == null &&
+          !validation.precios &&
+          !validation.escaneos &&
+          !validation.prendasSueltas &&
+          !validation.paquetesAbiertos &&
           !dialogOpen &&
-          session.puntoIdActivo
+          plazaState._idPunto
         ) {
+          document.getElementById('cantidadPagada')?.focus();
           setCobrarOpen(true);
           setDialogOpen(true);
         }
@@ -129,29 +137,33 @@ const UpperButtons = (props: UpperButtonsProps): JSX.Element => {
       <Box display="flex" m={0} p={1} width="100%">
         <Box p={1}>
           <Tooltip title={<h3>CTRL+DEL</h3>}>
-            <Button
-              color="secondary"
-              disabled={session.tickets.length === 1}
-              onClick={handleEliminarClick}
-              startIcon={<DeleteForeverIcon />}
-              variant="outlined"
-            >
-              Eliminar ticket
-            </Button>
+            <span>
+              <Button
+                color="secondary"
+                disabled={nombresTickets.length === 1}
+                onClick={handleEliminarClick}
+                startIcon={<DeleteForeverIcon />}
+                variant="outlined"
+              >
+                Eliminar ticket
+              </Button>
+            </span>
           </Tooltip>
         </Box>
         <Box p={1}>
           {formikProps.values.cliente === '' ? (
             <Tooltip title={<h3>ALT+C</h3>}>
-              <Button
-                color="primary"
-                disabled={session.puntoIdActivo == null}
-                onClick={handleAsignarClick}
-                startIcon={<PersonIcon />}
-                variant="outlined"
-              >
-                Asignar Cliente
-              </Button>
+              <span>
+                <Button
+                  color="primary"
+                  disabled={plazaState._idPunto == null}
+                  onClick={handleAsignarClick}
+                  startIcon={<PersonIcon />}
+                  variant="outlined"
+                >
+                  Asignar Cliente
+                </Button>
+              </span>
             </Tooltip>
           ) : (
             <div
@@ -163,7 +175,12 @@ const UpperButtons = (props: UpperButtonsProps): JSX.Element => {
             >
               <IconButton
                 color="default"
-                onClick={() => {
+                onClick={async () => {
+                  await docTicket?.atomicUpdate((o) => {
+                    o.cliente = '';
+                    o.tipoDePago = 'efectivo';
+                    return o;
+                  });
                   formikProps.setFieldValue('cliente', '', false);
                   formikProps.setFieldValue('tipoDePago', 'efectivo', false);
                 }}
@@ -181,7 +198,7 @@ const UpperButtons = (props: UpperButtonsProps): JSX.Element => {
         <Box flexGrow={1} p={1}>
           <Button
             color="primary"
-            disabled={session.puntoIdActivo == null}
+            disabled={plazaState._idPunto == null}
             onClick={handlePagoClick}
             startIcon={<AccountBalanceWalletIcon />}
             variant="outlined"
@@ -191,15 +208,19 @@ const UpperButtons = (props: UpperButtonsProps): JSX.Element => {
         </Box>
         <Box p={1}>
           <Tooltip title={<h3>CTRL+R</h3>}>
-            <Button
-              color="primary"
-              disabled={isEmpty(session.ultimoTicket) || reimprimirDisabled}
-              onClick={handleReimprimirClick}
-              startIcon={<ReceiptIcon />}
-              variant="outlined"
-            >
-              Reimprimir último ticket
-            </Button>
+            <span>
+              <Button
+                color="primary"
+                disabled={
+                  isEmpty(plazaState.ultimoTicket) || reimprimirDisabled
+                }
+                onClick={handleReimprimirClick}
+                startIcon={<ReceiptIcon />}
+                variant="outlined"
+              >
+                Reimprimir último ticket
+              </Button>
+            </span>
           </Tooltip>
         </Box>
         <Box p={1}>
@@ -211,18 +232,21 @@ const UpperButtons = (props: UpperButtonsProps): JSX.Element => {
               </>
             }
           >
-            <Button
-              color="primary"
-              disabled={
-                formikProps.values.articulos.length === 0 ||
-                session.puntoIdActivo == null
-              }
-              onClick={handleCobrarClick}
-              startIcon={<AttachMoneyIcon />}
-              variant="contained"
-            >
-              Cobrar
-            </Button>
+            <span>
+              <Button
+                color="primary"
+                disabled={
+                  formikProps.values.precios.length === 0 ||
+                  plazaState._idPunto == null ||
+                  history.location.search === ''
+                }
+                onClick={handleCobrarClick}
+                startIcon={<AttachMoneyIcon />}
+                variant="contained"
+              >
+                Cobrar
+              </Button>
+            </span>
           </Tooltip>
         </Box>
         <Box alignItems="center" p={1}>

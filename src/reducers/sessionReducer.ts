@@ -1,87 +1,49 @@
-import * as actionTypes from '../actions';
-import { Session } from '../types/types';
+import { SessionAction } from '../actions';
+import { SessionState } from '../types/types';
 
-const initialState: Session = {
-  loggedIn: localStorage.getItem('loggedIn') || 'false',
-  online: localStorage.getItem('online') !== 'false',
+const initialState: SessionState = {
+  loggedIn: Boolean(localStorage.getItem('loggedIn')),
   nombre: localStorage.getItem('nombre'),
-  roles: localStorage.getItem('roles'),
-  puntoIdActivo: localStorage.getItem('puntoIdActivo'),
-  infoPunto: localStorage.getItem('infoPunto'),
-  tickets: [{ cliente: '', articulos: [], nombre: 'ticket 1' }],
-  ultimoTicket: {},
-  impresora: localStorage.getItem('impresora'),
-  ancho: localStorage.getItem('ancho'),
-  inventario: [{ articulo: '', cantidad: 0 }],
-  sinAlmacen: localStorage.getItem('sinAlmacen') !== 'false',
+  roles: JSON.parse(localStorage.getItem('roles') || 'null'),
+  uid: localStorage.getItem('uid'),
 };
-// roles and name from db
 
-const sessionReducer = (state = initialState, action: any) => {
+const sessionReducer = (
+  state = initialState,
+  action: SessionAction
+): SessionState => {
   switch (action.type) {
-    case actionTypes.SESSION_LOGIN: {
+    case 'SESSION_LOGIN': {
+      if (action.loginArgs) {
+        localStorage.setItem('nombre', action.loginArgs.nombre);
+        localStorage.setItem('roles', JSON.stringify(action.loginArgs.roles));
+        localStorage.setItem('uid', action.loginArgs.uid);
+        localStorage.setItem('loggedIn', 'true');
+      }
       return {
         ...state,
-        loggedIn: 'true',
-        nombre: action.payload.nombre,
-        roles: action.payload.roles,
-        puntoIdActivo: action.payload.puntoIdActivo,
-        infoPunto: action.payload.infoPunto,
-        sinAlmacen: action.payload.sinAlmacen,
+        loggedIn: true,
+        nombre: action.loginArgs?.nombre || state.nombre,
+        roles: action.loginArgs?.roles || state.roles,
+        uid: action.loginArgs?.uid || state.uid,
       };
     }
-    case actionTypes.SESSION_LOGOUT: {
+    case 'SESSION_LOGOUT': {
+      localStorage.setItem('loggedIn', 'false');
+      localStorage.removeItem('_idPunto');
+      localStorage.removeItem('_idPuntoPrincipal');
+      localStorage.removeItem('idInventario');
+      localStorage.removeItem('sinAlmacen');
+      localStorage.removeItem('infoPunto');
+      localStorage.removeItem('nombre');
+      localStorage.removeItem('roles');
+      localStorage.removeItem('uid');
       return {
         ...state,
-        loggedIn: 'false',
+        loggedIn: false,
         nombre: null,
         roles: null,
-        puntoIdActivo: null,
-        infoPunto: null,
-        sinAlmacen: null,
-      };
-    }
-    case actionTypes.DESACTIVAR_PUNTO: {
-      return {
-        ...state,
-        puntoIdActivo: null,
-      };
-    }
-    case actionTypes.ASIGNAR_PUNTO: {
-      return {
-        ...state,
-        puntoIdActivo: action.payload.asignarPunto,
-      };
-    }
-    case actionTypes.MODIFICAR_TICKETS: {
-      return {
-        ...state,
-        tickets: action.payload.tickets,
-      };
-    }
-    case actionTypes.MODIFICAR_ONLINE: {
-      return {
-        ...state,
-        online: action.payload.online,
-      };
-    }
-    case actionTypes.GUARDAR_INVENTARIO: {
-      return {
-        ...state,
-        inventario: action.payload.inventario,
-      };
-    }
-    case actionTypes.MODIFICAR_ULTIMO_TICKET: {
-      return {
-        ...state,
-        ultimoTicket: action.payload.ultimoTicket,
-      };
-    }
-    case actionTypes.MODIFICAR_IMPRESORA: {
-      return {
-        ...state,
-        impresora: action.payload.impresora,
-        ancho: action.payload.ancho,
+        uid: null,
       };
     }
     default: {

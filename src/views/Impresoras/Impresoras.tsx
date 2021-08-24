@@ -1,26 +1,24 @@
 /* eslint-disable react/jsx-key */
 /* eslint-disable promise/always-return */
 /* eslint-disable no-underscore-dangle */
-import React, { useState } from 'react';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
-import Grid from '@material-ui/core/Grid';
 import Card from '@material-ui/core/Card';
-import Typography from '@material-ui/core/Typography';
-import { useSelector, useDispatch } from 'react-redux';
 import CardContent from '@material-ui/core/CardContent';
-import { Formik, Field } from 'formik';
-import * as yup from 'yup';
-
 import FormControlLabel from '@material-ui/core/FormControlLabel';
+import Grid from '@material-ui/core/Grid';
 import Radio from '@material-ui/core/Radio';
+import Typography from '@material-ui/core/Typography';
+import { Field, Formik } from 'formik';
 import { RadioGroup } from 'formik-material-ui';
-
-import { RootState } from '../../types/store';
-import { Session, ImpresoraValues } from '../../types/types';
+import React, { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import * as yup from 'yup';
+import { modificarImpresora } from '../../actions';
 import { AuthGuard, Header, SuccessErrorMessage } from '../../components';
-import { modificarImpresora } from '../../actions/sessionActions';
-import crearTicketData from '../../utils/crearTicketData';
+import { RootState } from '../../types/store';
+import { ImpresoraValues } from '../../types/types';
+import { crearTicketData } from '../../utils/functions';
 
 const { ipcRenderer, remote } = window.require('electron');
 const webContents = remote.getCurrentWebContents();
@@ -35,13 +33,8 @@ const Impresoras = () => {
   const [success, setSuccess] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [reimprimirDisabled, setReimprimirDisabled] = useState(false);
-  const session: Session = useSelector((state: RootState) => state.session);
+  const plaza = useSelector((state: RootState) => state.plaza);
   const dispatch = useDispatch();
-
-  const initialValues = {
-    impresora: session.impresora,
-    ancho: session.ancho,
-  };
 
   const handleSubmit = async (values: ImpresoraValues) => {
     dispatch(
@@ -50,8 +43,6 @@ const Impresoras = () => {
         ancho: values.ancho,
       })
     );
-    localStorage.setItem('impresora', values.impresora);
-    localStorage.setItem('ancho', values.ancho);
     setSuccess(true);
     setMessage('Impresora guardada');
   };
@@ -59,20 +50,20 @@ const Impresoras = () => {
   const handleImpresionDePrueba = async (values: ImpresoraValues) => {
     setReimprimirDisabled(true);
     const detalles = [
-      { articulo: 'Leggins', cantidad: 100, precio: 100 },
-      { articulo: 'Nicker dama basic', cantidad: 100, precio: 100 },
-      { articulo: 'Camisola', cantidad: 100, precio: 100 },
-      { articulo: 'Short dama basic', cantidad: 100, precio: 100 },
-      { articulo: 'Overol corto short dama', cantidad: 100, precio: 100 },
-      { articulo: 'Pantalón dama premium', cantidad: 100, precio: 100 },
+      { Nombre: 'Leggins', Cantidad: 100, Precio: 100 },
+      { Nombre: 'Nicker dama basic', Cantidad: 100, Precio: 100 },
+      { Nombre: 'Camisola', Cantidad: 100, Precio: 100 },
+      { Nombre: 'Short dama basic', Cantidad: 100, Precio: 100 },
+      { Nombre: 'Overol corto short dama', Cantidad: 100, Precio: 100 },
+      { Nombre: 'Pantalón dama premium', Cantidad: 100, Precio: 100 },
     ];
-    const data = crearTicketData(
-      `${session.infoPunto}IMPRESIÓN DE PRUEBA<br>`,
-      detalles,
-      null,
-      100000,
-      100
-    );
+    const data = crearTicketData({
+      infoPunto: `${plaza.infoPunto}IMPRESIÓN DE PRUEBA<br>`,
+      articulos: detalles,
+      cliente: null,
+      cantidadPagada: 100000,
+      cambio: 100,
+    });
     if (values.ancho && values.impresora) {
       ipcRenderer.send('PRINT', {
         data,
@@ -94,10 +85,13 @@ const Impresoras = () => {
 
   return (
     <AuthGuard denyReadOnly roles={['ADMIN', 'PUNTO']}>
-      <Header categoria="Ventas" titulo="Impresoras" />
+      <Header titulo="Impresoras" />
       <Box display="flex" justifyContent="center" m={0}>
         <Formik<ImpresoraValues>
-          initialValues={initialValues}
+          initialValues={{
+            impresora: plaza.impresora || '',
+            ancho: plaza.ancho || '',
+          }}
           onSubmit={() => {}}
           validateOnBlur={false}
           validateOnChange={false}

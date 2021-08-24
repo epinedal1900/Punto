@@ -5,7 +5,7 @@ export default {
   input: {
     '&::placeholder': {
       opacity: 1,
-      color: palette.text.secondary
-    }
-  }
+      color: palette.text.secondary,
+    },
+  },
 };

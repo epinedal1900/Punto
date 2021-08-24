@@ -6,10 +6,18 @@ interface SuccessErrorMessageProps {
   success: boolean;
   message: string | null;
   handleExit: () => void;
-  anchorOrigin: SnackbarOrigin;
+  anchorOrigin?: SnackbarOrigin;
 }
 const SuccessErrorMessage = (props: SuccessErrorMessageProps): JSX.Element => {
-  const { success, message, handleExit, anchorOrigin } = props;
+  const {
+    success,
+    message,
+    handleExit,
+    anchorOrigin = {
+      vertical: 'top',
+      horizontal: 'center',
+    },
+  } = props;
   return (
     <>
       {success && message ? (

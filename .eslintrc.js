@@ -46,7 +46,6 @@ module.exports = {
     'import/no-cycle': 0,
     'react/jsx-props-no-spreading': 0,
     'react/no-array-index-key': 0,
-    'react/jsx-no-duplicate-props': 0,
     'no-underscore-dangle': 0,
     'promise/always-return': 0,
     'promise/no-nesting': 0,
@@ -60,10 +59,6 @@ module.exports = {
     project: './tsconfig.json',
     tsconfigRootDir: __dirname,
     createDefaultProgram: true,
-  },
-  ecmaFeatures: {
-    jsx: true,
-    experimentalObjectRestSpread: true,
   },
   plugins: ['react', 'react-hooks'],
   settings: {

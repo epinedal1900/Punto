@@ -10,19 +10,26 @@ import ViewModuleIcon from '@material-ui/icons/ViewModule';
 import List from '@material-ui/core/List';
 import PrintIcon from '@material-ui/icons/Print';
 import CreateIcon from '@material-ui/icons/Create';
-import MonetizationOnOutlinedIcon from '@material-ui/icons/MonetizationOnOutlined';
-import { Link as RouterLink } from 'react-router-dom';
+import EventNoteIcon from '@material-ui/icons/EventNote';
+import { Link as RouterLink, useHistory } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Session } from '../types/types';
 import { RootState } from '../types/store';
 
 export const ListItems = () => {
-  const session: Session = useSelector((state: RootState) => state.session);
+  const plazaState = useSelector((state: RootState) => state.plaza);
+  const history = useHistory();
 
   return (
     <List>
       <div>
-        <ListItem button component={RouterLink} to="/">
+        <ListItem
+          button
+          onClick={() => {
+            if (history.location.pathname !== '/') {
+              history.push('/');
+            }
+          }}
+        >
           <ListItemIcon>
             <LocalAtmIcon />
           </ListItemIcon>
@@ -31,37 +38,39 @@ export const ListItems = () => {
         <ListItem
           button
           component={RouterLink}
-          disabled={session.puntoIdActivo == null}
-          to="/movimientos"
+          disabled={!plazaState._idPunto}
+          to={`/plazas/ver/${plazaState._idPunto}`}
         >
           <ListItemIcon>
             <ListAltIcon />
           </ListItemIcon>
-          <ListItemText primary="Movimientos" />
+          <ListItemText primary="Plaza activa" />
         </ListItem>
-        <ListItem
-          button
-          component={RouterLink}
-          disabled={session.puntoIdActivo == null}
-          to="/gastos"
-        >
-          <ListItemIcon>
-            <MonetizationOnOutlinedIcon />
-          </ListItemIcon>
-          <ListItemText primary="Gastos" />
-        </ListItem>
-        {!session.sinAlmacen && (
-          <ListItem
-            button
-            component={RouterLink}
-            disabled={session.puntoIdActivo == null || !session.online}
-            to="/registroinventario"
-          >
-            <ListItemIcon>
-              <CreateIcon />
-            </ListItemIcon>
-            <ListItemText primary="Registro de inventario" />
-          </ListItem>
+        {!plazaState.sinAlmacen && (
+          <>
+            <ListItem
+              button
+              component={RouterLink}
+              disabled={!plazaState._idPunto}
+              to="/calendario"
+            >
+              <ListItemIcon>
+                <EventNoteIcon />
+              </ListItemIcon>
+              <ListItemText primary="Calendario de registros" />
+            </ListItem>
+            <ListItem
+              button
+              component={RouterLink}
+              disabled={!plazaState._idPunto}
+              to="/registroinventario"
+            >
+              <ListItemIcon>
+                <CreateIcon />
+              </ListItemIcon>
+              <ListItemText primary="Registro de inventario" />
+            </ListItem>
+          </>
         )}
         <ListItem button component={RouterLink} to="/articulos">
           <ListItemIcon>

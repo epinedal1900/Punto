@@ -1,3 +1,4 @@
+/* eslint-disable no-alert */
 /* eslint-disable @typescript-eslint/naming-convention */
 import React, { useEffect, useState } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
@@ -9,17 +10,12 @@ import { useHistory } from 'react-router-dom';
 
 import LinearProgress from '@material-ui/core/LinearProgress';
 import { useQuery } from '@apollo/client';
-import { ipcRenderer } from 'electron';
-import { login } from '../../../actions';
-import { USUARIO, PUNTO_ID_ACTIVO, MOVIMIENTOS } from '../../../utils/queries';
+import { PLAZA, USUARIO } from '../../../utils/queries';
 
 import { RootState } from '../../../types/store';
-import { Role, Session } from '../../../types/types';
 import {
-  Movimientos,
-  MovimientosVariables,
-  PuntoIdActivo,
-  PuntoIdActivoVariables,
+  plaza,
+  plazaVariables,
   Usuario,
   UsuarioVariables,
 } from '../../../types/apollo';
@@ -55,40 +51,27 @@ const useStyles = makeStyles((theme) => ({
 
 const LoginForm = () => {
   const classes = useStyles();
-  const session: Session = useSelector((state: RootState) => state.session);
-  const [uid, setUid] = useState<{ uid: string } | null>(null);
-  const [nombre, setNombre] = useState<{ nombre: string } | null>(null);
-  const [idPunto, setidPunto] = useState<{ _id: string } | null>(null);
-  const { refetch: getMovimientos } = useQuery<
-    Movimientos,
-    MovimientosVariables
-  >(MOVIMIENTOS, {
-    // @ts-expect-error: error
-    variables: idPunto,
+  const session = useSelector((state: RootState) => state.session);
+  const [uid, setUid] = useState<string | null>(null);
+  const [idPunto, setidPunto] = useState<string | null>(null);
+  const { refetch: getPlaza } = useQuery<plaza, plazaVariables>(PLAZA, {
+    variables: { _id: idPunto || '' },
     skip: !idPunto,
   });
   const { refetch: getUser } = useQuery<Usuario, UsuarioVariables>(USUARIO, {
-    // @ts-expect-error: error
-    variables: uid || '',
+    variables: { uid: uid || '' },
     skip: !uid,
   });
-  const { refetch: getId } = useQuery<PuntoIdActivo, PuntoIdActivoVariables>(
-    PUNTO_ID_ACTIVO,
-    {
-      // @ts-expect-error: error
-      variables: nombre || '',
-      skip: !nombre,
-    }
-  );
+
   const history = useHistory();
   const dispatch = useDispatch();
 
   useEffect(() => {
-    if (session.loggedIn === 'true') {
+    if (session.loggedIn) {
       history.push('/');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [session.loggedIn]);
 
   return (
     <Box display="flex" justifyContent="center" m={0}>
@@ -106,65 +89,38 @@ const LoginForm = () => {
             )
             .then(async (res) => {
               if (res.user) {
-                let _id: string;
-                let nombreStr = '';
-                let roles: Role[];
-                let infoPunto: string | null;
-                let sinAlmacen: boolean | null = false;
-                await setUid({ uid: res.user.uid });
-                // @ts-expect-error: error
-                await getUser({ variables: { uid: res.user.uid } }).then(
-                  (data) => {
-                    if (data.data && data.data.usuario) {
-                      roles = data.data.usuario.roles;
-                      nombreStr = data.data.usuario.nombre;
-                      _id = data.data.usuario._id;
-                      infoPunto = data.data.usuario.infoPunto;
-                      sinAlmacen = data.data.usuario.sinAlmacen;
-                    }
-                  }
-                );
-                await setNombre({ nombre: nombreStr });
-                // @ts-expect-error: error
-                await getId({ variables: { nombre: nombreStr } }).then(
-                  async (data) => {
-                    localStorage.setItem('loggedIn', 'true');
-                    localStorage.setItem('roles', JSON.stringify(roles));
-                    localStorage.setItem('nombre', nombreStr);
-                    localStorage.setItem('infoPunto', infoPunto || '');
-                    localStorage.setItem(
-                      'sinAlmacen',
-                      sinAlmacen ? 'true' : 'false'
-                    );
-                    await dispatch(
-                      login({
-                        uid: _id,
-                        nombre: nombreStr,
-                        roles: JSON.stringify(roles),
-                        puntoIdActivo: data.data.puntoIdActivo,
-                        infoPunto,
-                        sinAlmacen,
-                      })
-                    );
-                    history.push('/');
-                    if (data.data.puntoIdActivo == null) {
-                      // eslint-disable-next-line no-alert
-                      alert('No hay ninguna plaza activa');
-                    } else {
-                      await setidPunto({ _id: data.data.puntoIdActivo });
-                      await getMovimientos({
-                        // @ts-expect-error: error
-                        variables: { _id: data.data.puntoIdActivo },
-                      }).then((movData) => {
-                        ipcRenderer.send('PLAZA', movData.data.movimientos);
+                setUid(res.user.uid);
+                await getUser({ uid: res.user.uid }).then((data) => {
+                  const { usuario } = data.data;
+                  if (usuario) {
+                    setidPunto(usuario._idPunto);
+                    dispatch({
+                      type: 'SESSION_LOGIN',
+                      loginArgs: {
+                        nombre: usuario.nombre,
+                        roles: usuario.roles,
+                        uid,
+                      },
+                    });
+                    if (usuario._idPunto && usuario.idInventario) {
+                      dispatch({
+                        type: 'ASIGNAR_PUNTO',
+                        asignarPuntoArgs: {
+                          idInventario: usuario.idInventario,
+                          _idPunto: usuario._idPunto,
+                          _idPuntoPrincipal: usuario._idPuntoPrincipal,
+                          infoPunto: usuario.infoPunto,
+                          sinAlmacen: usuario.sinAlmacen,
+                        },
                       });
-                      localStorage.setItem(
-                        'puntoIdActivo',
-                        data.data.puntoIdActivo
-                      );
+                    } else {
+                      dispatch({ type: 'DESACTIVAR_PUNTO' });
+                      alert('No hay ninguna plaza activa');
                     }
+                    history.push('/');
                   }
-                );
+                });
+                getPlaza({ _id: idPunto || '' });
               }
             })
             .catch((error) => {

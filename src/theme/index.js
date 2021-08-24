@@ -14,4 +14,5 @@ const theme = createMuiTheme(
   esES
 );
 
+export type Theme = typeof theme;
 export default theme;

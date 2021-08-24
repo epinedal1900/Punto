@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { makeStyles } from '@material-ui/core/styles';
-import { Typography, Button, useTheme, useMediaQuery } from '@material-ui/core';
+import { Typography, Button } from '@material-ui/core';
 
 const useStyles = makeStyles(() => ({
   root: {
     padding: 3,
-    paddingTop: '10vh',
+    paddingTop: '14vh',
     display: 'flex',
     flexDirection: 'column',
     alignContent: 'center',
@@ -31,12 +31,10 @@ const useStyles = makeStyles(() => ({
 
 const Error404 = () => {
   const classes = useStyles();
-  const theme = useTheme();
-  const mobileDevice = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (
-    <>
-      <Typography align="center" variant={mobileDevice ? 'h4' : 'h1'}>
+    <div className={classes.root}>
+      <Typography align="center" variant="h3">
         404: Página no encontrada
       </Typography>
       <div className={classes.buttonContainer}>
@@ -49,7 +47,7 @@ const Error404 = () => {
           Ir a la página principal
         </Button>
       </div>
-    </>
+    </div>
   );
 };
 

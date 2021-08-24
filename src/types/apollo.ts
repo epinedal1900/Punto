@@ -18,7 +18,7 @@ export interface MarcarLeidos {
 }
 
 export interface MarcarLeidosVariables {
-  nombre: string;
+  in: string;
 }
 
 /* tslint:disable */
@@ -27,21 +27,92 @@ export interface MarcarLeidosVariables {
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL mutation operation: EnviarReporteUrl
+// GraphQL mutation operation: enviarReporteUrl
 // ====================================================
 
-export interface EnviarReporteUrl_enviarReporteUrl {
+export interface enviarReporteUrl_enviarReporteUrl {
   success: boolean;
   message: string | null;
   _id: string | null;
 }
 
-export interface EnviarReporteUrl {
-  enviarReporteUrl: EnviarReporteUrl_enviarReporteUrl;
+export interface enviarReporteUrl {
+  enviarReporteUrl: enviarReporteUrl_enviarReporteUrl;
 }
 
-export interface EnviarReporteUrlVariables {
+export interface enviarReporteUrlVariables {
+  chat: Chat;
   url: string;
+}
+
+/* tslint:disable */
+/* eslint-disable */
+// @generated
+// This file was automatically generated and should not be edited.
+
+// ====================================================
+// GraphQL mutation operation: desactivarPlazaConInventario
+// ====================================================
+
+export interface desactivarPlazaConInventario_desactivarPlazaConInventario {
+  success: boolean;
+  message: string | null;
+  _id: string | null;
+}
+
+export interface desactivarPlazaConInventario {
+  desactivarPlazaConInventario: desactivarPlazaConInventario_desactivarPlazaConInventario;
+}
+
+export interface desactivarPlazaConInventarioVariables {
+  in: string;
+}
+
+/* tslint:disable */
+/* eslint-disable */
+// @generated
+// This file was automatically generated and should not be edited.
+
+// ====================================================
+// GraphQL mutation operation: cancelarVentaPunto
+// ====================================================
+
+export interface cancelarVentaPunto_cancelarVentaPunto {
+  success: boolean;
+  message: string | null;
+  _id: string | null;
+}
+
+export interface cancelarVentaPunto {
+  cancelarVentaPunto: cancelarVentaPunto_cancelarVentaPunto;
+}
+
+export interface cancelarVentaPuntoVariables {
+  _idVenta: string;
+  puntoId: string;
+}
+
+/* tslint:disable */
+/* eslint-disable */
+// @generated
+// This file was automatically generated and should not be edited.
+
+// ====================================================
+// GraphQL mutation operation: cancelarVenta
+// ====================================================
+
+export interface cancelarVenta_cancelarVenta {
+  success: boolean;
+  message: string | null;
+  _id: string | null;
+}
+
+export interface cancelarVenta {
+  cancelarVenta: cancelarVenta_cancelarVenta;
+}
+
+export interface cancelarVentaVariables {
+  _idVenta: string;
   nombre: string;
 }
 
@@ -51,22 +122,67 @@ export interface EnviarReporteUrlVariables {
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL mutation operation: ModificarPuntosActivos
+// GraphQL mutation operation: subirDatos
 // ====================================================
 
-export interface ModificarPuntosActivos_modificarPuntosActivos {
+export interface subirDatos_subirDatos_erroresIds {
+  gasto: string[];
+  intercambio: string[];
+  pago: string[];
+  venta_cliente: string[];
+  venta_punto: string[];
+}
+
+export interface subirDatos_subirDatos_usuario {
+  _id: string;
+  _idPunto: string | null;
+  _idPuntoPrincipal: string;
+  idInventario: string | null;
+  infoPunto: string;
+  sinAlmacen: boolean;
+}
+
+export interface subirDatos_subirDatos {
+  erroresIds: subirDatos_subirDatos_erroresIds;
+  message: string;
+  success: boolean;
+  usuario: subirDatos_subirDatos_usuario | null;
+}
+
+export interface subirDatos {
+  subirDatos: subirDatos_subirDatos;
+}
+
+export interface subirDatosVariables {
+  intercambio: intercambioVariables[];
+  venta_punto: ventaPuntoVariables[];
+  venta_cliente: ventaClienteVariables[];
+  pago: pagoVariables[];
+  gasto: gastoVariables[];
+}
+
+/* tslint:disable */
+/* eslint-disable */
+// @generated
+// This file was automatically generated and should not be edited.
+
+// ====================================================
+// GraphQL mutation operation: cancelarPago
+// ====================================================
+
+export interface cancelarPago_cancelarPago {
   success: boolean;
   message: string | null;
   _id: string | null;
 }
 
-export interface ModificarPuntosActivos {
-  modificarPuntosActivos: ModificarPuntosActivos_modificarPuntosActivos;
+export interface cancelarPago {
+  cancelarPago: cancelarPago_cancelarPago;
 }
 
-export interface ModificarPuntosActivosVariables {
+export interface cancelarPagoVariables {
+  _idPago: string;
   nombre: string;
-  propiedad: string;
 }
 
 /* tslint:disable */
@@ -75,21 +191,22 @@ export interface ModificarPuntosActivosVariables {
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL mutation operation: NuevoCliente
+// GraphQL mutation operation: cancelarIntercambio
 // ====================================================
 
-export interface NuevoCliente_nuevoCliente {
+export interface cancelarIntercambio_cancelarIntercambio {
   success: boolean;
   message: string | null;
   _id: string | null;
 }
 
-export interface NuevoCliente {
-  nuevoCliente: NuevoCliente_nuevoCliente;
+export interface cancelarIntercambio {
+  cancelarIntercambio: cancelarIntercambio_cancelarIntercambio;
 }
 
-export interface NuevoClienteVariables {
-  obj: any;
+export interface cancelarIntercambioVariables {
+  puntoId: string;
+  _idIntercambio: string;
 }
 
 /* tslint:disable */
@@ -98,27 +215,24 @@ export interface NuevoClienteVariables {
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL mutation operation: CancelarMovimiento
+// GraphQL mutation operation: nuevaVentaCliente
 // ====================================================
 
-export interface CancelarMovimiento_cancelarMovimiento {
+export interface nuevaVentaCliente_nuevaVentaCliente {
   success: boolean;
   message: string | null;
   _id: string | null;
 }
 
-export interface CancelarMovimiento {
-  cancelarMovimiento: CancelarMovimiento_cancelarMovimiento;
+export interface nuevaVentaCliente {
+  nuevaVentaCliente: nuevaVentaCliente_nuevaVentaCliente;
 }
 
-export interface CancelarMovimientoVariables {
+export interface nuevaVentaClienteVariables {
+  args: NuevaVentaArgs;
   nombre: string;
   puntoId: string;
-  idMovimiento: string;
-  movimiento: string;
-  articulos: any;
-  message: string;
-  conCliente?: boolean | null;
+  _id: string;
 }
 
 /* tslint:disable */
@@ -127,25 +241,23 @@ export interface CancelarMovimientoVariables {
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL mutation operation: CancelarPago
+// GraphQL mutation operation: nuevaVentaPuntoDeVenta
 // ====================================================
 
-export interface CancelarPago_cancelarPago {
+export interface nuevaVentaPuntoDeVenta_nuevaVentaPuntoDeVenta {
   success: boolean;
   message: string | null;
   _id: string | null;
 }
 
-export interface CancelarPago {
-  cancelarPago: CancelarPago_cancelarPago;
+export interface nuevaVentaPuntoDeVenta {
+  nuevaVentaPuntoDeVenta: nuevaVentaPuntoDeVenta_nuevaVentaPuntoDeVenta;
 }
 
-export interface CancelarPagoVariables {
-  _idCollection: string;
-  _idCliente: string;
-  cliente: string;
-  monto: number;
-  esDescuento?: boolean | null;
+export interface nuevaVentaPuntoDeVentaVariables {
+  args: NuevaVentaPuntoArgs;
+  puntoId: string;
+  _id: string;
 }
 
 /* tslint:disable */
@@ -154,79 +266,24 @@ export interface CancelarPagoVariables {
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL mutation operation: NuevoPedido
+// GraphQL mutation operation: nuevoIntercambio
 // ====================================================
 
-export interface NuevoPedido_nuevoPedido {
+export interface nuevoIntercambio_nuevoIntercambio {
   success: boolean;
   message: string | null;
   _id: string | null;
 }
 
-export interface NuevoPedido {
-  nuevoPedido: NuevoPedido_nuevoPedido;
+export interface nuevoIntercambio {
+  nuevoIntercambio: nuevoIntercambio_nuevoIntercambio;
 }
 
-export interface NuevoPedidoVariables {
-  obj: any;
-  cliente: string;
-  prendas: number;
-  urls?: string[] | null;
-}
-
-/* tslint:disable */
-/* eslint-disable */
-// @generated
-// This file was automatically generated and should not be edited.
-
-// ====================================================
-// GraphQL mutation operation: NuevaVenta
-// ====================================================
-
-export interface NuevaVenta_nuevaVenta {
-  success: boolean;
-  message: string | null;
-  _id: string | null;
-}
-
-export interface NuevaVenta {
-  nuevaVenta: NuevaVenta_nuevaVenta;
-}
-
-export interface NuevaVentaVariables {
-  objVenta: any;
-  monto?: number | null;
-  cliente?: string | null;
-  puntoId?: string | null;
-  nombre?: string | null;
-  idPago?: string | null;
-  enviarMensaje?: boolean | null;
-}
-
-/* tslint:disable */
-/* eslint-disable */
-// @generated
-// This file was automatically generated and should not be edited.
-
-// ====================================================
-// GraphQL mutation operation: NuevoIntercambio
-// ====================================================
-
-export interface NuevoIntercambio_nuevoIntercambio {
-  success: boolean;
-  message: string | null;
-  _id: string | null;
-}
-
-export interface NuevoIntercambio {
-  nuevoIntercambio: NuevoIntercambio_nuevoIntercambio;
-}
-
-export interface NuevoIntercambioVariables {
-  obj: any;
-  nombreSalida: string;
-  nombreEntrada: string;
-  enviarMensaje?: boolean | null;
+export interface nuevoIntercambioVariables {
+  prendas: PrendasNuevoRegistro[];
+  puntoIdReceptor: string;
+  puntoIdEmisor: string;
+  _id: string;
 }
 
 /* tslint:disable */
@@ -249,9 +306,9 @@ export interface NuevoGasto {
 }
 
 export interface NuevoGastoVariables {
-  obj: any;
+  gasto: GastoInput;
   puntoId: string;
-  enviarMensaje?: boolean | null;
+  _id: string;
 }
 
 /* tslint:disable */
@@ -260,22 +317,40 @@ export interface NuevoGastoVariables {
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL mutation operation: NuevoRegreso
+// GraphQL mutation operation: reportarError
 // ====================================================
 
-export interface NuevoRegreso_nuevoRegreso {
+export interface reportarError {
+  reportarError: number | null;
+}
+
+export interface reportarErrorVariables {
+  operation?: string | null;
+}
+
+/* tslint:disable */
+/* eslint-disable */
+// @generated
+// This file was automatically generated and should not be edited.
+
+// ====================================================
+// GraphQL mutation operation: nuevoRegistroDeInventario
+// ====================================================
+
+export interface nuevoRegistroDeInventario_nuevoRegistroDeInventario {
   success: boolean;
   message: string | null;
   _id: string | null;
 }
 
-export interface NuevoRegreso {
-  nuevoRegreso: NuevoRegreso_nuevoRegreso;
+export interface nuevoRegistroDeInventario {
+  nuevoRegistroDeInventario: nuevoRegistroDeInventario_nuevoRegistroDeInventario;
 }
 
-export interface NuevoRegresoVariables {
-  obj: any;
-  puntoId: string;
+export interface nuevoRegistroDeInventarioVariables {
+  articulos: PrendasNuevoRegistro[];
+  discrepancias: PrendasNuevoRegistro[];
+  _id: string;
   nombre: string;
 }
 
@@ -285,26 +360,24 @@ export interface NuevoRegresoVariables {
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL mutation operation: RegistrarDiscrepancias
+// GraphQL mutation operation: nuevoPago
 // ====================================================
 
-export interface RegistrarDiscrepancias_registrarDiscrepancias {
+export interface nuevoPago_nuevoPago {
   success: boolean;
   message: string | null;
   _id: string | null;
 }
 
-export interface RegistrarDiscrepancias {
-  registrarDiscrepancias: RegistrarDiscrepancias_registrarDiscrepancias;
+export interface nuevoPago {
+  nuevoPago: nuevoPago_nuevoPago;
 }
 
-export interface RegistrarDiscrepanciasVariables {
-  articulos: any[];
+export interface nuevoPagoVariables {
+  obj: ObjNuevoPago;
+  nombre: string;
   puntoId: string;
-  tipo: string;
-  nombre?: string | null;
-  sobrescribir?: any[] | null;
-  entradaId?: string | null;
+  _id: string;
 }
 
 /* tslint:disable */
@@ -313,24 +386,29 @@ export interface RegistrarDiscrepanciasVariables {
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL mutation operation: NuevoPago
+// GraphQL query operation: calendarioRegistrosInventario
 // ====================================================
 
-export interface NuevoPago_nuevoPago {
-  success: boolean;
-  message: string | null;
-  _id: string | null;
+export interface calendarioRegistrosInventario_calendarioRegistrosInventario_dias_prendas {
+  id: string;
+  reg: boolean | null;
 }
 
-export interface NuevoPago {
-  nuevoPago: NuevoPago_nuevoPago;
+export interface calendarioRegistrosInventario_calendarioRegistrosInventario_dias {
+  prendas: calendarioRegistrosInventario_calendarioRegistrosInventario_dias_prendas[];
+  fecha: string;
 }
 
-export interface NuevoPagoVariables {
-  objPago: any;
-  cliente: string;
-  urls?: string[] | null;
-  puntoId?: string | null;
+export interface calendarioRegistrosInventario_calendarioRegistrosInventario {
+  dias: calendarioRegistrosInventario_calendarioRegistrosInventario_dias[] | null;
+}
+
+export interface calendarioRegistrosInventario {
+  calendarioRegistrosInventario: calendarioRegistrosInventario_calendarioRegistrosInventario | null;
+}
+
+export interface calendarioRegistrosInventarioVariables {
+  _id: string;
 }
 
 /* tslint:disable */
@@ -342,12 +420,21 @@ export interface NuevoPagoVariables {
 // GraphQL query operation: Usuario
 // ====================================================
 
+export interface Usuario_usuario_roles {
+  role: string;
+  readOnly: boolean;
+}
+
 export interface Usuario_usuario {
   _id: string;
   nombre: string;
-  roles: any[];
-  infoPunto: string | null;
-  sinAlmacen: boolean | null;
+  roles: Usuario_usuario_roles[];
+  idInventario: string | null;
+  _idPunto: string | null;
+  infoPunto: string;
+  _idPuntoPrincipal: string;
+  clientes: (string | null)[] | null;
+  sinAlmacen: boolean;
 }
 
 export interface Usuario {
@@ -364,79 +451,26 @@ export interface UsuarioVariables {
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL query operation: PuntoIdActivo
-// ====================================================
-
-export interface PuntoIdActivo {
-  puntoIdActivo: string | null;
-}
-
-export interface PuntoIdActivoVariables {
-  nombre: string;
-}
-
-/* tslint:disable */
-/* eslint-disable */
-// @generated
-// This file was automatically generated and should not be edited.
-
-// ====================================================
 // GraphQL query operation: NotificacionesPunto
 // ====================================================
 
+export interface NotificacionesPunto_notificacionesPunto_notificaciones_notificaciones {
+  _id: string;
+  nombre: string;
+  leido: boolean;
+}
+
+export interface NotificacionesPunto_notificacionesPunto_notificaciones {
+  nombre: string;
+  notificaciones: NotificacionesPunto_notificacionesPunto_notificaciones_notificaciones[];
+}
+
+export interface NotificacionesPunto_notificacionesPunto {
+  notificaciones: NotificacionesPunto_notificacionesPunto_notificaciones[] | null;
+}
+
 export interface NotificacionesPunto {
-  notificacionesPunto: any;
-}
-
-/* tslint:disable */
-/* eslint-disable */
-// @generated
-// This file was automatically generated and should not be edited.
-
-// ====================================================
-// GraphQL query operation: Clientes
-// ====================================================
-
-export interface Clientes_clientes {
-  _id: string;
-  Nombre: string;
-  Telefono: string | null;
-  Balance: string | null;
-}
-
-export interface Clientes {
-  clientes: Clientes_clientes[] | null;
-}
-
-/* tslint:disable */
-/* eslint-disable */
-// @generated
-// This file was automatically generated and should not be edited.
-
-// ====================================================
-// GraphQL query operation: Cliente
-// ====================================================
-
-export interface Cliente_cliente_direcciones {
-  Direccion: string;
-  CP: string;
-  Estado: string;
-}
-
-export interface Cliente_cliente {
-  Nombre: string;
-  Telefono1: string | null;
-  Telefono2: string | null;
-  Correo: string | null;
-  direcciones: Cliente_cliente_direcciones[] | null;
-}
-
-export interface Cliente {
-  cliente: Cliente_cliente | null;
-}
-
-export interface ClienteVariables {
-  _id: string;
+  notificacionesPunto: NotificacionesPunto_notificacionesPunto | null;
 }
 
 /* tslint:disable */
@@ -449,21 +483,35 @@ export interface ClienteVariables {
 // ====================================================
 
 export interface NuevaVentaUtils_clientes {
-  _id: string;
+  _id: any;
   nombre: string;
+}
+
+export interface NuevaVentaUtils_productos_productos {
+  _id: any;
+  codigo: string;
+  nombre: string;
+  precio: number;
 }
 
 export interface NuevaVentaUtils_productos {
-  objects: any[] | null;
+  productos: NuevaVentaUtils_productos_productos[] | null;
+}
+
+export interface NuevaVentaUtils_puntosActivos_plazasConInventarios {
+  id: string | null;
+  in: string;
+  nombre: string | null;
+}
+
+export interface NuevaVentaUtils_puntosActivos {
+  plazasConInventarios: NuevaVentaUtils_puntosActivos_plazasConInventarios[] | null;
 }
 
 export interface NuevaVentaUtils {
-  clientes: NuevaVentaUtils_clientes[] | null;
+  clientes: NuevaVentaUtils_clientes[];
   productos: NuevaVentaUtils_productos | null;
-}
-
-export interface NuevaVentaUtilsVariables {
-  _idProductos: string;
+  puntosActivos: NuevaVentaUtils_puntosActivos | null;
 }
 
 /* tslint:disable */
@@ -472,52 +520,32 @@ export interface NuevaVentaUtilsVariables {
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL query operation: NuevoRegistroInventarioUtils
+// GraphQL query operation: nuevoRegistroInventarioUtils
 // ====================================================
 
-export interface NuevoRegistroInventarioUtils_inventario_inventario {
-  articulo: string;
-  cantidad: number;
+export interface nuevoRegistroInventarioUtils_inventario {
+  encrypted: string | null;
 }
 
-export interface NuevoRegistroInventarioUtils_inventario {
-  fecha: string;
-  inventario: NuevoRegistroInventarioUtils_inventario_inventario[];
-}
-
-export interface NuevoRegistroInventarioUtils_productos {
-  objects: any[] | null;
-}
-
-export interface NuevoRegistroInventarioUtils {
-  inventario: NuevoRegistroInventarioUtils_inventario | null;
-  productos: NuevoRegistroInventarioUtils_productos | null;
-}
-
-export interface NuevoRegistroInventarioUtilsVariables {
-  _idProductos: string;
+export interface nuevoRegistroInventarioUtils_productos_productos {
+  _id: any;
+  codigo: string;
   nombre: string;
+  precio: number;
 }
 
-/* tslint:disable */
-/* eslint-disable */
-// @generated
-// This file was automatically generated and should not be edited.
+export interface nuevoRegistroInventarioUtils_productos {
+  productos: nuevoRegistroInventarioUtils_productos_productos[] | null;
+}
 
-// ====================================================
-// GraphQL query operation: Ventas
-// ====================================================
+export interface nuevoRegistroInventarioUtils {
+  inventario: nuevoRegistroInventarioUtils_inventario | null;
+  productos: nuevoRegistroInventarioUtils_productos | null;
+  prendasPorRegistrar: string[];
+}
 
-export interface Ventas_ventas {
+export interface nuevoRegistroInventarioUtilsVariables {
   _id: string;
-  Fecha: string | null;
-  Nombre: string | null;
-  Monto: number;
-  Tipo: string | null;
-}
-
-export interface Ventas {
-  ventas: Ventas_ventas[];
 }
 
 /* tslint:disable */
@@ -529,13 +557,24 @@ export interface Ventas {
 // GraphQL query operation: Inventario
 // ====================================================
 
-export interface Inventario_inventario_inventario {
-  articulo: string;
-  cantidad: number;
+export interface Inventario_inventario_inv_pqs {
+  p: string;
+  c: number;
+  id: string;
+  proceso: string;
+  tela: string;
+}
+
+export interface Inventario_inventario_inv {
+  codigo: string;
+  nombre: string;
+  a: string;
+  c: number;
+  pqs: Inventario_inventario_inv_pqs[];
 }
 
 export interface Inventario_inventario {
-  inventario: Inventario_inventario_inventario[];
+  inv: Inventario_inventario_inv[] | null;
 }
 
 export interface Inventario {
@@ -543,105 +582,126 @@ export interface Inventario {
 }
 
 export interface InventarioVariables {
+  _id: string;
+}
+
+/* tslint:disable */
+/* eslint-disable */
+// @generated
+// This file was automatically generated and should not be edited.
+
+// ====================================================
+// GraphQL query operation: plaza
+// ====================================================
+
+export interface plaza_productos_productos {
+  _id: any;
+  codigo: string;
   nombre: string;
+  precio: number;
 }
 
-/* tslint:disable */
-/* eslint-disable */
-// @generated
-// This file was automatically generated and should not be edited.
-
-// ====================================================
-// GraphQL query operation: Movimientos
-// ====================================================
-
-export interface Movimientos_movimientos_movimientos_articulos {
-  articulo: string;
-  cantidad: number;
-  precio: number | null;
+export interface plaza_productos {
+  productos: plaza_productos_productos[] | null;
 }
 
-export interface Movimientos_movimientos_movimientos {
-  _id: string | null;
+export interface plaza_plaza_intercambios_ar_pqs {
+  p: string;
+  c: number;
+}
+
+export interface plaza_plaza_intercambios_ar {
+  a: string;
+  c: number;
+  pqs: plaza_plaza_intercambios_ar_pqs[];
+}
+
+export interface plaza_plaza_intercambios_discrepancias_pqs {
+  p: string;
+  c: number;
+}
+
+export interface plaza_plaza_intercambios_discrepancias {
+  a: string;
+  c: number;
+  pqs: plaza_plaza_intercambios_discrepancias_pqs[];
+}
+
+export interface plaza_plaza_intercambios {
+  _id: any;
+  esEmision: boolean | null;
   Fecha: string;
+  Envia: string;
+  Recibe: string;
+  ar: plaza_plaza_intercambios_ar[];
+  discrepancias: plaza_plaza_intercambios_discrepancias[] | null;
+  ca: boolean;
+}
+
+export interface plaza_plaza_ventas_ar_pqs {
+  p: any;
+  c: number;
+  dev: number | null;
+  mod: number | null;
+}
+
+export interface plaza_plaza_ventas_ar {
+  a: any;
+  c: number;
+  pqs: plaza_plaza_ventas_ar_pqs[];
+  p: number;
+  dev: number | null;
+  mod: number | null;
+}
+
+export interface plaza_plaza_ventas {
+  _id: any;
+  Fecha: string;
+  Nombre: string | null;
+  ar: plaza_plaza_ventas_ar[];
+  ca: boolean;
+  Monto: number;
+  Comentarios: string;
+}
+
+export interface plaza_plaza_pagos {
+  _id: any;
+  cliente: string;
+  Fecha: string;
+  Nombre: string;
   Tipo: string;
   Monto: number;
-  Pago: number | null;
-  Prendas: number;
-  articulos: Movimientos_movimientos_movimientos_articulos[] | null;
-  comentarios: string | null;
+  Comentarios: string | null;
+  ca: boolean | null;
 }
 
-export interface Movimientos_movimientos_gastos {
+export interface plaza_plaza_gastos {
+  _id: any;
   Fecha: string;
   Descripcion: string;
   Monto: number;
 }
 
-export interface Movimientos_movimientos {
+export interface plaza_plaza {
   fecha: string;
-  movimientos: Movimientos_movimientos_movimientos[];
-  gastos: Movimientos_movimientos_gastos[];
+  nombre: string;
+  ce: boolean | null;
+  re: number | null;
+  path: string | null;
+  idInventario: any | null;
+  intercambios: plaza_plaza_intercambios[] | null;
+  ventas: plaza_plaza_ventas[] | null;
+  pagos: plaza_plaza_pagos[];
+  gastos: plaza_plaza_gastos[];
 }
 
-export interface Movimientos {
-  movimientos: Movimientos_movimientos | null;
+export interface plaza {
+  productos: plaza_productos | null;
+  plaza: plaza_plaza | null;
 }
 
-export interface MovimientosVariables {
+export interface plazaVariables {
   _id: string;
-}
-
-/* tslint:disable */
-/* eslint-disable */
-// @generated
-// This file was automatically generated and should not be edited.
-
-// ====================================================
-// GraphQL query operation: DetallesMovimientosUtils
-// ====================================================
-
-export interface DetallesMovimientosUtils_movimientos_movimientos_articulos {
-  articulo: string;
-  cantidad: number;
-  precio: number | null;
-}
-
-export interface DetallesMovimientosUtils_movimientos_movimientos {
-  _id: string | null;
-  Fecha: string;
-  Tipo: string;
-  Monto: number;
-  Pago: number | null;
-  Prendas: number;
-  articulos: DetallesMovimientosUtils_movimientos_movimientos_articulos[] | null;
-  comentarios: string | null;
-}
-
-export interface DetallesMovimientosUtils_movimientos_gastos {
-  Fecha: string;
-  Descripcion: string;
-  Monto: number;
-}
-
-export interface DetallesMovimientosUtils_movimientos {
-  fecha: string;
-  movimientos: DetallesMovimientosUtils_movimientos_movimientos[];
-  gastos: DetallesMovimientosUtils_movimientos_gastos[];
-}
-
-export interface DetallesMovimientosUtils_productos {
-  objects: any[] | null;
-}
-
-export interface DetallesMovimientosUtils {
-  movimientos: DetallesMovimientosUtils_movimientos | null;
-  productos: DetallesMovimientosUtils_productos | null;
-}
-
-export interface DetallesMovimientosUtilsVariables {
-  _id: string;
-  _idProductos: string;
 }
 
 /* tslint:disable */
@@ -654,69 +714,12 @@ export interface DetallesMovimientosUtilsVariables {
 // ====================================================
 
 export interface NuevoPagoUtils_clientes {
-  _id: string;
+  _id: any;
   nombre: string;
 }
 
-export interface NuevoPagoUtils_cuentas {
-  values: string[] | null;
-}
-
 export interface NuevoPagoUtils {
-  clientes: NuevoPagoUtils_clientes[] | null;
-  cuentas: NuevoPagoUtils_cuentas | null;
-}
-
-export interface NuevoPagoUtilsVariables {
-  _idCuentas: string;
-}
-
-/* tslint:disable */
-/* eslint-disable */
-// @generated
-// This file was automatically generated and should not be edited.
-
-// ====================================================
-// GraphQL query operation: Otros
-// ====================================================
-
-export interface Otros_cuentas {
-  values: string[] | null;
-}
-
-export interface Otros_productos {
-  objects: any[] | null;
-}
-
-export interface Otros {
-  cuentas: Otros_cuentas | null;
-  productos: Otros_productos | null;
-}
-
-export interface OtrosVariables {
-  _idCuentas: string;
-  _idProductos: string;
-}
-
-/* tslint:disable */
-/* eslint-disable */
-// @generated
-// This file was automatically generated and should not be edited.
-
-// ====================================================
-// GraphQL query operation: Cuentas
-// ====================================================
-
-export interface Cuentas_cuentas {
-  values: string[] | null;
-}
-
-export interface Cuentas {
-  cuentas: Cuentas_cuentas | null;
-}
-
-export interface CuentasVariables {
-  _idCuentas: string;
+  clientes: NuevoPagoUtils_clientes[];
 }
 
 /* tslint:disable */
@@ -728,16 +731,19 @@ export interface CuentasVariables {
 // GraphQL query operation: Productos
 // ====================================================
 
+export interface Productos_productos_productos {
+  _id: any;
+  codigo: string;
+  nombre: string;
+  precio: number;
+}
+
 export interface Productos_productos {
-  objects: any[] | null;
+  productos: Productos_productos_productos[] | null;
 }
 
 export interface Productos {
   productos: Productos_productos | null;
-}
-
-export interface ProductosVariables {
-  _idProductos: string;
 }
 
 /* tslint:disable */
@@ -748,6 +754,101 @@ export interface ProductosVariables {
 //==============================================================
 // START Enums and Input Objects
 //==============================================================
+
+export enum Chat {
+  cuentasProduccion = "cuentasProduccion",
+  produccion = "produccion",
+  ventas = "ventas",
+}
+
+export enum TipoDePago {
+  cheque = "cheque",
+  deposito = "deposito",
+  descuento = "descuento",
+  efectivo = "efectivo",
+  prestamo = "prestamo",
+}
+
+export interface GastoInput {
+  mo: number;
+  de: string;
+}
+
+export interface NuevaVentaArgs {
+  cl: string;
+  in: string;
+  prendas: PrendasNuevaVenta[];
+  co?: string | null;
+  di?: string | null;
+}
+
+export interface NuevaVentaPuntoArgs {
+  in: string;
+  prendas: PrendasNuevaVenta[];
+  co?: string | null;
+}
+
+export interface ObjNuevoPago {
+  cl: string;
+  mo: number;
+  ti: TipoDePago;
+  path?: string[] | null;
+  cu?: string | null;
+  co?: string | null;
+  col?: string | null;
+}
+
+export interface PQs {
+  p: string;
+  c: number;
+  pqAPrendaSuelta?: number | null;
+}
+
+export interface PrendasNuevaVenta {
+  a: string;
+  c: number;
+  pqs: PQs[];
+  p: number;
+}
+
+export interface PrendasNuevoRegistro {
+  a: string;
+  c: number;
+  pqs: PQs[];
+}
+
+export interface gastoVariables {
+  gasto: GastoInput;
+  puntoId: string;
+  _id: string;
+}
+
+export interface intercambioVariables {
+  prendas: PrendasNuevoRegistro[];
+  puntoIdReceptor: string;
+  puntoIdEmisor: string;
+  _id: string;
+}
+
+export interface pagoVariables {
+  obj: ObjNuevoPago;
+  nombre: string;
+  puntoId: string;
+  _id: string;
+}
+
+export interface ventaClienteVariables {
+  args: NuevaVentaArgs;
+  nombre: string;
+  puntoId: string;
+  _id: string;
+}
+
+export interface ventaPuntoVariables {
+  args: NuevaVentaPuntoArgs;
+  puntoId: string;
+  _id: string;
+}
 
 //==============================================================
 // END Enums and Input Objects

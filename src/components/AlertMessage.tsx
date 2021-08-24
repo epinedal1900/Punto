@@ -1,12 +1,35 @@
 /* eslint-disable react/no-multi-comp */
 import React, { useState } from 'react';
-import Snackbar, { SnackbarOrigin } from '@material-ui/core/Snackbar';
-import MuiAlert from '@material-ui/lab/Alert';
+import Snackbar, {
+  SnackbarCloseReason,
+  SnackbarOrigin,
+} from '@material-ui/core/Snackbar';
+import MuiAlert, { Color } from '@material-ui/lab/Alert';
 import { makeStyles } from '@material-ui/core/styles';
 
-const Alert = (props: any): JSX.Element => {
-  // eslint-disable-next-line react/jsx-props-no-spreading
-  return <MuiAlert elevation={6} variant="filled" {...props} />;
+interface AlertProps {
+  className: string;
+  onClose: (
+    event: React.SyntheticEvent<any, Event>,
+    reason: SnackbarCloseReason
+  ) => void;
+  severity: Color;
+  children: React.ReactNode;
+}
+const Alert = (props: AlertProps): JSX.Element => {
+  const { severity, onClose, className, children } = props;
+  return (
+    <MuiAlert
+      className={className}
+      elevation={6}
+      // @ts-expect-error:err
+      onClose={onClose}
+      severity={severity}
+      variant="filled"
+    >
+      {children}
+    </MuiAlert>
+  );
 };
 
 const useStyles = makeStyles({
@@ -20,7 +43,7 @@ const useStyles = makeStyles({
   },
 });
 interface AlertMessageProps {
-  severity: 'success' | 'info' | 'warning' | 'error';
+  severity: Color;
   message: string;
   handleExit: () => void;
   anchorOrigin: SnackbarOrigin;
@@ -30,7 +53,10 @@ const AlertMessage = (props: AlertMessageProps): JSX.Element => {
   const [open, setOpen] = useState(true);
   const classes = useStyles();
 
-  const handleClose = (_e: any, reason: string) => {
+  const handleClose = (
+    _e: React.SyntheticEvent<any, Event>,
+    reason: SnackbarCloseReason
+  ) => {
     if (reason === 'clickaway') {
       return;
     }

@@ -1,127 +1,149 @@
 import React from 'react';
-import { Typography, Grid, Button } from '@material-ui/core';
+import { Typography, Box, Grid, Button, Chip } from '@material-ui/core';
 import EditOutlinedIcon from '@material-ui/icons/EditOutlined';
 import AddCircleOutlineOutlinedIcon from '@material-ui/icons/AddCircleOutlineOutlined';
 import ArrowRightAltIcon from '@material-ui/icons/ArrowRightAlt';
 import Skeleton from '@material-ui/lab/Skeleton';
-import PrintIcon from '@material-ui/icons/Print';
 import { useSelector } from 'react-redux';
+import CloudUploadOutlinedIcon from '@material-ui/icons/CloudUploadOutlined';
+import PrintIcon from '@material-ui/icons/Print';
 
 import { Link as RouterLink } from 'react-router-dom';
-import { AppRole, Role, Session } from '../types/types';
 import { RootState } from '../types/store';
+import { AppRole } from '../types/types';
 
-type IconOptions = 'añadir' | 'editar' | 'flecha' | 'imprimir';
-
+type IconOptions = 'añadir' | 'editar' | 'flecha' | 'imprimir' | 'subir';
 interface HeaderProps {
   categoria?: string;
-  titulo: string;
+  titulo?: string | null;
   addPath?: string;
-  handleOpen?: () => Promise<void> | void;
+  handleOpen?: () => void;
   buttonText?: string;
   buttonIcon?: IconOptions;
   loading?: boolean;
   disabled?: boolean;
+  cancelado?: boolean;
+  /** roles que pueden ver el botón si no son solo lectura */
   readOnlyRoles?: AppRole[];
   handleSecondaryOpen?: () => void;
   buttonSecondaryIcon?: IconOptions;
   buttonSecondaryText?: string;
 }
-const Header = (props: HeaderProps): JSX.Element => {
-  const {
-    categoria,
-    titulo,
-    addPath,
-    handleOpen,
-    buttonText,
-    buttonIcon,
-    loading,
-    disabled,
-    handleSecondaryOpen,
-    buttonSecondaryIcon,
-    buttonSecondaryText,
-    readOnlyRoles = [],
-  } = props;
+
+const Header = ({
+  categoria,
+  titulo,
+  addPath,
+  handleOpen,
+  buttonText,
+  buttonIcon,
+  loading,
+  disabled,
+  readOnlyRoles = [],
+  handleSecondaryOpen,
+  buttonSecondaryIcon,
+  buttonSecondaryText,
+  cancelado,
+}: HeaderProps): JSX.Element => {
   const icon = {
     añadir: <AddCircleOutlineOutlinedIcon />,
     editar: <EditOutlinedIcon />,
     flecha: <ArrowRightAltIcon />,
     imprimir: <PrintIcon />,
+    subir: <CloudUploadOutlinedIcon />,
   };
-  const session: Session = useSelector((state: RootState) => state.session);
+  const session = useSelector((state: RootState) => state.session);
 
   return (
-    <Grid alignItems="center" container justify="space-between" spacing={3}>
-      <Grid item>
-        {categoria && (
-          <Typography component="h2" gutterBottom variant="overline">
-            {categoria}
-          </Typography>
-        )}
-        {!loading ? (
-          <Typography component="h1" gutterBottom variant="h4">
-            {titulo}
-          </Typography>
-        ) : (
-          <Skeleton height={40} width={200} />
+    <Box mb={1}>
+      <Grid alignItems="center" container justify="space-between" spacing={2}>
+        <Grid item>
+          {categoria && (
+            <Typography component="h2" gutterBottom variant="overline">
+              {categoria}
+            </Typography>
+          )}
+          {!loading && titulo ? (
+            <Box display="flex" flexDirection="row">
+              <Box>
+                <Typography component="h1" gutterBottom variant="h5">
+                  {titulo}
+                </Typography>
+              </Box>
+              {cancelado && (
+                <Box ml={2}>
+                  <Chip
+                    label={`CANCELAD${titulo
+                      .trim()
+                      .charAt(titulo.trim().length - 1)
+                      .toUpperCase()}`}
+                    variant="outlined"
+                  />
+                </Box>
+              )}
+            </Box>
+          ) : (
+            <Skeleton height={40} width={200} />
+          )}
+        </Grid>
+        {(addPath || handleOpen) && (
+          <>
+            {session.roles?.some((role) => {
+              return readOnlyRoles.includes(role.role) && !role.readOnly;
+            }) && (
+              <>
+                {addPath && (
+                  <Grid item>
+                    <Button
+                      color="primary"
+                      component={RouterLink}
+                      disabled={disabled}
+                      to={addPath}
+                      variant="contained"
+                    >
+                      Añadir
+                    </Button>
+                  </Grid>
+                )}
+              </>
+            )}
+            {((handleOpen &&
+              session.roles?.some(
+                (role) => readOnlyRoles.includes(role.role) && !role.readOnly
+              )) ||
+              (handleOpen &&
+                (buttonText === 'Ver estado' ||
+                  buttonText === 'Ver corte'))) && (
+              <Grid item>
+                <Button
+                  color="primary"
+                  disabled={disabled}
+                  onClick={handleOpen}
+                  startIcon={buttonIcon && icon[buttonIcon]}
+                  variant="contained"
+                >
+                  {buttonText}
+                </Button>
+              </Grid>
+            )}
+            {handleSecondaryOpen && (
+              <Grid item>
+                <Button
+                  color="primary"
+                  disabled={disabled}
+                  onClick={handleSecondaryOpen}
+                  startIcon={buttonSecondaryIcon && icon[buttonSecondaryIcon]}
+                  variant="contained"
+                >
+                  {buttonSecondaryText}
+                </Button>
+              </Grid>
+            )}
+          </>
         )}
       </Grid>
-      {(addPath || handleOpen) && (
-        <>
-          {JSON.parse(session.roles).some((role: Role) => {
-            return (
-              readOnlyRoles.includes(role.role) && role.readOnly === 'false'
-            );
-          }) && (
-            <>
-              {addPath && (
-                <Grid item>
-                  <Button
-                    color="primary"
-                    component={RouterLink}
-                    disabled={disabled}
-                    to={addPath}
-                    variant="contained"
-                  >
-                    Añadir
-                  </Button>
-                </Grid>
-              )}
-            </>
-          )}
-          {handleOpen && (
-            <Grid item>
-              <Button
-                color="primary"
-                disabled={disabled}
-                onClick={handleOpen}
-                startIcon={buttonIcon ? icon[buttonIcon] : undefined}
-                variant="contained"
-              >
-                {buttonText}
-              </Button>
-            </Grid>
-          )}
-          {handleSecondaryOpen && (
-            <Grid item>
-              <Button
-                color="primary"
-                disabled={disabled}
-                onClick={handleSecondaryOpen}
-                startIcon={buttonSecondaryIcon && icon[buttonSecondaryIcon]}
-                variant="contained"
-              >
-                {buttonSecondaryText}
-              </Button>
-            </Grid>
-          )}
-        </>
-      )}
-    </Grid>
+    </Box>
   );
-};
-Header.defaultProps = {
-  readOnlyRoles: [],
 };
 
 export default Header;
