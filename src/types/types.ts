@@ -49,10 +49,13 @@ export type AppRole =
   | 'VENTAS'
   | 'PRODUCCION'
   | 'EN_PRODUCCION'
-  | 'PEDIDOS'
+  | 'INTERCAMBIOS'
+  | 'PLAZA'
+  | 'INVENTARIO'
   | 'FOTOS'
-  | 'PUNTO'
-  | 'MOVIMIENTOS_PUNTO';
+  | 'PEDIDOS'
+  | 'CONFIRMACION_PRODUCCION'
+  | 'CONFIRMACION_INVENTARIO';
 
 export interface Role {
   role: AppRole;

@@ -298,7 +298,7 @@ const DetallesVentaPlaza = (
   };
 
   return (
-    <AuthGuard roles={['ADMIN', 'PUNTO']}>
+    <AuthGuard roles={['ADMIN', 'PLAZA']}>
       <Header
         buttonIcon="imprimir"
         buttonText="Reimprimir ticket"
@@ -306,7 +306,7 @@ const DetallesVentaPlaza = (
         categoria="Punto de venta"
         disabled={loading || reimprimirDisabled}
         handleOpen={!cancelada ? handleReimprimir : undefined}
-        readOnlyRoles={['ADMIN', 'PUNTO']}
+        readOnlyRoles={['ADMIN', 'PLAZA']}
         titulo="Intercambio"
       />
       <SuccessErrorMessage
@@ -330,7 +330,7 @@ const DetallesVentaPlaza = (
             hasHeaderColumns={false}
             loading={loading}
             movimiento="intercambio"
-            readOnlyRoles={['PUNTO', 'ADMIN']}
+            readOnlyRoles={['PLAZA', 'ADMIN']}
             title="Información general"
           />
         </Grid>

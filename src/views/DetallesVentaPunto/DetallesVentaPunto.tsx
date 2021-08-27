@@ -322,7 +322,7 @@ const DetallesVentaPlaza = (
     }
   };
   return (
-    <AuthGuard roles={['ADMIN', 'PUNTO']}>
+    <AuthGuard roles={['ADMIN', 'PLAZA']}>
       <Header
         buttonIcon="imprimir"
         buttonSecondaryIcon="imprimir"
@@ -334,7 +334,7 @@ const DetallesVentaPlaza = (
         handleSecondaryOpen={
           nombre && !cancelada ? handleReimprimirA5 : undefined
         }
-        readOnlyRoles={['ADMIN', 'PUNTO']}
+        readOnlyRoles={['ADMIN', 'PLAZA']}
         titulo="Venta"
       />
       <SuccessErrorMessage
@@ -362,7 +362,7 @@ const DetallesVentaPlaza = (
             hasHeaderColumns={false}
             loading={loading}
             movimiento="venta"
-            readOnlyRoles={['PUNTO', 'ADMIN']}
+            readOnlyRoles={['PLAZA', 'ADMIN']}
             title="Información general"
           />
         </Grid>

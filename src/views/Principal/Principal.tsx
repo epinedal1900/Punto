@@ -216,7 +216,6 @@ const Principal = (): JSX.Element => {
       if (e.key !== 'Control' && e.key !== 'Alt' && e.key !== 'Tab') {
         str += e.key.replace('Shift', '');
         if (e.key.includes('Enter')) {
-          console.log('str', str);
           setCodigoStr(str);
           str = '';
         }
@@ -271,8 +270,11 @@ const Principal = (): JSX.Element => {
   };
 
   return (
-    <AuthGuard roles={['ADMIN', 'PUNTO']}>
-      {mutationVariablesDoc && db && plazaDoc && docIntercambio ? (
+    <AuthGuard roles={['ADMIN', 'PLAZA']}>
+      {mutationVariablesDoc &&
+      db &&
+      (plazaDoc || !plazaState._idPunto) &&
+      docIntercambio ? (
         <>
           <SuccessErrorMessage
             anchorOrigin={{

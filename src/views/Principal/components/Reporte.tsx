@@ -126,12 +126,12 @@ const CrearReporte = (props: CrearReporteProps): JSX.Element => {
               dineroInicial += val.Monto;
             }
           });
-          const objGastos = groupBy(gastosFiltered, 'de');
+          const objGastos = groupBy(gastosFiltered, 'Descripcion');
           if (gastosFiltered.length > 0) {
             gastosArr = Object.keys(objGastos).map((key) => {
               return {
-                descripción: key,
-                monto: aFormatoDeDinero(
+                Descripción: key,
+                Monto: aFormatoDeDinero(
                   objGastos[key].reduce((acc, cur) => {
                     return acc + cur.Monto;
                   }, 0)
@@ -383,7 +383,7 @@ const CrearReporte = (props: CrearReporteProps): JSX.Element => {
   const handleCrear = async () => {
     setReporteLoading(true);
     const blob = await pdf(doc).toBlob();
-    const pathRef = storage.ref(`/${session.nombre}: ${data.fecha}.pdf`);
+    const pathRef = storage.ref(`/PDFs/${session.nombre}: ${data.fecha}.pdf`);
     await pathRef.put(blob, { contentType: 'application/pdf' });
     const url = await pathRef.getDownloadURL();
     if (
@@ -395,6 +395,7 @@ const CrearReporte = (props: CrearReporteProps): JSX.Element => {
     ) {
       await nuevoIntercambioFunction({
         variables: {
+          _id: new ObjectId().toString(),
           prendas: inventario.map((v) => {
             const pqs = v.pqs.map((p) => {
               return { p: p.p, c: p.c };
@@ -421,7 +422,7 @@ const CrearReporte = (props: CrearReporteProps): JSX.Element => {
   useEffect(() => {
     const bloquearSubmit = async () => {
       setEspera(true);
-      await new Promise((resolve) => setTimeout(resolve, 4000));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
       setEspera(false);
     };
     bloquearSubmit();

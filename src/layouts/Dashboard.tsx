@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-/* eslint-disable no-console */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { Suspense, useState, useRef, useEffect } from 'react';
 import clsx from 'clsx';
@@ -188,21 +187,19 @@ export default function Dashboard(props: {
             sinAlmacen: usuario.sinAlmacen,
           })
         );
-        await getPlaza({ _id: usuario._idPunto }).then(async (data) => {
-          if (data.data.plaza && db && usuario?._idPunto) {
-            console.log('data.data.plaza', data.data.plaza);
-            await db.collections.plaza.upsert({
-              _id: usuario._idPunto,
-              ...data.data.plaza,
-            });
-          }
-        });
         if (subirSuccess) {
+          await getPlaza({ _id: usuario._idPunto }).then(async (data) => {
+            if (data.data.plaza && db && usuario?._idPunto) {
+              await db.collections.plaza.upsert({
+                _id: usuario._idPunto,
+                ...data.data.plaza,
+              });
+            }
+          });
           dispatch(modificarOnline(true));
           setSuccess(true);
         }
         const variables = omit(mutationVariablesDoc?.toJSON(), '_id');
-        console.log('variables', variables);
         keys(variables).forEach((key) => {
           // @ts-expect-error:err
           variables[key] = variables[key].filter((v) => {
@@ -210,7 +207,6 @@ export default function Dashboard(props: {
             return erroresIds[key].includes(v._id);
           });
         });
-        console.log('variables', variables);
         const m = await db?.collections.mutation_variables.upsert({
           _id: 'mutationVariables',
           ...variables,
@@ -251,7 +247,6 @@ export default function Dashboard(props: {
         venta_cliente,
         venta_punto,
       } = mutationVariablesDoc.toJSON();
-      console.log('pago', pago);
       if (
         gasto.length === 0 &&
         intercambio.length === 0 &&

@@ -106,6 +106,8 @@ const UpperButtons = (props: UpperButtonsProps): JSX.Element => {
   };
 
   const handleTicketChange = (n: number) => {
+    // @ts-expect-error:err
+    document.activeElement?.blur();
     if (!dialogOpen && n <= nombresTickets.length) {
       history.replace(`/${nombresTickets[n - 1]._id}`);
     }

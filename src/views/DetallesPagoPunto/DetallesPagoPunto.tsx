@@ -205,7 +205,7 @@ const DetallesPagoPunto = (
   };
 
   return (
-    <AuthGuard roles={['ADMIN', 'PUNTO']}>
+    <AuthGuard roles={['ADMIN', 'PLAZA']}>
       <Header cancelado={cancelada} titulo="Pago" />
       <SuccessErrorMessage
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
@@ -228,7 +228,7 @@ const DetallesPagoPunto = (
             hasHeaderColumns={false}
             loading={loading}
             movimiento="pago"
-            readOnlyRoles={['PUNTO', 'ADMIN']}
+            readOnlyRoles={['PLAZA', 'ADMIN']}
             title="Información general"
           />
         </Grid>

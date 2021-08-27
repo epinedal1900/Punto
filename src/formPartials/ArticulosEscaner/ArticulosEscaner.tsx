@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /* eslint-disable prefer-destructuring */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable radix */
@@ -191,7 +190,6 @@ const ArticulosComp = (props: ArticulosCompProps): JSX.Element => {
   const onEscaneo = async (codigo: string) => {
     setProcesando(true);
     // TODO actualizar para responder a version con \ al inicio
-    console.log(' document.activeElement', document.activeElement);
     // @ts-expect-error:err
     await document.activeElement?.blur();
     const escaneosAccesor: Accesor =
@@ -205,7 +203,6 @@ const ArticulosComp = (props: ArticulosCompProps): JSX.Element => {
       : esIntercambio && !esRegistro
       ? `ie${codigo}`
       : `e${codigo}`;
-    console.log('elementId', elementId);
     setErrorDeEscaneo(null);
     const prenda = await resolverPrendas([prendaIdDeQR(codigo)]);
     if (codigo.length !== 58 && codigo.length !== 54) {
@@ -276,13 +273,10 @@ const ArticulosComp = (props: ArticulosCompProps): JSX.Element => {
             return oldData;
           });
         }
-        console.log('escaneosAccesor', escaneosAccesor);
-        console.log('index', index);
         setFieldValue(`${escaneosAccesor}.${index}`, push, false);
       }
     }
     const d = document.getElementById(elementId);
-    console.log('d', d);
     if (d && !escaneoParaAbrirPaquete) {
       d.focus();
     }

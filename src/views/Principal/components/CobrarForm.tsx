@@ -101,7 +101,6 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
   const [cambio, setCambio] = useState('$0.00');
 
   const plazaState = useSelector((state: RootState) => state.plaza);
-  const session = useSelector((state: RootState) => state.session);
   const dispatch = useDispatch();
   const [pRevision, setPRevision] = useState<PrendasRevision[] | null>(null);
   const [pPrendas, setPPrendas] = useState<PrendasNuevaVenta[] | null>(null);
@@ -219,13 +218,11 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
       pPrendas.length > 0 &&
       total &&
       plazaState._idPunto &&
-      plazaState.idInventario &&
-      session.nombre
+      plazaState.idInventario
     ) {
       const _id = new ObjectId();
       const prendasTicket = await datosParaTablaDePrendas(pPrendas);
       setSubmitting(true);
-      const { nombre } = session;
       const ventaOffline: plaza_plaza_ventas = {
         _id: _id.toString(),
         Fecha: fechaPorId(_id),
@@ -239,6 +236,7 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
         Comentarios: values.comentarios,
       };
       if (values.cliente !== '') {
+        const { nombre } = values.cliente;
         const cliente = values.cliente;
         if (values.tipoDePago === 'efectivo') {
           const pagoVariables: nuevoPagoVariables = {
@@ -410,6 +408,7 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
               {values.tipoDePago === 'efectivo' && (
                 <Grid item xs={12}>
                   <TextField
+                    autoFocus
                     error={
                       (Boolean(touched.cantidadPagada) &&
                         Boolean(errors.cantidadPagada)) ||

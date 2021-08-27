@@ -4,7 +4,7 @@
 /* eslint-disable react/jsx-props-no-spreading */
 /* eslint-disable no-alert */
 /* eslint-disable react/no-multi-comp */
-// git commit -m "Avances inventario" --no-verify
+// git commit -m "arreglo de detalles " --no-verify
 
 import React from 'react';
 import { Router, Switch, Route } from 'react-router-dom';
@@ -18,9 +18,6 @@ import { PLAZA, USUARIO } from './utils/queries';
 
 import { auth } from './firebase';
 import { history } from './utils/history';
-import Principal from './views/Principal';
-import Error405 from './views/Error405';
-import Error404 from './views/Error404';
 import Dashboard from './layouts/Dashboard';
 import Auth from './layouts/Auth';
 import Error from './layouts/Error';
@@ -106,7 +103,7 @@ export default function App() {
         <GlobalStyles />
         <Router history={history}>
           <ErrorBoundary
-            FallbackComponent={Error405}
+            FallbackComponent={React.lazy(() => import('./views/Error405'))}
             onError={async (error) => {
               await client.mutate({
                 mutation: REPORTAR_ERROR,
@@ -122,7 +119,7 @@ export default function App() {
           >
             <Switch>
               <RouteWrapper
-                component={Principal}
+                component={React.lazy(() => import('./views/Principal'))}
                 exact
                 layout={Dashboard}
                 path="/"
@@ -201,7 +198,11 @@ export default function App() {
                 layout={Dashboard}
                 path="/plazas/ventas/:puntoId/:id"
               />
-              <RouteWrapper component={Error404} layout={Error} path="*" />
+              <RouteWrapper
+                component={React.lazy(() => import('./views/Error404'))}
+                layout={Error}
+                path="*"
+              />
             </Switch>
           </ErrorBoundary>
         </Router>

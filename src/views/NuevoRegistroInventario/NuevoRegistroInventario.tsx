@@ -124,7 +124,7 @@ const NuevoRegistroDeInventario = ({
   useEffect(() => {
     const bloquearSubmit = async () => {
       setEsperaResumen(true);
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
       setEsperaResumen(false);
     };
     if (activeStep === lastStep) {
@@ -213,7 +213,7 @@ const NuevoRegistroDeInventario = ({
   };
 
   return (
-    <AuthGuard denyReadOnly roles={['ADMIN', 'PUNTO']}>
+    <AuthGuard denyReadOnly roles={['ADMIN', 'PLAZA']}>
       <Header titulo="Nuevo registro de inventario" />
       <SuccessErrorMessage
         handleExit={handleExit}

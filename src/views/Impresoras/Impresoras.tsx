@@ -84,7 +84,7 @@ const Impresoras = () => {
   };
 
   return (
-    <AuthGuard denyReadOnly roles={['ADMIN', 'PUNTO']}>
+    <AuthGuard denyReadOnly roles={['ADMIN', 'PLAZA']}>
       <Header titulo="Impresoras" />
       <Box display="flex" justifyContent="center" m={0}>
         <Formik<ImpresoraValues>

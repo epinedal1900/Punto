@@ -323,7 +323,7 @@ const DetallesPlaza = (
     },
   };
   return (
-    <AuthGuard roles={['ADMIN', 'PUNTO']}>
+    <AuthGuard roles={['ADMIN', 'PLAZA']}>
       <Header
         readOnlyRoles={['ADMIN', 'VENTAS']}
         titulo={`Plaza: ${nombre} ${fecha}`}

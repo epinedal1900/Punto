@@ -756,6 +756,7 @@ export interface Productos {
 //==============================================================
 
 export enum Chat {
+  compras = "compras",
   cuentasProduccion = "cuentasProduccion",
   produccion = "produccion",
   ventas = "ventas",

@@ -85,7 +85,7 @@ const DetallesPago = ({ history }: RouteComponentProps): JSX.Element => {
     setSuccess(false);
   };
   return (
-    <AuthGuard roles={['ADMIN', 'PUNTO']}>
+    <AuthGuard roles={['ADMIN', 'PLAZA']}>
       <Header titulo="Calendario de registros" />
       <SuccessErrorMessage
         handleExit={handleExit}

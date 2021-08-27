@@ -155,6 +155,7 @@ const IntercambioForm = (props: NuevoIntercambioProps): JSX.Element => {
           intercambioValues
         );
         const variables: nuevoIntercambioVariables = {
+          _id: new ObjectId().toString(),
           prendas,
           // @ts-expect-error:err
           puntoIdReceptor: intercambioValues.plazaReceptora.id,
@@ -171,7 +172,7 @@ const IntercambioForm = (props: NuevoIntercambioProps): JSX.Element => {
         } else {
           const _id = new ObjectId();
           await mutationVariablesDoc.atomicUpdate((oldData) => {
-            oldData.intercambio.push({ ...variables, _id: _id.toString() });
+            oldData.intercambio.push(variables);
             return oldData;
           });
           await plazaDoc.atomicUpdate((oldData) => {

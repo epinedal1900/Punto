@@ -48,7 +48,7 @@ const Articulos = (): JSX.Element => {
   }, [db]);
 
   return (
-    <AuthGuard roles={['ADMIN', 'PUNTO']}>
+    <AuthGuard roles={['ADMIN', 'PLAZA']}>
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <DataTable

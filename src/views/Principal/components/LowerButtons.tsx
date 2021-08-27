@@ -77,12 +77,16 @@ const UpperButtons = (props: UpperButtonsProps): JSX.Element => {
   };
 
   const handleAsignarClick = () => {
+    // @ts-expect-error:err
+    document.activeElement?.blur();
     if (!dialogOpen && plazaState._idPunto) {
       setAsignarOpen(true);
       setDialogOpen(true);
     }
   };
   const handlePagoClick = () => {
+    // @ts-expect-error:err
+    document.activeElement?.blur();
     if (!dialogOpen && plazaState._idPunto) {
       setDialogOpen(true);
       setPagoOpen(true);
@@ -90,6 +94,8 @@ const UpperButtons = (props: UpperButtonsProps): JSX.Element => {
   };
 
   const handleCobrarClick = async () => {
+    // @ts-expect-error:err
+    document.activeElement?.blur();
     if (
       formikProps.values.precios.length !== 0 &&
       history.location.search !== ''

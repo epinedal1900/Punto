@@ -76,6 +76,8 @@ const Tickets = (props: TicketsProps): JSX.Element => {
   }, [db, history.location.search]);
 
   const handleChange = (_e: any, newValue: string) => {
+    // @ts-expect-error:err
+    document.activeElement?.blur();
     history.replace(`/${newValue}`);
   };
 
