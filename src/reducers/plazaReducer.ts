@@ -19,7 +19,8 @@ const sessionReducer = (
 ): PlazaState => {
   switch (action.type) {
     case 'DESACTIVAR_PUNTO': {
-      localStorage.removeItem('puntoIdActivo');
+      localStorage.removeItem('_idPunto');
+      localStorage.removeItem('_idPuntoPrincipal');
       return {
         ...state,
         _idPunto: null,

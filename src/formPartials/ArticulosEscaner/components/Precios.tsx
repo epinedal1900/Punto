@@ -42,8 +42,8 @@ const Precios = (props: PrendasSueltasProps): JSX.Element => {
           <Divider className={classes.divider} />
           <Box
             className={classes.box}
-            height={matches ? '35vh' : '27vh'}
-            maxHeight={matches ? '35vh' : '27vh'}
+            height={matches ? '32vh' : '27vh'}
+            maxHeight={matches ? '32vh' : '27vh'}
             overflow="auto"
           >
             <div className={classes.list}>

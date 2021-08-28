@@ -38,6 +38,7 @@ import { auth } from '../firebase';
 import * as Database from '../Database';
 import {
   MarcarLeidos,
+  MarcarLeidosVariables,
   NotificacionesPunto,
   NotificacionesPunto_notificacionesPunto_notificaciones_notificaciones,
   plaza,
@@ -291,21 +292,24 @@ export default function Dashboard(props: {
     pollInterval: 5000,
   });
 
-  const [marcarLeidos] = useMutation<MarcarLeidos>(MARCAR_LEIDOS_PUNTO, {
-    onCompleted: (data) => {
-      if (data.marcarLeidos.success === true) {
-        setNoLeidos(0);
-      }
-    },
-  });
+  const [marcarLeidos] = useMutation<MarcarLeidos, MarcarLeidosVariables>(
+    MARCAR_LEIDOS_PUNTO,
+    {
+      onCompleted: (data) => {
+        if (data.marcarLeidos.success) {
+          setNoLeidos(0);
+        }
+      },
+    }
+  );
 
   const handleExit = () => {
     setSuccess(false);
     setMessage(null);
   };
   const handlenotificacionesOpen = () => {
-    if (noLeidos > 0) {
-      marcarLeidos({ variables: { nombre: session.nombre } });
+    if (noLeidos > 0 && plazaState._idPunto) {
+      marcarLeidos({ variables: { in: plazaState._idPunto } });
     }
     setOpenNotificaciones(true);
   };

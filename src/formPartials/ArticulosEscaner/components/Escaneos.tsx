@@ -83,7 +83,7 @@ const Escaneos = (props: EscaneosProps): JSX.Element => {
               matches
                 ? esRegistro
                   ? '60vh'
-                  : '37vh'
+                  : '32vh'
                 : esRegistro
                 ? '50vh'
                 : '27vh'
@@ -92,7 +92,7 @@ const Escaneos = (props: EscaneosProps): JSX.Element => {
               matches
                 ? esRegistro
                   ? '60vh'
-                  : '37vh'
+                  : '32vh'
                 : esRegistro
                 ? '50vh'
                 : '27vh'

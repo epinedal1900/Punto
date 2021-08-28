@@ -73,16 +73,13 @@ const CrearReporte = (props: CrearReporteProps): JSX.Element => {
     Inventario_inventario_inv[] | null
   >(null);
 
-  const quitarPlaza = () => {
-    dispatch(desactivarPunto());
-  };
   const [desactivarPlazaConInventarioFunction] = useMutation<
     desactivarPlazaConInventario,
     desactivarPlazaConInventarioVariables
   >(DESACTIVAR_PLAZA_CON_INVENTARIO, {
     onCompleted: (res) => {
-      if (res.desactivarPlazaConInventario.success === true) {
-        quitarPlaza();
+      if (res.desactivarPlazaConInventario.success) {
+        dispatch(desactivarPunto());
       }
     },
   });
@@ -110,7 +107,7 @@ const CrearReporte = (props: CrearReporteProps): JSX.Element => {
   const [obtenerPlaza] = useLazyQuery<plaza, plazaVariables>(PLAZA, {
     onCompleted(res) {
       if (res.plaza) {
-        const { ventas, pagos, gastos } = res.plaza;
+        const { ventas, pagos, gastos, nombre } = res.plaza;
         let ventasPublico = 0;
         let ventasAClientes = 0;
         let pagosClientes = 0;
@@ -144,7 +141,7 @@ const CrearReporte = (props: CrearReporteProps): JSX.Element => {
           }
         }
         ventas?.forEach((venta) => {
-          if (venta.Nombre && !venta.ca) {
+          if (venta.Nombre !== 'público en general' && !venta.ca) {
             ventasAClientes += venta.Monto;
           } else if (!venta.ca) {
             ventasPublico += venta.Monto;
@@ -158,7 +155,7 @@ const CrearReporte = (props: CrearReporteProps): JSX.Element => {
         const dineroEsperado =
           dineroInicial + ventasPublico + pagosClientes - totalGastos;
         const dataObj = {
-          nombre: session.nombre,
+          nombre,
           fecha: dayjs(
             new ObjectId(plazaState._idPunto || '').getTimestamp()
           ).format('DD-MM-YYYY'),
@@ -383,7 +380,7 @@ const CrearReporte = (props: CrearReporteProps): JSX.Element => {
   const handleCrear = async () => {
     setReporteLoading(true);
     const blob = await pdf(doc).toBlob();
-    const pathRef = storage.ref(`/PDFs/${session.nombre}: ${data.fecha}.pdf`);
+    const pathRef = storage.ref(`/PDFs/${data.nombre}: ${data.fecha}.pdf`);
     await pathRef.put(blob, { contentType: 'application/pdf' });
     const url = await pathRef.getDownloadURL();
     if (

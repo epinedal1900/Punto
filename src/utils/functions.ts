@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-alert */
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable no-else-return */
@@ -1015,6 +1016,11 @@ export const obtenerNombresTickets = (
       });
       setNombresTickets(n);
       if (n[0] && n[0]._id[0] === '?') history.replace(`/${n[0]._id}`);
+      if (n.length === 0) {
+        const _id = encodeURI(`?ticket ${1}`);
+        setNombresTickets([{ _id, nombre: null }]);
+        history.replace(`/${_id}`);
+      }
     }
   };
   if (db) {

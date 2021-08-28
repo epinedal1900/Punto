@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@apollo/client';
-import { Grid } from '@material-ui/core';
+import { Box, Grid } from '@material-ui/core';
 import { useSelector } from 'react-redux';
 import { RxDatabase } from 'rxdb';
 
@@ -49,16 +49,21 @@ const Articulos = (): JSX.Element => {
 
   return (
     <AuthGuard roles={['ADMIN', 'PLAZA']}>
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
-          <DataTable
-            firstRowId={false}
-            loading={loading}
-            rawData={productosTabla}
-            title="Artículos"
-          />
-        </Grid>
-      </Grid>
+      <Box display="flex" justifyContent="center" m={0}>
+        <Box minHeight={500} width={800}>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <DataTable
+                firstRowId={false}
+                loading={loading}
+                pSize={50}
+                rawData={productosTabla}
+                title="Artículos"
+              />
+            </Grid>
+          </Grid>
+        </Box>
+      </Box>
     </AuthGuard>
   );
 };

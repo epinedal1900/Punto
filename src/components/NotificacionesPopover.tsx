@@ -72,7 +72,7 @@ const NotificacionesPopover = (
                 className={classes.listItem}
                 component={RouterLink}
                 divider={i < notificaciones.length - 1}
-                to={`/plazas/intercambios/${plazaState._idPunto}//${notificacion._id}`}
+                to={`/plazas/intercambios/${plazaState._idPunto}/${notificacion._id}`}
               >
                 <ListItemText
                   primary={notificacion.nombre}

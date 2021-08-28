@@ -150,7 +150,7 @@ const DetallesPlaza = (
       let ventasGeneral = 0;
       let ventasClientes = 0;
       let gastosTotal = 0;
-      const pagosClientes = plazaObj.pagos.reduce((acc, cur) => {
+      const pagosClientes = plazaObj.pagos?.reduce((acc, cur) => {
         if (!cur.ca) {
           return acc + cur.Monto;
         }
