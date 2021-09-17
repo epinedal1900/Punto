@@ -325,7 +325,7 @@ const collections: { [name: string]: RxCollectionCreatorBase } = {
   mutation_variables: {
     schema: {
       title: 'mutation_variables',
-      version: 1,
+      version: 2,
       type: 'object',
       properties: {
         intercambio: {
@@ -362,6 +362,9 @@ const collections: { [name: string]: RxCollectionCreatorBase } = {
     },
     migrationStrategies: {
       1: function () {
+        return null;
+      },
+      2: function () {
         return null;
       },
     },

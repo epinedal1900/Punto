@@ -193,7 +193,7 @@ const DetallesPlaza = (
             });
             totalFaltantePorPreciosAnormales += totalNormal - venta.Monto;
           }
-          if (venta.Nombre !== 'público en general' && !venta.ca) {
+          if (!venta.Nombre?.includes('público en general') && !venta.ca) {
             ventasClientes += venta.Monto;
           } else if (!venta.ca) {
             ventasGeneral += venta.Monto;

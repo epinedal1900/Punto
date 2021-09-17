@@ -56,27 +56,32 @@ const UpperButtons = (props: UpperButtonsProps): JSX.Element => {
   const plazaState = useSelector((state: RootState) => state.plaza);
   const { setFieldValue, values } = useFormikContext<PrincipalValues>();
   const [esperaNuevoTicket, setEsperaNuevoTicket] = useState(false);
-  const handleAgregarClick = () => {
+  const handleAbrirDialogo = async () => {
+    // @ts-expect-error:err
+    await document.activeElement?.blur();
+    setDialogOpen(true);
+  };
+  const handleAgregarClick = async () => {
     if (!dialogOpen) {
-      setDialogOpen(true);
+      await handleAbrirDialogo();
       setAgregarOpen(true);
     }
   };
-  const handleIntercambioClick = () => {
+  const handleIntercambioClick = async () => {
     if (!dialogOpen && plazaState._idPunto) {
-      setDialogOpen(true);
+      await handleAbrirDialogo();
       setIntercambioOpen(true);
     }
   };
-  const handleGenerarReporteClick = () => {
+  const handleGenerarReporteClick = async () => {
     if (!dialogOpen) {
-      setDialogOpen(true);
+      await handleAbrirDialogo();
       setGenerarReporteConfirmation(true);
     }
   };
-  const handleGastoClick = () => {
+  const handleGastoClick = async () => {
     if (!dialogOpen && plazaState._idPunto) {
-      setDialogOpen(true);
+      await handleAbrirDialogo();
       setGastoOpen(true);
     }
   };

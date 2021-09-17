@@ -226,7 +226,7 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
       const ventaOffline: plaza_plaza_ventas = {
         _id: _id.toString(),
         Fecha: fechaPorId(_id),
-        Nombre: `sin conexión: venta ${
+        Nombre: `sin conexión: ${
           values.cliente !== '' ? values.cliente.nombre : 'público en general'
         }`,
         Monto: total,
@@ -439,6 +439,12 @@ const CobrarForm = (props: CobrarFormProps): JSX.Element => {
                       }
                       setCambio(nuevoCambio);
                       setFieldValue('cantidadPagada', nuevoValue, false);
+                    }}
+                    onFocus={(e) => {
+                      e.preventDefault();
+                      const { target } = e;
+                      target.focus();
+                      target.select();
                     }}
                     value={
                       values.cantidadPagada === 0

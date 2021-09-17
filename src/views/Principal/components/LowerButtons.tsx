@@ -69,33 +69,34 @@ const UpperButtons = (props: UpperButtonsProps): JSX.Element => {
       setReimprimirDisabled(false);
     }
   };
-  const handleEliminarClick = () => {
+  const handleAbrirDialogo = async () => {
+    // @ts-expect-error:err
+    await document.activeElement?.blur();
+    setDialogOpen(true);
+  };
+  const handleEliminarClick = async () => {
     if (!dialogOpen && nombresTickets.length !== 1) {
+      await handleAbrirDialogo();
       setEliminarTicketConfirmation(true);
-      setDialogOpen(true);
     }
   };
 
-  const handleAsignarClick = () => {
-    // @ts-expect-error:err
-    document.activeElement?.blur();
+  const handleAsignarClick = async () => {
     if (!dialogOpen && plazaState._idPunto) {
+      await handleAbrirDialogo();
       setAsignarOpen(true);
-      setDialogOpen(true);
     }
   };
-  const handlePagoClick = () => {
-    // @ts-expect-error:err
-    document.activeElement?.blur();
+  const handlePagoClick = async () => {
     if (!dialogOpen && plazaState._idPunto) {
-      setDialogOpen(true);
+      await handleAbrirDialogo();
       setPagoOpen(true);
     }
   };
 
   const handleCobrarClick = async () => {
     // @ts-expect-error:err
-    document.activeElement?.blur();
+    await document.activeElement?.blur();
     if (
       formikProps.values.precios.length !== 0 &&
       history.location.search !== ''
@@ -111,9 +112,8 @@ const UpperButtons = (props: UpperButtonsProps): JSX.Element => {
           !dialogOpen &&
           plazaState._idPunto
         ) {
-          document.getElementById('cantidadPagada')?.focus();
+          await handleAbrirDialogo();
           setCobrarOpen(true);
-          setDialogOpen(true);
         }
       });
     }

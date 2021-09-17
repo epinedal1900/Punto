@@ -767,6 +767,7 @@ export enum TipoDePago {
   deposito = "deposito",
   descuento = "descuento",
   efectivo = "efectivo",
+  pendiente = "pendiente",
   prestamo = "prestamo",
 }
 
@@ -797,6 +798,7 @@ export interface ObjNuevoPago {
   cu?: string | null;
   co?: string | null;
   col?: string | null;
+  pro?: string | null;
 }
 
 export interface PQs {

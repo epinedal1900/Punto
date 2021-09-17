@@ -1,0 +1,228 @@
+Date : 2021-08-28 10:29:13
+Directory : c:\Users\emane\Desktop\App\Punto
+Total : 159 files,  56598 codes, 1231 comments, 1293 blanks, all 59122 lines
+
+Languages
++------------------+------------+------------+------------+------------+------------+
+| language         | files      | code       | comment    | blank      | total      |
++------------------+------------+------------+------------+------------+------------+
+| JSON             |          7 |     40,949 |        278 |          5 |     41,232 |
+| TypeScript React |         64 |     10,291 |        518 |        504 |     11,313 |
+| TypeScript       |         33 |      3,554 |        306 |        353 |      4,213 |
+| JavaScript       |         47 |      1,127 |        113 |        160 |      1,400 |
+| Markdown         |          3 |        522 |          0 |        247 |        769 |
+| CSS              |          1 |         48 |          4 |          7 |         59 |
+| HTML             |          1 |         45 |          0 |          3 |         48 |
+| Ignore           |          1 |         33 |         12 |         12 |         57 |
+| XML              |          1 |         23 |          0 |          1 |         24 |
+| YAML             |          1 |          6 |          0 |          1 |          7 |
++------------------+------------+------------+------------+------------+------------+
+
+Directories
++------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                       | files      | code       | comment    | blank      | total      |
++------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                          |        159 |     56,598 |      1,231 |      1,293 |     59,122 |
+| .erb                                                                                                       |         15 |        654 |         94 |         93 |        841 |
+| .erb\configs                                                                                               |          6 |        507 |         87 |         68 |        662 |
+| .erb\mocks                                                                                                 |          1 |          1 |          0 |          1 |          2 |
+| .erb\scripts                                                                                               |          8 |        146 |          7 |         24 |        177 |
+| assets                                                                                                     |          2 |         35 |          0 |          4 |         39 |
+| src                                                                                                        |        131 |     14,456 |        829 |        921 |     16,206 |
+| src\__tests__                                                                                              |          1 |          9 |          0 |          2 |         11 |
+| src\actions                                                                                                |          3 |         83 |          0 |         11 |         94 |
+| src\components                                                                                             |         21 |      2,035 |         50 |        128 |      2,213 |
+| src\formPartials                                                                                           |         10 |      1,396 |        305 |         63 |      1,764 |
+| src\formPartials\ArticulosEscaner                                                                          |          7 |      1,236 |         12 |         39 |      1,287 |
+| src\formPartials\ArticulosEscaner\components                                                               |          5 |        903 |          3 |         24 |        930 |
+| src\layouts                                                                                                |          3 |        507 |          6 |         29 |        542 |
+| src\reducers                                                                                               |          3 |        146 |          0 |         12 |        158 |
+| src\store                                                                                                  |          2 |         17 |          4 |          6 |         27 |
+| src\theme                                                                                                  |         20 |        315 |          0 |         39 |        354 |
+| src\theme\overrides                                                                                        |         17 |        173 |          0 |         28 |        201 |
+| src\types                                                                                                  |          4 |        795 |        187 |        183 |      1,165 |
+| src\utils                                                                                                  |         10 |      1,809 |         32 |         86 |      1,927 |
+| src\views                                                                                                  |         42 |      6,096 |        142 |        282 |      6,520 |
+| src\views\Articulos                                                                                        |          2 |         65 |          1 |          8 |         74 |
+| src\views\CalendarioRegistrosInventario                                                                    |          2 |        139 |          2 |          9 |        150 |
+| src\views\DetallesIntercambioPunto                                                                         |          2 |        318 |         40 |         12 |        370 |
+| src\views\DetallesPagoPunto                                                                                |          2 |        228 |          1 |         14 |        243 |
+| src\views\DetallesPlaza                                                                                    |          2 |        463 |          4 |         13 |        480 |
+| src\views\DetallesVentaPunto                                                                               |          2 |        370 |          2 |         14 |        386 |
+| src\views\Error401                                                                                         |          2 |         63 |          0 |          6 |         69 |
+| src\views\Error404                                                                                         |          2 |         51 |          0 |          6 |         57 |
+| src\views\Error405                                                                                         |          2 |         51 |          0 |          6 |         57 |
+| src\views\Impresoras                                                                                       |          2 |        173 |          5 |          9 |        187 |
+| src\views\Ingreso                                                                                          |          3 |        257 |          4 |         18 |        279 |
+| src\views\Ingreso\components                                                                               |          1 |        205 |          4 |         11 |        220 |
+| src\views\NuevoRegistroInventario                                                                          |          6 |        664 |          7 |         38 |        709 |
+| src\views\NuevoRegistroInventario\components                                                               |          4 |        353 |          3 |         26 |        382 |
+| src\views\Principal                                                                                        |         13 |      3,254 |         76 |        129 |      3,459 |
+| src\views\Principal\components                                                                             |         11 |      2,843 |         66 |        109 |      3,018 |
++------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++------------------------------------------------------------------------------------------------------------+------------------+------------+------------+------------+------------+
+| filename                                                                                                   | language         | code       | comment    | blank      | total      |
++------------------------------------------------------------------------------------------------------------+------------------+------------+------------+------------+------------+
+| c:\Users\emane\Desktop\App\Punto\.erb\configs\webpack.config.base.js                                       | JavaScript       |         39 |          7 |          7 |         53 |
+| c:\Users\emane\Desktop\App\Punto\.erb\configs\webpack.config.eslint.js                                     | JavaScript       |          2 |          2 |          2 |          6 |
+| c:\Users\emane\Desktop\App\Punto\.erb\configs\webpack.config.main.prod.babel.js                            | JavaScript       |         52 |         17 |         13 |         82 |
+| c:\Users\emane\Desktop\App\Punto\.erb\configs\webpack.config.renderer.dev.babel.js                         | JavaScript       |        242 |         26 |         17 |        285 |
+| c:\Users\emane\Desktop\App\Punto\.erb\configs\webpack.config.renderer.dev.dll.babel.js                     | JavaScript       |         43 |         15 |         15 |         73 |
+| c:\Users\emane\Desktop\App\Punto\.erb\configs\webpack.config.renderer.prod.babel.js                        | JavaScript       |        129 |         20 |         14 |        163 |
+| c:\Users\emane\Desktop\App\Punto\.erb\mocks\fileMock.js                                                    | JavaScript       |          1 |          0 |          1 |          2 |
+| c:\Users\emane\Desktop\App\Punto\.erb\scripts\BabelRegister.js                                             | JavaScript       |          5 |          0 |          2 |          7 |
+| c:\Users\emane\Desktop\App\Punto\.erb\scripts\CheckBuildsExist.js                                          | JavaScript       |         21 |          1 |          4 |         26 |
+| c:\Users\emane\Desktop\App\Punto\.erb\scripts\CheckNativeDep.js                                            | JavaScript       |         45 |          3 |          2 |         50 |
+| c:\Users\emane\Desktop\App\Punto\.erb\scripts\CheckNodeEnv.js                                              | JavaScript       |         14 |          0 |          3 |         17 |
+| c:\Users\emane\Desktop\App\Punto\.erb\scripts\CheckPortInUse.js                                            | JavaScript       |         14 |          0 |          3 |         17 |
+| c:\Users\emane\Desktop\App\Punto\.erb\scripts\DeleteSourceMaps.js                                          | JavaScript       |          4 |          3 |          1 |          8 |
+| c:\Users\emane\Desktop\App\Punto\.erb\scripts\ElectronRebuild.js                                           | JavaScript       |         20 |          0 |          3 |         23 |
+| c:\Users\emane\Desktop\App\Punto\.erb\scripts\Notarize.js                                                  | JavaScript       |         23 |          0 |          6 |         29 |
+| c:\Users\emane\Desktop\App\Punto\.eslintignore                                                             | Ignore           |         33 |         12 |         12 |         57 |
+| c:\Users\emane\Desktop\App\Punto\.eslintrc.js                                                              | JavaScript       |         66 |         10 |          1 |         77 |
+| c:\Users\emane\Desktop\App\Punto\CHANGELOG.md                                                              | Markdown         |        341 |          0 |        193 |        534 |
+| c:\Users\emane\Desktop\App\Punto\CODE_OF_CONDUCT.md                                                        | Markdown         |         57 |          0 |         20 |         77 |
+| c:\Users\emane\Desktop\App\Punto\README.md                                                                 | Markdown         |        124 |          0 |         34 |        158 |
+| c:\Users\emane\Desktop\App\Punto\assets\assets.d.ts                                                        | TypeScript       |         12 |          0 |          3 |         15 |
+| c:\Users\emane\Desktop\App\Punto\assets\icon.svg                                                           | XML              |         23 |          0 |          1 |         24 |
+| c:\Users\emane\Desktop\App\Punto\babel.config.js                                                           | JavaScript       |         43 |          8 |         12 |         63 |
+| c:\Users\emane\Desktop\App\Punto\codegen.yml                                                               | YAML             |          6 |          0 |          1 |          7 |
+| c:\Users\emane\Desktop\App\Punto\graphql-schema.json                                                       | JSON             |     17,868 |          0 |          0 |     17,868 |
+| c:\Users\emane\Desktop\App\Punto\package-lock.json                                                         | JSON             |     22,796 |         16 |          1 |     22,813 |
+| c:\Users\emane\Desktop\App\Punto\package.json                                                              | JSON             |         87 |        260 |          0 |        347 |
+| c:\Users\emane\Desktop\App\Punto\src\App.global.css                                                        | CSS              |         48 |          4 |          7 |         59 |
+| c:\Users\emane\Desktop\App\Punto\src\App.tsx                                                               | TypeScript React |        197 |         13 |          8 |        218 |
+| c:\Users\emane\Desktop\App\Punto\src\Database.ts                                                           | TypeScript       |        402 |          4 |          9 |        415 |
+| c:\Users\emane\Desktop\App\Punto\src\Inventario.json                                                       | JSON             |         51 |          0 |          1 |         52 |
+| c:\Users\emane\Desktop\App\Punto\src\Punto.json                                                            | JSON             |         97 |          0 |          1 |         98 |
+| c:\Users\emane\Desktop\App\Punto\src\Title.jsx                                                             | JavaScript       |         13 |          1 |          3 |         17 |
+| c:\Users\emane\Desktop\App\Punto\src\__tests__\App.test.tsx                                                | TypeScript React |          9 |          0 |          2 |         11 |
+| c:\Users\emane\Desktop\App\Punto\src\actions\index.ts                                                      | TypeScript       |          2 |          0 |          1 |          3 |
+| c:\Users\emane\Desktop\App\Punto\src\actions\plazaActions.ts                                               | TypeScript       |         59 |          0 |          7 |         66 |
+| c:\Users\emane\Desktop\App\Punto\src\actions\sessionActions.ts                                             | TypeScript       |         22 |          0 |          3 |         25 |
+| c:\Users\emane\Desktop\App\Punto\src\components\AlertMessage.tsx                                           | TypeScript React |         78 |          2 |          6 |         86 |
+| c:\Users\emane\Desktop\App\Punto\src\components\AuthGuard.tsx                                              | TypeScript React |         37 |          3 |          6 |         46 |
+| c:\Users\emane\Desktop\App\Punto\src\components\AutocompleteField.tsx                                      | TypeScript React |         51 |          0 |          4 |         55 |
+| c:\Users\emane\Desktop\App\Punto\src\components\AutocompleteFieldArray.tsx                                 | TypeScript React |         89 |          1 |          5 |         95 |
+| c:\Users\emane\Desktop\App\Punto\src\components\BlockingContext.tsx                                        | TypeScript React |         20 |          1 |          4 |         25 |
+| c:\Users\emane\Desktop\App\Punto\src\components\CancelDialog.tsx                                           | TypeScript React |         69 |          1 |          3 |         73 |
+| c:\Users\emane\Desktop\App\Punto\src\components\DataTable.tsx                                              | TypeScript React |        359 |          8 |         20 |        387 |
+| c:\Users\emane\Desktop\App\Punto\src\components\DetailsTable.tsx                                           | TypeScript React |        337 |         14 |         15 |        366 |
+| c:\Users\emane\Desktop\App\Punto\src\components\GlobalFilter.tsx                                           | TypeScript React |         69 |          5 |          7 |         81 |
+| c:\Users\emane\Desktop\App\Punto\src\components\GlobalStyles.tsx                                           | TypeScript React |         45 |          0 |          5 |         50 |
+| c:\Users\emane\Desktop\App\Punto\src\components\Header.tsx                                                 | TypeScript React |        143 |          1 |          6 |        150 |
+| c:\Users\emane\Desktop\App\Punto\src\components\LoadingTable.tsx                                           | TypeScript React |         48 |          1 |          5 |         54 |
+| c:\Users\emane\Desktop\App\Punto\src\components\NotificacionesPopover.tsx                                  | TypeScript React |         91 |          2 |          6 |         99 |
+| c:\Users\emane\Desktop\App\Punto\src\components\NumberField.tsx                                            | TypeScript React |         24 |          0 |          3 |         27 |
+| c:\Users\emane\Desktop\App\Punto\src\components\NumberFieldArray.tsx                                       | TypeScript React |         94 |          6 |          5 |        105 |
+| c:\Users\emane\Desktop\App\Punto\src\components\RevisionDeArticulos.tsx                                    | TypeScript React |        180 |          3 |          5 |        188 |
+| c:\Users\emane\Desktop\App\Punto\src\components\SuccessErrorMessage.tsx                                    | TypeScript React |         42 |          0 |          3 |         45 |
+| c:\Users\emane\Desktop\App\Punto\src\components\TablePaginationActions.tsx                                 | TypeScript React |         78 |          1 |         11 |         90 |
+| c:\Users\emane\Desktop\App\Punto\src\components\TextForm.tsx                                               | TypeScript React |         56 |          1 |          4 |         61 |
+| c:\Users\emane\Desktop\App\Punto\src\components\index.js                                                   | JavaScript       |         14 |          0 |          1 |         15 |
+| c:\Users\emane\Desktop\App\Punto\src\components\listItems.tsx                                              | TypeScript React |        111 |          0 |          4 |        115 |
+| c:\Users\emane\Desktop\App\Punto\src\firebase.js                                                           | JavaScript       |         15 |          0 |          4 |         19 |
+| c:\Users\emane\Desktop\App\Punto\src\formPartials\Articulos.tsx                                            | TypeScript React |        160 |          0 |          6 |        166 |
+| c:\Users\emane\Desktop\App\Punto\src\formPartials\ArticulosEscaner\ArticulosEscaner.tsx                    | TypeScript React |        332 |          9 |         14 |        355 |
+| c:\Users\emane\Desktop\App\Punto\src\formPartials\ArticulosEscaner\components\Escaneos.tsx                 | TypeScript React |        143 |          0 |          6 |        149 |
+| c:\Users\emane\Desktop\App\Punto\src\formPartials\ArticulosEscaner\components\PaquetesAbiertos.tsx         | TypeScript React |        147 |          1 |          5 |        153 |
+| c:\Users\emane\Desktop\App\Punto\src\formPartials\ArticulosEscaner\components\Precios.tsx                  | TypeScript React |        112 |          0 |          4 |        116 |
+| c:\Users\emane\Desktop\App\Punto\src\formPartials\ArticulosEscaner\components\PrendasSueltas.tsx           | TypeScript React |        309 |          2 |          5 |        316 |
+| c:\Users\emane\Desktop\App\Punto\src\formPartials\ArticulosEscaner\components\QR.tsx                       | TypeScript React |        192 |          0 |          4 |        196 |
+| c:\Users\emane\Desktop\App\Punto\src\formPartials\ArticulosEscaner\index.ts                                | TypeScript       |          1 |          0 |          1 |          2 |
+| c:\Users\emane\Desktop\App\Punto\src\formPartials\Direccion.tsx                                            | TypeScript React |          0 |         71 |          4 |         75 |
+| c:\Users\emane\Desktop\App\Punto\src\formPartials\NewUserForm.tsx                                          | TypeScript React |          0 |        222 |         14 |        236 |
+| c:\Users\emane\Desktop\App\Punto\src\index.html                                                            | HTML             |         45 |          0 |          3 |         48 |
+| c:\Users\emane\Desktop\App\Punto\src\index.tsx                                                             | TypeScript React |          4 |          0 |          2 |          6 |
+| c:\Users\emane\Desktop\App\Punto\src\layouts\Auth.tsx                                                      | TypeScript React |         24 |          0 |          6 |         30 |
+| c:\Users\emane\Desktop\App\Punto\src\layouts\Dashboard.tsx                                                 | TypeScript React |        463 |          6 |         17 |        486 |
+| c:\Users\emane\Desktop\App\Punto\src\layouts\Error.tsx                                                     | TypeScript React |         20 |          0 |          6 |         26 |
+| c:\Users\emane\Desktop\App\Punto\src\main.dev.ts                                                           | TypeScript       |        123 |         27 |         27 |        177 |
+| c:\Users\emane\Desktop\App\Punto\src\menu.ts                                                               | TypeScript       |        235 |         54 |         14 |        303 |
+| c:\Users\emane\Desktop\App\Punto\src\package.json                                                          | JSON             |         18 |          0 |          1 |         19 |
+| c:\Users\emane\Desktop\App\Punto\src\reducers\index.ts                                                     | TypeScript       |          8 |          0 |          4 |         12 |
+| c:\Users\emane\Desktop\App\Punto\src\reducers\plazaReducer.ts                                              | TypeScript       |         86 |          0 |          4 |         90 |
+| c:\Users\emane\Desktop\App\Punto\src\reducers\sessionReducer.ts                                            | TypeScript       |         52 |          0 |          4 |         56 |
+| c:\Users\emane\Desktop\App\Punto\src\store\index.ts                                                        | TypeScript       |          1 |          1 |          1 |          3 |
+| c:\Users\emane\Desktop\App\Punto\src\store\store.ts                                                        | TypeScript       |         16 |          3 |          5 |         24 |
+| c:\Users\emane\Desktop\App\Punto\src\theme\index.js                                                        | JavaScript       |         15 |          0 |          4 |         19 |
+| c:\Users\emane\Desktop\App\Punto\src\theme\overrides\MuiButton.js                                          | JavaScript       |          7 |          0 |          1 |          8 |
+| c:\Users\emane\Desktop\App\Punto\src\theme\overrides\MuiCardActions.js                                     | JavaScript       |          5 |          0 |          1 |          6 |
+| c:\Users\emane\Desktop\App\Punto\src\theme\overrides\MuiCardContent.js                                     | JavaScript       |          5 |          0 |          1 |          6 |
+| c:\Users\emane\Desktop\App\Punto\src\theme\overrides\MuiCardHeader.js                                      | JavaScript       |          5 |          0 |          1 |          6 |
+| c:\Users\emane\Desktop\App\Punto\src\theme\overrides\MuiChip.js                                            | JavaScript       |         12 |          0 |          2 |         14 |
+| c:\Users\emane\Desktop\App\Punto\src\theme\overrides\MuiIconButton.js                                      | JavaScript       |          9 |          0 |          2 |         11 |
+| c:\Users\emane\Desktop\App\Punto\src\theme\overrides\MuiInputBase.js                                       | JavaScript       |         10 |          0 |          2 |         12 |
+| c:\Users\emane\Desktop\App\Punto\src\theme\overrides\MuiLinearProgress.js                                  | JavaScript       |         10 |          0 |          2 |         12 |
+| c:\Users\emane\Desktop\App\Punto\src\theme\overrides\MuiListItemIcon.js                                    | JavaScript       |          7 |          0 |          2 |          9 |
+| c:\Users\emane\Desktop\App\Punto\src\theme\overrides\MuiOutlinedInput.js                                   | JavaScript       |          6 |          0 |          1 |          7 |
+| c:\Users\emane\Desktop\App\Punto\src\theme\overrides\MuiPaper.js                                           | JavaScript       |          6 |          0 |          1 |          7 |
+| c:\Users\emane\Desktop\App\Punto\src\theme\overrides\MuiTableCell.js                                       | JavaScript       |          8 |          0 |          2 |         10 |
+| c:\Users\emane\Desktop\App\Punto\src\theme\overrides\MuiTableHead.js                                       | JavaScript       |          6 |          0 |          2 |          8 |
+| c:\Users\emane\Desktop\App\Punto\src\theme\overrides\MuiTableRow.js                                        | JavaScript       |         13 |          0 |          2 |         15 |
+| c:\Users\emane\Desktop\App\Punto\src\theme\overrides\MuiToggleButton.js                                    | JavaScript       |         25 |          0 |          3 |         28 |
+| c:\Users\emane\Desktop\App\Punto\src\theme\overrides\MuiTypography.js                                      | JavaScript       |          5 |          0 |          1 |          6 |
+| c:\Users\emane\Desktop\App\Punto\src\theme\overrides\index.js                                              | JavaScript       |         34 |          0 |          2 |         36 |
+| c:\Users\emane\Desktop\App\Punto\src\theme\palette.js                                                      | JavaScript       |         39 |          0 |          5 |         44 |
+| c:\Users\emane\Desktop\App\Punto\src\theme\typography.js                                                   | JavaScript       |         88 |          0 |          2 |         90 |
+| c:\Users\emane\Desktop\App\Punto\src\types\apollo.ts                                                       | TypeScript       |        519 |        178 |        160 |        857 |
+| c:\Users\emane\Desktop\App\Punto\src\types\react-table-config.d.ts                                         | TypeScript       |        120 |          8 |          9 |        137 |
+| c:\Users\emane\Desktop\App\Punto\src\types\store.ts                                                        | TypeScript       |          3 |          0 |          2 |          5 |
+| c:\Users\emane\Desktop\App\Punto\src\types\types.ts                                                        | TypeScript       |        153 |          1 |         12 |        166 |
+| c:\Users\emane\Desktop\App\Punto\src\utils\Constants.ts                                                    | TypeScript       |         33 |          0 |          4 |         37 |
+| c:\Users\emane\Desktop\App\Punto\src\utils\TextFieldFormats.tsx                                            | TypeScript React |         84 |          2 |          8 |         94 |
+| c:\Users\emane\Desktop\App\Punto\src\utils\apolloClient.ts                                                 | TypeScript       |         76 |          5 |          7 |         88 |
+| c:\Users\emane\Desktop\App\Punto\src\utils\client.ts                                                       | TypeScript       |          9 |         11 |          3 |         23 |
+| c:\Users\emane\Desktop\App\Punto\src\utils\commonValidation.ts                                             | TypeScript       |         95 |          4 |          4 |        103 |
+| c:\Users\emane\Desktop\App\Punto\src\utils\functions.ts                                                    | TypeScript       |      1,105 |          9 |         37 |      1,151 |
+| c:\Users\emane\Desktop\App\Punto\src\utils\history.ts                                                      | TypeScript       |          2 |          1 |          2 |          5 |
+| c:\Users\emane\Desktop\App\Punto\src\utils\mutations.ts                                                    | TypeScript       |        197 |          0 |         10 |        207 |
+| c:\Users\emane\Desktop\App\Punto\src\utils\queries.ts                                                      | TypeScript       |        205 |          0 |          9 |        214 |
+| c:\Users\emane\Desktop\App\Punto\src\utils\useRouter.ts                                                    | TypeScript       |          3 |          0 |          2 |          5 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Articulos\Articulos.tsx                                         | TypeScript React |         64 |          1 |          7 |         72 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Articulos\index.js                                              | JavaScript       |          1 |          0 |          1 |          2 |
+| c:\Users\emane\Desktop\App\Punto\src\views\CalendarioRegistrosInventario\CalendarioRegistrosInventario.tsx | TypeScript React |        138 |          2 |          8 |        148 |
+| c:\Users\emane\Desktop\App\Punto\src\views\CalendarioRegistrosInventario\index.ts                          | TypeScript       |          1 |          0 |          1 |          2 |
+| c:\Users\emane\Desktop\App\Punto\src\views\DetallesIntercambioPunto\DetallesIntercambioPunto.tsx           | TypeScript React |        317 |         40 |         11 |        368 |
+| c:\Users\emane\Desktop\App\Punto\src\views\DetallesIntercambioPunto\index.ts                               | TypeScript       |          1 |          0 |          1 |          2 |
+| c:\Users\emane\Desktop\App\Punto\src\views\DetallesPagoPunto\DetallesPagoPunto.tsx                         | TypeScript React |        227 |          1 |         13 |        241 |
+| c:\Users\emane\Desktop\App\Punto\src\views\DetallesPagoPunto\index.ts                                      | TypeScript       |          1 |          0 |          1 |          2 |
+| c:\Users\emane\Desktop\App\Punto\src\views\DetallesPlaza\DetallesPlaza.tsx                                 | TypeScript React |        462 |          4 |         12 |        478 |
+| c:\Users\emane\Desktop\App\Punto\src\views\DetallesPlaza\index.ts                                          | TypeScript       |          1 |          0 |          1 |          2 |
+| c:\Users\emane\Desktop\App\Punto\src\views\DetallesVentaPunto\DetallesVentaPunto.tsx                       | TypeScript React |        369 |          2 |         13 |        384 |
+| c:\Users\emane\Desktop\App\Punto\src\views\DetallesVentaPunto\index.ts                                     | TypeScript       |          1 |          0 |          1 |          2 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Error401\Error401.tsx                                           | TypeScript React |         62 |          0 |          5 |         67 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Error401\index.js                                               | JavaScript       |          1 |          0 |          1 |          2 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Error404\Error404.tsx                                           | TypeScript React |         50 |          0 |          5 |         55 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Error404\index.js                                               | JavaScript       |          1 |          0 |          1 |          2 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Error405\Error405.tsx                                           | TypeScript React |         50 |          0 |          5 |         55 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Error405\index.js                                               | JavaScript       |          1 |          0 |          1 |          2 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Impresoras\Impresoras.tsx                                       | TypeScript React |        172 |          5 |          8 |        185 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Impresoras\index.js                                             | JavaScript       |          1 |          0 |          1 |          2 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Ingreso\Ingreso.tsx                                             | TypeScript React |         51 |          0 |          6 |         57 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Ingreso\components\LoginForm.tsx                                | TypeScript React |        205 |          4 |         11 |        220 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Ingreso\index.js                                                | JavaScript       |          1 |          0 |          1 |          2 |
+| c:\Users\emane\Desktop\App\Punto\src\views\NuevoRegistroInventario\NuevoRegistroInventario.tsx             | TypeScript React |        310 |          4 |         11 |        325 |
+| c:\Users\emane\Desktop\App\Punto\src\views\NuevoRegistroInventario\components\Resumen.tsx                  | TypeScript React |         56 |          1 |          5 |         62 |
+| c:\Users\emane\Desktop\App\Punto\src\views\NuevoRegistroInventario\components\StepperForm.tsx              | TypeScript React |        180 |          1 |         13 |        194 |
+| c:\Users\emane\Desktop\App\Punto\src\views\NuevoRegistroInventario\components\Steps.tsx                    | TypeScript React |        108 |          1 |          5 |        114 |
+| c:\Users\emane\Desktop\App\Punto\src\views\NuevoRegistroInventario\components\validationSchema.ts          | TypeScript       |          9 |          0 |          3 |         12 |
+| c:\Users\emane\Desktop\App\Punto\src\views\NuevoRegistroInventario\index.ts                                | TypeScript       |          1 |          0 |          1 |          2 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Principal\Principal.tsx                                         | TypeScript React |        410 |         10 |         19 |        439 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Principal\components\AgregarForm.tsx                            | TypeScript React |        190 |          2 |         10 |        202 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Principal\components\AsignarForm.tsx                            | TypeScript React |        113 |          1 |          6 |        120 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Principal\components\CobrarForm.tsx                             | TypeScript React |        507 |         19 |         14 |        540 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Principal\components\GastoForm.tsx                              | TypeScript React |        278 |          3 |          9 |        290 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Principal\components\IntercambioForm.tsx                        | TypeScript React |        259 |          8 |          8 |        275 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Principal\components\LowerButtons.tsx                           | TypeScript React |        258 |          5 |          9 |        272 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Principal\components\Notas.tsx                                  | TypeScript React |        143 |         10 |          9 |        162 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Principal\components\PagoForm.tsx                               | TypeScript React |        247 |          2 |          9 |        258 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Principal\components\Reporte.tsx                                | TypeScript React |        444 |          5 |         18 |        467 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Principal\components\Tickets.tsx                                | TypeScript React |        155 |          8 |          7 |        170 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Principal\components\UpperButtons.tsx                           | TypeScript React |        249 |          3 |         10 |        262 |
+| c:\Users\emane\Desktop\App\Punto\src\views\Principal\index.js                                              | JavaScript       |          1 |          0 |          1 |          2 |
+| c:\Users\emane\Desktop\App\Punto\tsconfig.json                                                             | JSON             |         32 |          2 |          1 |         35 |
+| Total                                                                                                      |                  |     56,598 |      1,231 |      1,293 |     59,122 |
++------------------------------------------------------------------------------------------------------------+------------------+------------+------------+------------+------------+

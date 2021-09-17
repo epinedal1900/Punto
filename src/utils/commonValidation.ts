@@ -43,13 +43,16 @@ export const articulosEscanerPreciosValidation = {
       cantidad: yup.number().required('requerido').min(1, 'requerido'),
     })
   ),
-  precios: yup.array().of(
-    yup.object().shape({
-      nombre: yup.string().required('requerido'),
-      _id: yup.string().required('requerido'),
-      precio: yup.number().required('requerido').min(1, 'requerido'),
-    })
-  ),
+  precios: yup
+    .array()
+    .min(1)
+    .of(
+      yup.object().shape({
+        nombre: yup.string().required('requerido'),
+        _id: yup.string().required('requerido'),
+        precio: yup.number().required('requerido').min(1, 'requerido'),
+      })
+    ),
 };
 
 export const articulosEscanerInventarioValidation = {

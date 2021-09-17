@@ -145,6 +145,8 @@ const IntercambioForm = (props: NuevoIntercambioProps): JSX.Element => {
         typeof validation?.intercambioValues?.plazaReceptora !== 'string' &&
         // @ts-expect-error:err
         !validation?.intercambioValues?.plazaReceptora?.id &&
+        !validation?.intercambioValues?.escaneos &&
+        !validation?.intercambioValues?.prendasSueltas &&
         // @ts-expect-error:err
         !validation?.intercambioValues?.plazaReceptora?.nombre &&
         plazaState._idPunto
@@ -259,7 +261,11 @@ const IntercambioForm = (props: NuevoIntercambioProps): JSX.Element => {
         </Button>
         <Button
           color="primary"
-          disabled={loading}
+          disabled={
+            loading ||
+            (values.intercambioValues.escaneos.length === 0 &&
+              values.intercambioValues.prendasSueltas.length === 0)
+          }
           onClick={handleIntercambio}
           size="small"
           variant="contained"
