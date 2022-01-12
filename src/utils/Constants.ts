@@ -8,7 +8,6 @@ import {
 export const ArticulosInitialValues: ArticulosValues = {
   escaneos: [],
   prendasSueltas: [],
-  paquetesAbiertos: [],
   precios: [],
 };
 export const IntercambiosInitialValues: IntercambioValues = {

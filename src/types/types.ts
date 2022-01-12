@@ -102,7 +102,6 @@ export interface PrendaSuelta {
 export interface ArticulosValues {
   escaneos: Qr[];
   prendasSueltas: PrendaSuelta[];
-  paquetesAbiertos: Qr[];
   precios: Precios[];
 }
 
@@ -116,6 +115,7 @@ export interface Ticket extends ArticulosValues {
   tipoDeImpresion: 'imprimir' | 'noImprimir' | 'imprimirA5';
   comentarios: string;
   cantidadPagada: number;
+  nombre?: string | null;
 }
 export interface PrincipalValues extends Ticket {
   intercambioValues: IntercambioValues;

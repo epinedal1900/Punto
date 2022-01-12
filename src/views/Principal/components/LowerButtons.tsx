@@ -108,7 +108,6 @@ const UpperButtons = (props: UpperButtonsProps): JSX.Element => {
           !validation.precios &&
           !validation.escaneos &&
           !validation.prendasSueltas &&
-          !validation.paquetesAbiertos &&
           !dialogOpen &&
           plazaState._idPunto
         ) {

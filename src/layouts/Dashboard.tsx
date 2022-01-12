@@ -42,13 +42,11 @@ import {
   MarcarLeidosVariables,
   NotificacionesPunto,
   NotificacionesPunto_notificacionesPunto_notificaciones_notificaciones,
-  plaza,
-  plazaVariables,
   subirDatos,
   subirDatosVariables,
 } from '../types/apollo';
 import { MARCAR_LEIDOS_PUNTO, SUBIR_DATOS } from '../utils/mutations';
-import { NOTIFICACIONES_PUNTO, PLAZA } from '../utils/queries';
+import { NOTIFICACIONES_PUNTO } from '../utils/queries';
 import { obtenerDB, obtenerDocsPrincipal } from '../utils/functions';
 import { asignarPunto, modificarOnline } from '../actions';
 
@@ -139,7 +137,6 @@ export default function Dashboard(props: {
   const { children } = props;
   const session = useSelector((state: RootState) => state.session);
   const plazaState = useSelector((state: RootState) => state.plaza);
-  const plazaRefetch = useSelector((state: RootState) => state.plaza);
   const dispatch = useDispatch();
   const [open, setOpen] = useState(false);
   const [noLeidos, setNoLeidos] = useState(0);
@@ -161,11 +158,6 @@ export default function Dashboard(props: {
   const [mutationVariablesDoc, setMutationVariablesDoc] = useState<RxDocument<
     Database.mutation_variables
   > | null>(null);
-
-  const { refetch: getPlaza } = useQuery<plaza, plazaVariables>(PLAZA, {
-    variables: { _id: plazaRefetch._idPunto || '' },
-    skip: true,
-  });
 
   const [subirDatosFunction, { loading: subirDatosLoading }] = useMutation<
     subirDatos,
@@ -189,18 +181,6 @@ export default function Dashboard(props: {
             sinAlmacen: usuario.sinAlmacen,
           })
         );
-        if (subirSuccess) {
-          await getPlaza({ _id: usuario._idPunto }).then(async (data) => {
-            if (data.data.plaza && db && usuario?._idPunto) {
-              await db.collections.plaza.upsert({
-                _id: usuario._idPunto,
-                ...data.data.plaza,
-              });
-            }
-          });
-          dispatch(modificarOnline(true));
-          setSuccess(true);
-        }
         const variables = omit(mutationVariablesDoc?.toJSON(), '_id');
         keys(variables).forEach((key) => {
           // @ts-expect-error:err
@@ -215,9 +195,17 @@ export default function Dashboard(props: {
         });
         if (m) setMutationVariablesDoc(m);
 
-        setMessage(subirMessage);
         setLoading(false);
         setSubirConfirmationOpen(false);
+        if (subirSuccess) {
+          dispatch(modificarOnline(true));
+          setSuccess(true);
+          setMessage(`${subirMessage}`);
+          await new Promise((resolve) => setTimeout(resolve, 5000));
+          window.location.reload();
+        } else {
+          setMessage(`${subirMessage} ${!success ? JSON.stringify(m) : ''}`);
+        }
       } else {
         window.location.reload();
       }

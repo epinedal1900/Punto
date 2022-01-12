@@ -3,18 +3,20 @@
 /* eslint-disable react/no-multi-comp */
 /* eslint-disable import/no-cycle */
 import React, { useState, useEffect } from 'react';
-
+import * as yup from 'yup';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import AppBar from '@material-ui/core/AppBar';
 import Tabs from '@material-ui/core/Tabs';
-import InputBase from '@material-ui/core/InputBase';
 import Tab from '@material-ui/core/Tab';
+import { Grid } from '@material-ui/core';
 import Box from '@material-ui/core/Box';
 import { RxDatabase, RxDocument } from 'rxdb';
-import { FormikProps, useFormikContext } from 'formik';
+import { FormikHelpers, FormikProps, useFormikContext } from 'formik';
 import { useHistory } from 'react-router';
 import { NombreTickets, PrincipalValues, SetState } from '../../../types/types';
 import ArticulosEscaner from '../../../formPartials/ArticulosEscaner';
+import FormDialog from '../../../formPartials/FormDialog';
+import TextFieldFormik from '../../../formPartials/TextFieldFormik';
 import { AgregarFormProps } from './AgregarForm';
 import { Productos_productos_productos } from '../../../types/apollo';
 import * as Database from '../../../Database';
@@ -36,6 +38,11 @@ interface TicketsProps {
   docIntercambio: RxDocument<
     Database.intercambioDB | Database.registroInventarioDB
   > | null;
+  dialogOpen: boolean;
+  setDialogOpen: SetState<boolean>;
+}
+interface NuevoNombreTicket {
+  nombre: string;
 }
 const Tickets = (props: TicketsProps): JSX.Element => {
   const {
@@ -52,12 +59,16 @@ const Tickets = (props: TicketsProps): JSX.Element => {
     setDocTicket,
     docIntercambio,
     docTicket,
+    dialogOpen,
+    setDialogOpen,
   } = props;
   const history = useHistory();
-  const [ticketNameDisabled, setTicketNameDisabled] = useState(true);
   const { setValues, setErrors } = useFormikContext<PrincipalValues>();
-  const [nombreTemporal, setNombreTemporal] = useState<string | null>(null);
-  const [idTemporal, setIdTemporal] = useState(-1);
+  const [idNuevoNombre, setidNuevoNombre] = useState(-1);
+  const [nuevoNombreTicketOpen, setNuevoNombreTicketOpen] = useState(false);
+  const [nuevoTicketSubmitLoading, setNuevoTicketSubmitLoading] = useState(
+    false
+  );
   useEffect(() => {
     if (db) {
       setDocTicket(null);
@@ -81,19 +92,70 @@ const Tickets = (props: TicketsProps): JSX.Element => {
     history.replace(`/${newValue}`);
   };
 
-  const handleTicketNameChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    i: number
+  const handleTicketNameChange = async (
+    values: NuevoNombreTicket,
+    actions: FormikHelpers<NuevoNombreTicket>
   ) => {
-    if (e.target.value.length <= 15) {
-      setIdTemporal(i);
-      setNombreTemporal(e.target.value);
-    }
+    setNuevoTicketSubmitLoading(true);
+    const nuevosTickets = nombresTickets.map((v, j) => {
+      if (j === idNuevoNombre) {
+        return { _id: v._id, nombre: values.nombre };
+      }
+      return v;
+    });
+    await docTicket
+      ?.update({
+        $set: { nombre: values.nombre },
+      })
+      .then(() => {
+        setNombresTickets(nuevosTickets);
+        actions.resetForm();
+        setNuevoTicketSubmitLoading(false);
+        setDialogOpen(false);
+        setNuevoNombreTicketOpen(false);
+      });
   };
 
   return (
     <>
       <CssBaseline />
+      <FormDialog<NuevoNombreTicket>
+        handleClose={() => {
+          setDialogOpen(false);
+        }}
+        handleSubmit={handleTicketNameChange}
+        initialValues={{
+          nombre:
+            nombresTickets[idNuevoNombre]?.nombre ||
+            decodeURI(nombresTickets[idNuevoNombre]?._id.substring(1) || ''),
+        }}
+        loading={nuevoTicketSubmitLoading}
+        maxWidth="xs"
+        open={nuevoNombreTicketOpen}
+        render={() => (
+          <>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextFieldFormik
+                  label={
+                    nombresTickets[idNuevoNombre]?.nombre ||
+                    decodeURI(
+                      nombresTickets[idNuevoNombre]?._id.substring(1) ||
+                        'Nombre'
+                    )
+                  }
+                  maxLength={15}
+                  valueName="nombre"
+                />
+              </Grid>
+            </Grid>
+          </>
+        )}
+        setOpen={setNuevoNombreTicketOpen}
+        submitText="Editar"
+        title="Nuevo nombre de ticket"
+        validationSchema={yup.object()}
+      />
       <AppBar color="default" position="static">
         <Tabs
           indicatorColor="primary"
@@ -106,40 +168,14 @@ const Tickets = (props: TicketsProps): JSX.Element => {
           {nombresTickets.map((val, i) => (
             <Tab
               disableRipple
-              label={
-                <Box
-                  component="div"
-                  onDoubleClick={() => setTicketNameDisabled(false)}
-                  overflow="visible"
-                >
-                  <InputBase
-                    disabled={ticketNameDisabled}
-                    onBlur={async () => {
-                      setTicketNameDisabled(true);
-                      const nuevosTickets = nombresTickets.map((v, j) => {
-                        if (j === i) {
-                          return { _id: v._id, nombre: nombreTemporal };
-                        }
-                        return v;
-                      });
-                      setNombresTickets(nuevosTickets);
-                      await docTicket?.update({
-                        $set: { nombre: nombreTemporal },
-                      });
-                      setIdTemporal(-1);
-                      setNombreTemporal(null);
-                    }}
-                    onChange={(e) => handleTicketNameChange(e, i)}
-                    value={
-                      nombreTemporal && i === idTemporal
-                        ? nombreTemporal
-                        : val.nombre
-                        ? val.nombre
-                        : decodeURI(val._id.substring(1))
-                    }
-                  />
-                </Box>
-              }
+              label={val.nombre ? val.nombre : decodeURI(val._id.substring(1))}
+              onDoubleClick={() => {
+                if (!dialogOpen) {
+                  setNuevoNombreTicketOpen(true);
+                  setDialogOpen(true);
+                  setidNuevoNombre(i);
+                }
+              }}
               value={val._id}
             />
           ))}
@@ -149,7 +185,6 @@ const Tickets = (props: TicketsProps): JSX.Element => {
         <form onSubmit={formikProps.handleSubmit}>
           {/* <h6>{JSON.stringify(values)}</h6> */}
           <ArticulosEscaner
-            abrirPaquetes
             agregarFormProps={agregarFormProps}
             codigoStr={codigoStr}
             doc={docTicket || undefined}

@@ -381,7 +381,7 @@ const quitarCamposDeRevision = (v: PrendasRevision) => {
 export const agruparArticulosParaRegistro = (
   values: AgruparArticulosArg
 ): { prendas: PrendasNuevoRegistro[]; revision: PrendasRevision[] } => {
-  const { escaneos, paquetesAbiertos, prendasSueltas } = values;
+  const { escaneos, prendasSueltas } = values;
   const prendasSueltasRevision: PrendasRevision[] = prendasSueltas.map(
     (val) => {
       return {
@@ -392,17 +392,12 @@ export const agruparArticulosParaRegistro = (
       };
     }
   );
-  const paquetesAbiertosRevision = paquetesAbiertos.map((qr) => {
-    return agruparArticulosParaRegistroProcesarQr(qr, true);
-  });
   const escaneosRevision = escaneos.map((qr) => {
     return agruparArticulosParaRegistroProcesarQr(qr, false);
   });
 
   const prendasAgrupadasRevisionArr = groupBy(
-    prendasSueltasRevision
-      .concat(paquetesAbiertosRevision)
-      .concat(escaneosRevision),
+    prendasSueltasRevision.concat(escaneosRevision),
     'a'
   );
   const revision = Object.keys(prendasAgrupadasRevisionArr).map((key) => {
@@ -568,10 +563,6 @@ export const montoDeArticulosEscaner = (values: PrincipalValues): number => {
     values.escaneos.reduce((acc, cur) => {
       const precio = precios[prendaIdDeQR(cur.qr)] || 0;
       return acc + cur.cantidad * cur.piezas * precio;
-    }, 0) +
-    values.paquetesAbiertos.reduce((acc, cur) => {
-      const precio = precios[prendaIdDeQR(cur.qr)] || 0;
-      return acc + cur.cantidad * precio;
     }, 0);
 
   return total;
@@ -980,7 +971,6 @@ export const eliminarTicket = async (
     },
     $unset: {
       escaneos: '',
-      paquetesAbiertos: '',
       prendasSueltas: '',
       precios: '',
       cliente: '',
@@ -1010,7 +1000,6 @@ export const obtenerNombresTickets = (
       const n: NombreTickets[] = [];
       nombres.forEach((v) => {
         if (!v.eliminado) {
-          // @ts-expect-error:error
           n.push({ _id: v._id, nombre: v.nombre || null });
         }
       });

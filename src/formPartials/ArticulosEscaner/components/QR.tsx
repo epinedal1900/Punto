@@ -14,7 +14,7 @@ interface QRProps {
   resaltado: { id: number; name: string };
   setResaltado: (a: { id: number; name: string }) => void;
   qr: Qr;
-  name: 'escaneos' | 'paquetesAbiertos' | 'intercambioValues.escaneos';
+  name: 'escaneos' | 'intercambioValues.escaneos';
   arrayHelpers: FieldArrayRenderProps;
   eliminarDePrecios: (a: string, b: Casos, c: number) => void;
   incluirPrecio: boolean;
@@ -71,16 +71,9 @@ const QR = (props: QRProps): JSX.Element => {
                   });
                 } else if (doc) {
                   await doc.atomicUpdate((oldData) => {
-                    const v =
-                      (name === 'escaneos' && val > 70) ||
-                      (name === 'paquetesAbiertos' &&
-                        val > values.paquetesAbiertos[idx].piezas - 1)
-                        ? 0
-                        : val;
+                    const v = name === 'escaneos' && val > 70 ? 0 : val;
                     if (name === 'escaneos') {
                       oldData.escaneos[index].cantidad = v;
-                    } else {
-                      oldData.paquetesAbiertos[index].cantidad = v;
                     }
                     return oldData;
                   });
@@ -89,17 +82,11 @@ const QR = (props: QRProps): JSX.Element => {
               id={
                 name === 'escaneos'
                   ? `e${values.escaneos[idx].qr}`
-                  : name === 'intercambioValues.escaneos'
-                  ? `ie${values.intercambioValues.escaneos[idx].qr}`
-                  : `p${values.paquetesAbiertos[idx].qr}`
+                  : `ie${values.intercambioValues.escaneos[idx].qr}`
               }
               index={idx}
               label="Paquetes"
-              maxVal={
-                name === 'escaneos' || name === 'intercambioValues.escaneos'
-                  ? 70
-                  : values.paquetesAbiertos[idx].piezas - 1
-              }
+              maxVal={70}
               property="cantidad"
               valueName={name}
             />
@@ -168,18 +155,13 @@ const QR = (props: QRProps): JSX.Element => {
               await doc.atomicUpdate((oldData) => {
                 if (name === 'escaneos') {
                   oldData.escaneos.splice(idx, 1);
-                } else {
-                  oldData.paquetesAbiertos.splice(idx, 1);
                 }
                 return oldData;
               });
             }
             setResaltado({ id: -1, name: 'null' });
             if (incluirPrecio && name !== 'intercambioValues.escaneos') {
-              const nombre =
-                name === 'escaneos'
-                  ? values.escaneos[idx].nombre
-                  : values.paquetesAbiertos[idx].nombre;
+              const { nombre } = values.escaneos[idx];
               eliminarDePrecios(nombre, name, idx);
             }
           }}

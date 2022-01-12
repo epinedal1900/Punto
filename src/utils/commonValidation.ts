@@ -33,16 +33,6 @@ export const articulosEscanerPreciosValidation = {
       cantidad: yup.number().required('requerido').min(1, 'requerido'),
     })
   ),
-  paquetesAbiertos: yup.array().of(
-    yup.object().shape({
-      qr: yup.string().required('requerido'),
-      id: yup.string().required('requerido'),
-      tallas: yup.string().required('requerido'),
-      piezas: yup.string().required('requerido'),
-      nombre: yup.string().required('requerido'),
-      cantidad: yup.number().required('requerido').min(1, 'requerido'),
-    })
-  ),
   precios: yup
     .array()
     .min(1)

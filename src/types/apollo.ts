@@ -606,23 +606,23 @@ export interface plaza_productos {
 }
 
 export interface plaza_plaza_intercambios_ar_pqs {
-  p: string;
+  p: any;
   c: number;
 }
 
 export interface plaza_plaza_intercambios_ar {
-  a: string;
+  a: any;
   c: number;
   pqs: plaza_plaza_intercambios_ar_pqs[];
 }
 
 export interface plaza_plaza_intercambios_discrepancias_pqs {
-  p: string;
+  p: any;
   c: number;
 }
 
 export interface plaza_plaza_intercambios_discrepancias {
-  a: string;
+  a: any;
   c: number;
   pqs: plaza_plaza_intercambios_discrepancias_pqs[];
 }

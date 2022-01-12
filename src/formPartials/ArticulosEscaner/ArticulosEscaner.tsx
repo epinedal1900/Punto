@@ -9,7 +9,6 @@ import { RxDocument } from 'rxdb';
 
 import Escaneos from './components/Escaneos';
 import PrendasSueltas from './components/PrendasSueltas';
-import PaquetesAbiertos from './components/PaquetesAbiertos';
 import Precios from './components/Precios';
 import * as Database from '../../Database';
 import { Productos_productos_productos } from '../../types/apollo';
@@ -47,7 +46,7 @@ export type Accesor =
   | keyof ArticulosValues
   | 'intercambioValues.escaneos'
   | 'intercambioValues.prendasSueltas';
-export type Casos = 'escaneos' | 'prendasSueltas' | 'paquetesAbiertos';
+export type Casos = 'escaneos' | 'prendasSueltas';
 
 export const handleAgregarPrecio = async (
   nombre: string,
@@ -91,7 +90,6 @@ interface ArticulosCompProps {
   setTotal?: SetState<number>;
   maxRows?: number;
   allowZero?: boolean;
-  abrirPaquetes?: boolean;
   esRegistro?: boolean;
   agregarFormProps?: AgregarFormProps;
 }
@@ -101,7 +99,6 @@ const ArticulosComp = (props: ArticulosCompProps): JSX.Element => {
     incluirPrecio = false,
     maxRows = 15,
     allowZero = false,
-    abrirPaquetes,
     productos,
     doc,
     agregarFormProps,
@@ -116,7 +113,6 @@ const ArticulosComp = (props: ArticulosCompProps): JSX.Element => {
   const theme = useTheme();
   const matches = useMediaQuery(theme.breakpoints.up('xl'));
   const { values, setFieldValue } = useFormikContext<PrincipalValues>();
-  const [escaneoParaAbrirPaquete, setEscaneoParaAbrirPaquete] = useState(false);
   const classes = useStyles();
   const [procesando, setProcesando] = useState(false);
   const [resaltado, setResaltado] = useState<{ id: number; name: string }>({
@@ -141,19 +137,14 @@ const ArticulosComp = (props: ArticulosCompProps): JSX.Element => {
         return o;
       });
     }
-  }, [
-    values.escaneos,
-    values.paquetesAbiertos,
-    values.precios,
-    values.prendasSueltas,
-  ]);
+  }, [values.escaneos, values.precios, values.prendasSueltas]);
 
   const eliminarDePrecios = async (
     nombre: string,
     valueName: Casos,
     index: number
   ) => {
-    const casos: Casos[] = ['escaneos', 'paquetesAbiertos', 'prendasSueltas'];
+    const casos: Casos[] = ['escaneos', 'prendasSueltas'];
     let noEliminar = values[valueName].some((val, i) => {
       const valNombre =
         // @ts-expect-error:casos
@@ -186,6 +177,8 @@ const ArticulosComp = (props: ArticulosCompProps): JSX.Element => {
       setFieldValue('precios', precios, false);
     }
   };
+  // TODO soporte para nueva version de codigos
+  // TODO soporte para abrir paquetes sin ventas
 
   const onEscaneo = async (codigo: string) => {
     setProcesando(true);
@@ -198,24 +191,21 @@ const ArticulosComp = (props: ArticulosCompProps): JSX.Element => {
       esIntercambio && !esRegistro
         ? values.intercambioValues.escaneos
         : values.escaneos;
-    const elementId = escaneoParaAbrirPaquete
-      ? `p${codigo}`
-      : esIntercambio && !esRegistro
-      ? `ie${codigo}`
-      : `e${codigo}`;
+    const elementId =
+      esIntercambio && !esRegistro ? `ie${codigo}` : `e${codigo}`;
     setErrorDeEscaneo(null);
     const prenda = await resolverPrendas([prendaIdDeQR(codigo)]);
     if (codigo.length !== 58 && codigo.length !== 54) {
       setErrorDeEscaneo('Código inválido (longitud inválida)');
     } else if (prenda[0].nombre === 'prenda no definida') {
       setErrorDeEscaneo('Código inválido (prenda no definida)');
-    } else if (!escaneoParaAbrirPaquete && document.getElementById(elementId)) {
+    } else if (document.getElementById(elementId)) {
       const idx = escaneos.findIndex((val) => {
         return val.qr === codigo;
       });
       setResaltado({
         id: idx,
-        name: escaneoParaAbrirPaquete ? 'paquetesAbiertos' : escaneosAccesor,
+        name: escaneosAccesor,
       });
     } else {
       const tallaInicial = parseInt(codigo.slice(0, 2));
@@ -240,23 +230,7 @@ const ArticulosComp = (props: ArticulosCompProps): JSX.Element => {
           doc
         );
       }
-      if (escaneoParaAbrirPaquete && doc) {
-        index = values.paquetesAbiertos.length;
-        setResaltado({
-          id: index,
-          name: 'paquetesAbiertos',
-        });
-        await doc.atomicUpdate((oldData) => {
-          oldData.paquetesAbiertos[index] = JSON.parse(JSON.stringify(push));
-          return oldData;
-        });
-        setFieldValue(
-          `paquetesAbiertos.${index}`,
-          JSON.parse(JSON.stringify(push)),
-          false
-        );
-        setEscaneoParaAbrirPaquete(false);
-      } else {
+      if (doc) {
         index = escaneos.length;
         setResaltado({
           id: index,
@@ -277,7 +251,7 @@ const ArticulosComp = (props: ArticulosCompProps): JSX.Element => {
       }
     }
     const d = document.getElementById(elementId);
-    if (d && !escaneoParaAbrirPaquete) {
+    if (d) {
       d.focus();
     }
     setProcesando(false);
@@ -311,18 +285,6 @@ const ArticulosComp = (props: ArticulosCompProps): JSX.Element => {
             matches={matches}
             procesando={procesando}
             resaltado={resaltado}
-            setResaltado={setResaltado}
-          />
-          <PaquetesAbiertos
-            abrirPaquetes={Boolean(abrirPaquetes)}
-            classes={classes}
-            doc={doc}
-            eliminarDePrecios={eliminarDePrecios}
-            escaneoParaAbrirPaquete={escaneoParaAbrirPaquete}
-            incluirPrecio={incluirPrecio}
-            matches={matches}
-            resaltado={resaltado}
-            setEscaneoParaAbrirPaquete={setEscaneoParaAbrirPaquete}
             setResaltado={setResaltado}
           />
         </Grid>

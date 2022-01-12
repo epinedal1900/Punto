@@ -120,7 +120,7 @@ const collections: { [name: string]: RxCollectionCreatorBase } = {
   ticket: {
     schema: {
       title: 'principal',
-      version: 3,
+      version: 5,
       type: 'object',
       properties: {
         escaneos: {
@@ -130,12 +130,6 @@ const collections: { [name: string]: RxCollectionCreatorBase } = {
           },
         },
         prendasSueltas: {
-          type: 'array',
-          items: {
-            type: 'object',
-          },
-        },
-        paquetesAbiertos: {
           type: 'array',
           items: {
             type: 'object',
@@ -151,7 +145,7 @@ const collections: { [name: string]: RxCollectionCreatorBase } = {
           type: ['string', 'object'],
         },
         nombre: {
-          type: 'string',
+          type: ['string', 'null'],
         },
         esMenudeo: {
           type: 'boolean',
@@ -189,12 +183,18 @@ const collections: { [name: string]: RxCollectionCreatorBase } = {
       3: function () {
         return null;
       },
+      4: function () {
+        return null;
+      },
+      5: function () {
+        return null;
+      },
     },
   },
   intercambio: {
     schema: {
       title: 'principal',
-      version: 0,
+      version: 1,
       type: 'object',
       properties: {
         escaneos: {
@@ -204,12 +204,6 @@ const collections: { [name: string]: RxCollectionCreatorBase } = {
           },
         },
         prendasSueltas: {
-          type: 'array',
-          items: {
-            type: 'object',
-          },
-        },
-        paquetesAbiertos: {
           type: 'array',
           items: {
             type: 'object',
@@ -229,11 +223,16 @@ const collections: { [name: string]: RxCollectionCreatorBase } = {
         },
       },
     },
+    migrationStrategies: {
+      1: function () {
+        return null;
+      },
+    },
   },
   registro_inventario: {
     schema: {
       title: 'registro_inventario',
-      version: 0,
+      version: 1,
       type: 'object',
       properties: {
         escaneos: {
@@ -248,18 +247,17 @@ const collections: { [name: string]: RxCollectionCreatorBase } = {
             type: 'object',
           },
         },
-        paquetesAbiertos: {
-          type: 'array',
-          items: {
-            type: 'object',
-          },
-        },
         precios: {
           type: 'array',
           items: {
             type: 'object',
           },
         },
+      },
+    },
+    migrationStrategies: {
+      1: function () {
+        return null;
       },
     },
   },
@@ -325,7 +323,7 @@ const collections: { [name: string]: RxCollectionCreatorBase } = {
   mutation_variables: {
     schema: {
       title: 'mutation_variables',
-      version: 2,
+      version: 4,
       type: 'object',
       properties: {
         intercambio: {
@@ -365,6 +363,12 @@ const collections: { [name: string]: RxCollectionCreatorBase } = {
         return null;
       },
       2: function () {
+        return null;
+      },
+      3: function () {
+        return null;
+      },
+      4: function () {
         return null;
       },
     },

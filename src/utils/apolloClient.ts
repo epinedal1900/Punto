@@ -60,7 +60,7 @@ export const retryLink = new RetryLink({
 });
 let uri;
 if (process.env.NODE_ENV === 'development') {
-  uri = 'http://192.168.100.149:4000/graphql'; // dev Main
+  uri = 'http://localhost:4000/graphql'; // dev Main
 } else {
   uri = 'https://server-dot-dark-garden-296622.ue.r.appspot.com/8081/graphql'; // Main
 }

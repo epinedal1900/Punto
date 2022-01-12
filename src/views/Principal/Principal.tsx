@@ -208,11 +208,6 @@ const Principal = (): JSX.Element => {
     let str = '';
     const kep = (e: KeyboardEvent) => {
       // TODO actualizar para responder a version con \ al inicio
-      // const active = document.activeElement;
-      // if (e.key==='\') {
-      //   // @ts-expect-error:error
-      //   active?.blur();
-      // }
       if (e.key !== 'Control' && e.key !== 'Alt' && e.key !== 'Tab') {
         str += e.key.replace('Shift', '');
         if (e.key.includes('Enter')) {
@@ -308,55 +303,59 @@ const Principal = (): JSX.Element => {
                   message="¿Está seguro de que desea eliminar el ticket?"
                   open={eliminarTicketConfirmation}
                 />
-                <GastoForm
-                  mutationVariablesDoc={mutationVariablesDoc}
-                  open={gastoOpen}
-                  plazaDoc={plazaDoc}
-                  setDialogOpen={setDialogOpen}
-                  setGastoOpen={setGastoOpen}
-                  setMessage={setMessage}
-                  setSuccess={setSuccess}
-                />
-                <IntercambioForm
-                  codigoStr={codigoStr}
-                  docIntercambio={docIntercambio}
-                  mutationVariablesDoc={mutationVariablesDoc}
-                  opcionesArticulos={opcionesArticulos || []}
-                  open={intercambioOpen}
-                  plazaDoc={plazaDoc}
-                  plazasParaIntercambios={plazasParaIntercambios}
-                  setCodigoStr={setCodigoStr}
-                  setDialogOpen={setDialogOpen}
-                  setIntercambioOpen={setIntercambioOpen}
-                  setMessage={setMessage}
-                  setSuccess={setSuccess}
-                />
-                <PagoForm
-                  clientes={clientes}
-                  mutationVariablesDoc={mutationVariablesDoc}
-                  open={pagoOpen}
-                  plazaDoc={plazaDoc}
-                  setDialogOpen={setDialogOpen}
-                  setMessage={setMessage}
-                  setPagoOpen={setPagoOpen}
-                  setSuccess={setSuccess}
-                />
+                {plazaDoc && (
+                  <>
+                    <GastoForm
+                      mutationVariablesDoc={mutationVariablesDoc}
+                      open={gastoOpen}
+                      plazaDoc={plazaDoc}
+                      setDialogOpen={setDialogOpen}
+                      setGastoOpen={setGastoOpen}
+                      setMessage={setMessage}
+                      setSuccess={setSuccess}
+                    />
+                    <IntercambioForm
+                      codigoStr={codigoStr}
+                      docIntercambio={docIntercambio}
+                      mutationVariablesDoc={mutationVariablesDoc}
+                      opcionesArticulos={opcionesArticulos || []}
+                      open={intercambioOpen}
+                      plazaDoc={plazaDoc}
+                      plazasParaIntercambios={plazasParaIntercambios}
+                      setCodigoStr={setCodigoStr}
+                      setDialogOpen={setDialogOpen}
+                      setIntercambioOpen={setIntercambioOpen}
+                      setMessage={setMessage}
+                      setSuccess={setSuccess}
+                    />
+                    <PagoForm
+                      clientes={clientes}
+                      mutationVariablesDoc={mutationVariablesDoc}
+                      open={pagoOpen}
+                      plazaDoc={plazaDoc}
+                      setDialogOpen={setDialogOpen}
+                      setMessage={setMessage}
+                      setPagoOpen={setPagoOpen}
+                      setSuccess={setSuccess}
+                    />
+                    <CobrarForm
+                      docTicket={docTicket}
+                      mutationVariablesDoc={mutationVariablesDoc}
+                      open={cobrarOpen}
+                      plazaDoc={plazaDoc}
+                      setCobrarOpen={setCobrarOpen}
+                      setDialogOpen={setDialogOpen}
+                      setMessage={setMessage}
+                      setSuccess={setSuccess}
+                    />
+                  </>
+                )}
                 <AsignarForm
                   clientes={clientes}
                   docTicket={docTicket}
                   open={asignarOpen}
                   setAsignarOpen={setAsignarOpen}
                   setDialogOpen={setDialogOpen}
-                />
-                <CobrarForm
-                  docTicket={docTicket}
-                  mutationVariablesDoc={mutationVariablesDoc}
-                  open={cobrarOpen}
-                  plazaDoc={plazaDoc}
-                  setCobrarOpen={setCobrarOpen}
-                  setDialogOpen={setDialogOpen}
-                  setMessage={setMessage}
-                  setSuccess={setSuccess}
                 />
                 <Box height="90vh">
                   <Grid container spacing={3}>
@@ -392,6 +391,7 @@ const Principal = (): JSX.Element => {
                             }}
                             codigoStr={codigoStr}
                             db={db}
+                            dialogOpen={dialogOpen}
                             docIntercambio={docIntercambio}
                             docTicket={docTicket}
                             formikProps={formikProps}
@@ -399,6 +399,7 @@ const Principal = (): JSX.Element => {
                             nombresTickets={nombresTickets}
                             opcionesArticulos={opcionesArticulos}
                             setCodigoStr={setCodigoStr}
+                            setDialogOpen={setDialogOpen}
                             setDocTicket={setDocTicket}
                             setNombresTickets={setNombresTickets}
                             setTotal={setTotal}
