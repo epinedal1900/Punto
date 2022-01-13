@@ -10,6 +10,7 @@ import React from 'react';
 import { Router, Switch, Route } from 'react-router-dom';
 import { ApolloProvider } from '@apollo/client';
 import { Provider as StoreProvider } from 'react-redux';
+import { ThemeProvider, createMuiTheme } from '@material-ui/core/styles';
 import { ErrorBoundary } from 'react-error-boundary';
 import { configure } from 'react-hotkeys';
 import client from './utils/client';
@@ -25,6 +26,8 @@ import { store } from './store';
 import { REPORTAR_ERROR } from './utils/mutations';
 import { plaza, Usuario, UsuarioVariables } from './types/apollo';
 import { GlobalStyles } from './components';
+
+const theme = createMuiTheme();
 
 configure({
   ignoreTags: ['select', 'textarea'],
@@ -100,112 +103,114 @@ export default function App() {
   return (
     <ApolloProvider client={client}>
       <StoreProvider store={store}>
-        <GlobalStyles />
-        <Router history={history}>
-          <ErrorBoundary
-            FallbackComponent={React.lazy(() => import('./views/Error405'))}
-            onError={async (error) => {
-              await client.mutate({
-                mutation: REPORTAR_ERROR,
-                variables: {
-                  operation: `${JSON.stringify(error.message)} ${
-                    history.location.pathname
-                  }`,
-                },
-              });
-              history.push('/error/405');
-              window.location.reload();
-            }}
-          >
-            <Switch>
-              <RouteWrapper
-                component={React.lazy(() => import('./views/Principal'))}
-                exact
-                layout={Dashboard}
-                path="/"
-              />
-              <RouteWrapper
-                component={React.lazy(() => import('./views/Articulos'))}
-                exact
-                layout={Dashboard}
-                path="/articulos"
-              />
-              <RouteWrapper
-                component={React.lazy(() => import('./views/Impresoras'))}
-                exact
-                layout={Dashboard}
-                path="/impresoras"
-              />
-              <RouteWrapper
-                component={React.lazy(() =>
-                  import('./views/NuevoRegistroInventario')
-                )}
-                exact
-                layout={Dashboard}
-                path="/registroinventario"
-              />
-              <RouteWrapper
-                component={React.lazy(() =>
-                  import('./views/CalendarioRegistrosInventario')
-                )}
-                exact
-                layout={Dashboard}
-                path="/calendario"
-              />
-              <RouteWrapper
-                component={React.lazy(() => import('./views/Ingreso'))}
-                exact
-                layout={Auth}
-                path="/ingreso"
-              />
-              <RouteWrapper
-                component={React.lazy(() => import('./views/Error405'))}
-                layout={Error}
-                path="/error/405"
-              />
-              <RouteWrapper
-                component={React.lazy(() => import('./views/Error401'))}
-                layout={Error}
-                path="/error/401"
-              />
-              <RouteWrapper
-                component={React.lazy(() => import('./views/DetallesPlaza'))}
-                exact
-                layout={Dashboard}
-                path="/plazas/ver/:puntoId"
-              />
-              <RouteWrapper
-                component={React.lazy(() =>
-                  import('./views/DetallesPagoPunto')
-                )}
-                exact
-                layout={Dashboard}
-                path="/plazas/pagos/:puntoId/:id"
-              />
-              <RouteWrapper
-                component={React.lazy(() =>
-                  import('./views/DetallesIntercambioPunto')
-                )}
-                exact
-                layout={Dashboard}
-                path="/plazas/intercambios/:puntoId/:id"
-              />
-              <RouteWrapper
-                component={React.lazy(() =>
-                  import('./views/DetallesVentaPunto')
-                )}
-                exact
-                layout={Dashboard}
-                path="/plazas/ventas/:puntoId/:id"
-              />
-              <RouteWrapper
-                component={React.lazy(() => import('./views/Error404'))}
-                layout={Error}
-                path="*"
-              />
-            </Switch>
-          </ErrorBoundary>
-        </Router>
+        <ThemeProvider theme={theme}>
+          <GlobalStyles />
+          <Router history={history}>
+            <ErrorBoundary
+              FallbackComponent={React.lazy(() => import('./views/Error405'))}
+              onError={async (error) => {
+                await client.mutate({
+                  mutation: REPORTAR_ERROR,
+                  variables: {
+                    operation: `${JSON.stringify(error.message)} ${
+                      history.location.pathname
+                    }`,
+                  },
+                });
+                history.push('/error/405');
+                window.location.reload();
+              }}
+            >
+              <Switch>
+                <RouteWrapper
+                  component={React.lazy(() => import('./views/Principal'))}
+                  exact
+                  layout={Dashboard}
+                  path="/"
+                />
+                <RouteWrapper
+                  component={React.lazy(() => import('./views/Articulos'))}
+                  exact
+                  layout={Dashboard}
+                  path="/articulos"
+                />
+                <RouteWrapper
+                  component={React.lazy(() => import('./views/Impresoras'))}
+                  exact
+                  layout={Dashboard}
+                  path="/impresoras"
+                />
+                <RouteWrapper
+                  component={React.lazy(() =>
+                    import('./views/NuevoRegistroInventario')
+                  )}
+                  exact
+                  layout={Dashboard}
+                  path="/registroinventario"
+                />
+                <RouteWrapper
+                  component={React.lazy(() =>
+                    import('./views/CalendarioRegistrosInventario')
+                  )}
+                  exact
+                  layout={Dashboard}
+                  path="/calendario"
+                />
+                <RouteWrapper
+                  component={React.lazy(() => import('./views/Ingreso'))}
+                  exact
+                  layout={Auth}
+                  path="/ingreso"
+                />
+                <RouteWrapper
+                  component={React.lazy(() => import('./views/Error405'))}
+                  layout={Error}
+                  path="/error/405"
+                />
+                <RouteWrapper
+                  component={React.lazy(() => import('./views/Error401'))}
+                  layout={Error}
+                  path="/error/401"
+                />
+                <RouteWrapper
+                  component={React.lazy(() => import('./views/DetallesPlaza'))}
+                  exact
+                  layout={Dashboard}
+                  path="/plazas/ver/:puntoId"
+                />
+                <RouteWrapper
+                  component={React.lazy(() =>
+                    import('./views/DetallesPagoPunto')
+                  )}
+                  exact
+                  layout={Dashboard}
+                  path="/plazas/pagos/:puntoId/:id"
+                />
+                <RouteWrapper
+                  component={React.lazy(() =>
+                    import('./views/DetallesIntercambioPunto')
+                  )}
+                  exact
+                  layout={Dashboard}
+                  path="/plazas/intercambios/:puntoId/:id"
+                />
+                <RouteWrapper
+                  component={React.lazy(() =>
+                    import('./views/DetallesVentaPunto')
+                  )}
+                  exact
+                  layout={Dashboard}
+                  path="/plazas/ventas/:puntoId/:id"
+                />
+                <RouteWrapper
+                  component={React.lazy(() => import('./views/Error404'))}
+                  layout={Error}
+                  path="*"
+                />
+              </Switch>
+            </ErrorBoundary>
+          </Router>
+        </ThemeProvider>
       </StoreProvider>
     </ApolloProvider>
   );
